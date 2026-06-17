@@ -38,7 +38,6 @@ export function SessionScreen() {
   const lastStateSeverityRef = useRef<'success' | 'warning' | 'error'>('error');
   const poseDataRef = useRef<{ angles: Record<string, number>; feedbackMessage: string; score: number } | null>(null);
 
-  // Initialize store session when the screen mounts
   useEffect(() => {
     if (pose) {
       store.startSession(pose.id, pose.name);
@@ -48,13 +47,11 @@ export function SessionScreen() {
     };
   }, [activePoseId]);
 
-  // Session Ticker (runs once per second when active)
   useEffect(() => {
     if (sessionActive) {
       timerRef.current = setInterval(() => {
         const currentData = poseDataRef.current;
         if (currentData) {
-          // Log frame state to store
           store.updateSessionLogs({
             timestamp: Date.now(),
             score: currentData.score,
@@ -62,7 +59,7 @@ export function SessionScreen() {
             feedbackMessage: currentData.feedbackMessage,
           });
 
-          // Trigger hold status beeps
+
           const score = currentData.score;
           if (score >= 75 && lastStateSeverityRef.current !== 'success') {
             playAudioCue('success');
@@ -75,7 +72,6 @@ export function SessionScreen() {
             lastStateSeverityRef.current = 'error';
           }
         } else {
-          // Keep ticking session logs even if body is out of frame
           store.updateSessionLogs({
             timestamp: Date.now(),
             score: 0,
@@ -95,11 +91,9 @@ export function SessionScreen() {
     };
   }, [sessionActive]);
 
-  // Handle incoming camera frames
   const handlePoseDetected = useCallback((data: { keypoints: Keypoint[]; angles: Record<string, number> }) => {
     if (!pose) return;
 
-    // Check visibility of required joints
     const missingJoints: string[] = [];
     const indexMap: Record<string, number> = {
       LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12,
@@ -133,18 +127,18 @@ export function SessionScreen() {
 
     setIsCalibrating(false);
 
-    // Run geometry check
+
     const evaluation = evaluatePose(pose.id, data.angles);
     setFeedback(evaluation);
 
-    // Save current frame metrics for the 1s logger
+
     poseDataRef.current = {
       angles: data.angles,
       feedbackMessage: evaluation.corrections[0] || 'Perfect Alignment',
       score: evaluation.score
     };
 
-    // Voice Feedback (throttled to every 5 seconds to prevent audio spam)
+    // Voice feedback (throttled to 5s)
     const now = Date.now();
     if (now - lastAudioFeedbackTimeRef.current > 5000) {
       if (evaluation.severity !== 'success') {
@@ -154,7 +148,7 @@ export function SessionScreen() {
           lastAudioFeedbackTimeRef.current = now;
         }
       } else {
-        // Occasional encouragement
+
         if (Math.random() > 0.8) {
           speakFeedback('Great form, keep holding.');
           lastAudioFeedbackTimeRef.current = now;
@@ -203,7 +197,7 @@ export function SessionScreen() {
     );
   }
 
-  // Formatting utility
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -233,12 +227,9 @@ export function SessionScreen() {
 
       <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
         
-        {/* LEFT COLUMN: Camera and session controls */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Webcam AI Engine */}
           <AIEngine onPoseDetected={handlePoseDetected} poseImage={pose.image} poseName={pose.name} />
 
-          {/* Session controllers */}
           <div className="plush" style={{ padding: 18, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', gap: 12 }}>
               {!sessionActive ? (
@@ -267,10 +258,8 @@ export function SessionScreen() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Real-time Cues, Hold stats and Joint Angles */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           
-          {/* Live timer stats */}
           <div className="plush-lg" style={{ padding: 20, background: 'white', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
             <div style={{ borderRight: '3.5px dashed var(--line)' }}>
               <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -295,7 +284,7 @@ export function SessionScreen() {
             </div>
           </div>
 
-          {/* Alignment feedback and corrections card */}
+
           <div className="plush" style={{
             padding: 20,
             background: isCalibrating ? 'var(--cream-2)' : feedback?.severity === 'error' ? 'var(--rose)' : feedback?.severity === 'warning' ? 'var(--butter)' : 'var(--mint)',
@@ -330,7 +319,7 @@ export function SessionScreen() {
             </div>
           </div>
 
-          {/* Reference Card with Instructions */}
+
           <div className="plush" style={{ padding: 20, background: 'white' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center', borderBottom: '2.5px solid var(--line)', paddingBottom: 12, marginBottom: 12 }}>
               <div style={{
@@ -371,7 +360,7 @@ export function SessionScreen() {
             </div>
           </div>
 
-          {/* Joint meters grid */}
+
           <div className="plush" style={{ padding: 20, background: 'white' }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, borderBottom: '2.5px solid var(--line)', paddingBottom: 8, marginBottom: 12 }}>
               Joint Angle Calibrator
@@ -388,7 +377,7 @@ export function SessionScreen() {
                   const currentAngle = dev ? dev.current : 0;
                   const isError = dev ? dev.error : true;
 
-                  // Percentage of ideal angle (for visual progress bar)
+
                   const progressPct = Math.min(100, Math.max(0, (currentAngle / 180) * 100));
 
                   return (
@@ -400,7 +389,7 @@ export function SessionScreen() {
                         </span>
                       </div>
                       
-                      {/* Bar track */}
+
                       <div style={{
                         height: 12,
                         background: 'var(--cream)',
@@ -416,7 +405,7 @@ export function SessionScreen() {
                           transition: 'width 200ms ease, background-color 200ms'
                         }} />
 
-                        {/* Visual target bracket overlay */}
+
                         <div style={{
                           position: 'absolute',
                           left: `${(target.min / 180) * 100}%`,

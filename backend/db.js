@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Check if Postgres connection string is provided in environment variables
 const isPostgres = !!process.env.DATABASE_URL;
 
 let dbSQLite = null;
@@ -17,7 +16,7 @@ if (isPostgres) {
   pgPool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
-      rejectUnauthorized: false // Required for serverless database environments like Neon
+      rejectUnauthorized: false // Required for Neon/serverless Postgres
     }
   });
 } else {
@@ -32,20 +31,13 @@ if (isPostgres) {
   });
 }
 
-/**
- * Automatically converts query placeholders from SQLite format (?)
- * to Postgres format ($1, $2, ...) dynamically at runtime.
- */
+// Convert SQLite query placeholders (?) to Postgres ($1, $2, ...)
 function convertSql(sql) {
   if (!isPostgres) return sql;
   let index = 1;
   return sql.replace(/\?/g, () => `$${index++}`);
 }
 
-/**
- * Execute a query that modifies the database (INSERT, UPDATE, DELETE).
- * Returns { changes: number } indicating row counts affected.
- */
 export const dbRun = async (sql, params = []) => {
   if (isPostgres) {
     const pgSql = convertSql(sql);
@@ -66,9 +58,6 @@ export const dbRun = async (sql, params = []) => {
   }
 };
 
-/**
- * Fetch a single row from the database matching the query parameters.
- */
 export const dbGet = async (sql, params = []) => {
   if (isPostgres) {
     const pgSql = convertSql(sql);
@@ -89,9 +78,6 @@ export const dbGet = async (sql, params = []) => {
   }
 };
 
-/**
- * Fetch all matching rows from the database.
- */
 export const dbAll = async (sql, params = []) => {
   if (isPostgres) {
     const pgSql = convertSql(sql);
@@ -112,13 +98,10 @@ export const dbAll = async (sql, params = []) => {
   }
 };
 
-/**
- * Initialize table schemas on startup.
- * Uses BIGINT for the 'date' field to accommodate JavaScript millisecond timestamps in both SQL engines.
- */
+// Initialize table schemas using BIGINT for JS timestamps
 export const initDB = async () => {
   try {
-    // 1. Create Users Table
+    // Create Users Table
     await dbRun(`
       CREATE TABLE IF NOT EXISTS users (
         clerk_id TEXT PRIMARY KEY,
@@ -133,7 +116,7 @@ export const initDB = async () => {
       )
     `);
     
-    // Run migration defensively to add 'role' column if db was already created
+    // Defensive migrations
     try {
       await dbRun("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'patient'");
       console.log('[PhysioAlign DB] Database migration: Added role column to users table.');
@@ -157,7 +140,7 @@ export const initDB = async () => {
     
     console.log('[PhysioAlign DB] Users table verified/created.');
 
-    // 2. Create Sessions Table
+    // Create Sessions Table
     await dbRun(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,

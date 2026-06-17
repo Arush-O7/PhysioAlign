@@ -157,7 +157,6 @@ export function HomeScreen() {
   const activeTab = useActiveTab();
   const setActiveTab = (tab: 'dashboard' | 'trends' | 'consult') => store.setActiveTab(tab);
 
-  // Pain Tracker states
   const [painLevel, setPainLevel] = useState<number>(3);
   const [loggedPain, setLoggedPain] = useState<boolean>(() => {
     try {
@@ -188,7 +187,6 @@ export function HomeScreen() {
     return '';
   });
 
-  // Dynamic Habits/Roadmap checklist states
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>(() => {
     const defaultRoadmap: RoadmapItem[] = [
       { id: 'pose-tree', label: 'Practice Tree Pose (Vrksasana)', completed: false, type: 'pose', iconName: 'pose' },
@@ -211,7 +209,7 @@ export function HomeScreen() {
     return defaultRoadmap;
   });
 
-  // Chat Tab states
+
   const [selectedCoachId, setSelectedCoachId] = useState<string>('anya');
   const [inputText, setInputText] = useState<string>('');
   const [isTyping, setIsTyping] = useState<boolean>(false);
@@ -241,39 +239,39 @@ export function HomeScreen() {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom of chat
+
   useEffect(() => {
     if (activeTab === 'consult') {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chats, selectedCoachId, activeTab]);
 
-  // Persist chats to localStorage
+
   useEffect(() => {
     localStorage.setItem('physioalign:coach_chats', JSON.stringify(chats));
   }, [chats]);
 
-  // Persist roadmap to localStorage
+
   useEffect(() => {
     localStorage.setItem('physioalign:daily_roadmap', JSON.stringify(roadmap));
     localStorage.setItem('physioalign:daily_roadmap_date', new Date().toDateString());
   }, [roadmap]);
 
-  // Load history from SQLite backend database on mount
+
   useEffect(() => {
     if (userId) {
       store.syncHistory(userId);
     }
   }, [userId]);
 
-  // Compute stats
+
   const count = history.length;
   
   const avgScore = count > 0 
     ? Math.round(history.reduce((sum, s) => sum + s.averageScore, 0) / count) 
     : 0;
 
-  // Compute Streak
+
   const computeStreak = (sessions: SessionData[]): number => {
     if (sessions.length === 0) return 0;
     const dates = new Set(
@@ -294,7 +292,7 @@ export function HomeScreen() {
   };
   const streak = computeStreak(history);
 
-  // Analyze Weakest Area
+
   const getWeakestJoint = (sessions: SessionData[]): string => {
     if (sessions.length === 0) return 'None';
     const jointErrors: Record<string, number> = {};
@@ -332,7 +330,7 @@ export function HomeScreen() {
     }
   };
 
-  // Chat message submission
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || isTyping) return;
@@ -382,7 +380,7 @@ export function HomeScreen() {
     }
   };
 
-  // Pain Logger submission
+
   const handleLogPain = () => {
     let rec = '';
     let updatedRoadmap: RoadmapItem[] = [];
@@ -432,7 +430,7 @@ export function HomeScreen() {
 
   const activeCoach = COACHES.find(c => c.id === selectedCoachId) || COACHES[0];
 
-  // Prepare Recharts Data
+
   const trendData = [...history]
     .reverse()
     .map(s => ({
@@ -464,7 +462,7 @@ export function HomeScreen() {
 
       <main style={{ maxWidth: 1024, margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
         
-        {/* Welcome Hero card */}
+
         <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: 20, top: -10, opacity: 0.15 }} className="wobble">
             <Doodle kind="flower" size={120} color="var(--mint)" />
@@ -489,7 +487,7 @@ export function HomeScreen() {
           </button>
         </div>
 
-        {/* Tab Selector */}
+
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, borderBottom: '3.5px solid var(--line)', paddingBottom: 12 }}>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -517,11 +515,11 @@ export function HomeScreen() {
           </button>
         </div>
 
-        {/* TAB CONTENTS */}
+
 
         {activeTab === 'dashboard' && (
           <div className="popin" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {/* Stats Grid */}
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
               <StatCard title="Daily Streak" value={`${streak} days`} icon={<Flame size={20} color="var(--ink)" />} color="var(--peach)" />
               <StatCard title="Sessions Practiced" value={count} icon={<Activity size={20} color="var(--ink)" />} color="var(--sky)" />
@@ -529,7 +527,7 @@ export function HomeScreen() {
               <StatCard title="Attention Area" value={weakestArea} icon={<Doodle kind="star" size={20} color="var(--ink)" />} color="var(--rose)" />
             </div>
 
-            {/* Prescribed Rehabilitation Plan */}
+
             {(() => {
               let carePlan: any[] = [];
               try {
@@ -591,10 +589,10 @@ export function HomeScreen() {
               );
             })()}
 
-            {/* Split layout: Left (Evaluations), Right (Habits & Pain Tracker) */}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'start' }}>
               
-              {/* Left Column: Completed Evaluations */}
+
               <div className="plush" style={{ padding: '24px 28px', background: 'white' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '3px solid var(--line)', paddingBottom: 12, marginBottom: 16 }}>
                   <h2 style={{ fontSize: 22, color: 'var(--ink)', margin: 0 }}>
@@ -637,7 +635,7 @@ export function HomeScreen() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                          {/* Cute cartoon grade badge */}
+
                           <div
                             className={`debrief-grade-badge ${session.grade.toLowerCase()}`}
                             style={{
@@ -683,10 +681,10 @@ export function HomeScreen() {
                 )}
               </div>
 
-              {/* Right Column: Pain tracker & Habit Roadmap */}
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                 
-                {/* 1. Daily Fatigue & Stiffness Log */}
+
                 <div className="plush" style={{ padding: 20, background: 'white' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <HeartPulse size={20} color="var(--rose-deep)" /> Daily Pain & Stiffness Log
@@ -698,7 +696,7 @@ export function HomeScreen() {
                         How do your joints and muscles feel right now? Log today's fatigue index (1 is limber, 10 is stiff/painful) to adapt your exercises:
                       </p>
                       
-                      {/* Slider Control */}
+
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '20px 0' }}>
                         <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--mint-deep)' }}>1 (Limber)</span>
                         <input 
@@ -751,13 +749,13 @@ export function HomeScreen() {
                   )}
                 </div>
 
-                {/* 2. Today's Wellness Roadmap */}
+
                 <div className="plush" style={{ padding: 20, background: 'white' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <TrendingUp size={20} color="var(--mint-deep)" /> Today's Wellness Roadmap
                   </h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                    {/* Progress Bar */}
+
                     <div style={{ flex: 1, height: 10, background: 'var(--cream)', border: '2px solid var(--line)', borderRadius: 'var(--r-pill)', overflow: 'hidden' }}>
                       <div style={{ width: `${roadmapPercentage}%`, height: '100%', background: 'var(--mint-deep)', transition: 'width 300ms ease' }} />
                     </div>
@@ -822,7 +820,7 @@ export function HomeScreen() {
                   </div>
                 </div>
 
-                {/* 3. Link to AI Coach */}
+
                 <div className="plush" style={{ padding: 20, background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{
                     border: '2.5px solid var(--line)',
@@ -885,7 +883,7 @@ export function HomeScreen() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
                 
-                {/* 1. Accuracy over time */}
+
                 <div className="plush" style={{ background: 'white', padding: 24 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <TrendingUp size={18} color="var(--peach-deep)" /> Accuracy Progress (%)
@@ -919,7 +917,7 @@ export function HomeScreen() {
                   </div>
                 </div>
 
-                {/* 2. Pose hold durations */}
+
                 <div className="plush" style={{ background: 'white', padding: 24 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Clock size={18} color="var(--sky-deep)" /> Hold Duration (seconds)
@@ -953,7 +951,7 @@ export function HomeScreen() {
                   </div>
                 </div>
 
-                {/* 3. Pose Performance comparison */}
+
                 <div className="plush" style={{ background: 'white', padding: 24, gridColumn: '1 / -1' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Award size={18} color="var(--butter-deep)" /> Average Accuracy by Yoga Pose
@@ -995,7 +993,7 @@ export function HomeScreen() {
         {activeTab === 'consult' && (
           <div className="popin" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, minHeight: 520 }}>
             
-            {/* Left Column: Coach Selection */}
+
             <div className="plush" style={{ background: 'white', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
               <h3 style={{ fontSize: 18, fontWeight: 900, borderBottom: '2.5px solid var(--line)', paddingBottom: 8, color: 'var(--ink)' }}>
                 Yoga Instructors
@@ -1057,10 +1055,10 @@ export function HomeScreen() {
               </div>
             </div>
 
-            {/* Right Column: Chat Window */}
+
             <div className="plush" style={{ background: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 520 }}>
               
-              {/* Chat Header */}
+
               <div style={{
                 padding: '16px 20px',
                 borderBottom: '3px solid var(--line)',
@@ -1094,7 +1092,7 @@ export function HomeScreen() {
                 </div>
               </div>
 
-              {/* Chat Message Thread */}
+
               <div style={{
                 flex: 1,
                 padding: 20,
@@ -1162,7 +1160,7 @@ export function HomeScreen() {
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Chat Input form */}
+
               <form
                 onSubmit={handleSendMessage}
                 style={{

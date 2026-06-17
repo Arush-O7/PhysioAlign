@@ -21,14 +21,12 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [authView, setAuthView] = useState<'landing' | 'role_select' | 'login'>('landing');
 
-  // Force login on fresh tab/browser sessions
   useEffect(() => {
     if (!isLoaded) return;
     
     const hasActiveSession = sessionStorage.getItem('physioalign:session_active');
     
     if (!hasActiveSession) {
-      // New browser session/tab. If already signed in, force logout to require fresh login.
       if (isSignedIn) {
         signOut();
       }
@@ -36,7 +34,7 @@ export default function App() {
     }
   }, [isLoaded, isSignedIn]);
 
-  // Sync user authentication status with backend database
+  // Sync auth status with database
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId || !user) return;
 
@@ -46,7 +44,6 @@ export default function App() {
         const res = await fetch(`/api/users/${userId}`);
         if (res.ok) {
           const profile = await res.json();
-          // User exists, save to store and route to correct portal
           store.getState().userData = {
             name: profile.name,
             age: profile.age,
@@ -59,13 +56,11 @@ export default function App() {
           const nextScreen = profile.role === 'doctor' ? 'doctor' : profile.role === 'admin' ? 'admin' : 'dashboard';
           store.setScreen(nextScreen);
         } else if (res.status === 404) {
-          // New user, send to onboarding
           store.getState().userData = null;
           store.setScreen('onboarding');
         }
       } catch (err) {
         console.error('[PhysioAlign] Failed to sync user profile with backend, routing to onboarding:', err);
-        // Fallback: assume onboarding is needed
         store.getState().userData = null;
         store.setScreen('onboarding');
       } finally {
@@ -84,7 +79,6 @@ export default function App() {
     );
   }
 
-  // Auth screen if not signed in
   if (!isSignedIn) {
     if (authView === 'landing') {
       return (
@@ -101,7 +95,6 @@ export default function App() {
     if (authView === 'role_select') {
       return (
         <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, gap: 28 }}>
-          {/* Back button */}
           <button
             onClick={() => setAuthView('landing')}
             className="tap btn-plush ghost"
@@ -136,7 +129,6 @@ export default function App() {
             maxWidth: 900,
             width: '100%'
           }} className="popin">
-            {/* Patient portal selection card */}
             <div 
               onClick={() => {
                 sessionStorage.setItem('physioalign:registration_intent', 'patient');
@@ -156,7 +148,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Doctor portal selection card */}
             <div 
               onClick={() => {
                 sessionStorage.setItem('physioalign:registration_intent', 'doctor');
@@ -176,7 +167,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Admin portal selection card */}
             <div 
               onClick={() => {
                 sessionStorage.setItem('physioalign:registration_intent', 'admin');

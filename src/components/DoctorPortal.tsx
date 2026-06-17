@@ -43,26 +43,21 @@ export function DoctorPortal() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Selected Patient Details state
   const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
   const [patientHistory, setPatientHistory] = useState<SessionData[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionData | null>(null);
 
-  // AI insights state
   const [aiReport, setAiReport] = useState('');
   const [generatingAi, setGeneratingAi] = useState(false);
 
-  // Filter tabs state
   const [activeFilterTab, setActiveFilterTab] = useState<'my' | 'all'>('my');
 
-  // Care plan builder states
   const [prescribingPose, setPrescribingPose] = useState<string>('');
   const [prescribingHold, setPrescribingHold] = useState<number>(15);
   const [prescribingFreq, setPrescribingFreq] = useState<string>('Daily');
   const [isUpdatingCarePlan, setIsUpdatingCarePlan] = useState(false);
 
-  // Load patients
   const fetchPatients = async () => {
     try {
       setLoading(true);
@@ -82,7 +77,6 @@ export function DoctorPortal() {
     fetchPatients();
   }, []);
 
-  // Load history when a patient is selected
   const handleSelectPatient = async (patient: PatientRecord) => {
     setSelectedPatient(patient);
     setPatientHistory([]);
@@ -156,11 +150,8 @@ export function DoctorPortal() {
         body: JSON.stringify({ carePlan: updatedPlan })
       });
       if (res.ok) {
-        // Update local selectedPatient state
         const updatedUser = { ...selectedPatient, care_plan: JSON.stringify(updatedPlan) };
         setSelectedPatient(updatedUser);
-        
-        // Update in patients list
         setPatients(prev => prev.map(p => p.clerk_id === selectedPatient.clerk_id ? updatedUser : p));
       } else {
         alert('Failed to save care plan');
@@ -180,7 +171,6 @@ export function DoctorPortal() {
     return matchesSearch && matchesTab;
   });
 
-  // Stats calculations
   const totalPatientsCount = patients.length;
   const avgAdherence = totalPatientsCount > 0 
     ? Math.round(patients.reduce((sum, p) => sum + p.sessionCount, 0) / totalPatientsCount) 
@@ -196,7 +186,6 @@ export function DoctorPortal() {
 
       <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
-        {/* Clinician Header Card */}
         <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: 20, top: -10, opacity: 0.15 }} className="wobble">
             <Doodle kind="flower" size={120} color="var(--mint)" />
@@ -210,7 +199,6 @@ export function DoctorPortal() {
           </p>
         </div>
 
-        {/* Diagnostic Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           
           <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -254,7 +242,6 @@ export function DoctorPortal() {
           </div>
         </div>
 
-        {/* Search & Patients Grid */}
         <div className="plush" style={{ background: 'white', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
@@ -389,7 +376,6 @@ export function DoctorPortal() {
         </div>
       </main>
 
-      {/* Patient Detail Drawer / Overlay */}
       {selectedPatient && (
         <div style={{
           position: 'fixed',
@@ -403,10 +389,8 @@ export function DoctorPortal() {
           justifyContent: 'flex-end',
           alignItems: 'stretch'
         }}>
-          {/* Backdrop Click */}
           <div style={{ flex: 1 }} onClick={() => setSelectedPatient(null)} />
           
-          {/* Drawer container */}
           <div className="slide-in-right" style={{
             width: '100%',
             maxWidth: 680,
@@ -420,7 +404,6 @@ export function DoctorPortal() {
             boxShadow: '-10px 0 0 rgba(43, 30, 22, 0.1)'
           }}>
             
-            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3.5px dashed var(--line)', paddingBottom: 16 }}>
               <div>
                 <h2 style={{ fontSize: 26, color: 'var(--ink)', margin: 0 }}>{selectedPatient.name}</h2>
@@ -462,7 +445,6 @@ export function DoctorPortal() {
               </div>
             </div>
 
-            {/* Info cards */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="plush" style={{ padding: '12px 16px', background: 'white', fontSize: 13 }}>
                 <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', fontSize: 10 }}>Experience Level</span>
@@ -474,7 +456,6 @@ export function DoctorPortal() {
               </div>
             </div>
 
-            {/* Rehabilitative Care Plan */}
             {(() => {
               let currentCarePlan: any[] = [];
               try {
@@ -490,7 +471,6 @@ export function DoctorPortal() {
                     <HeartPulse size={18} style={{ color: 'var(--rose-deep)' }} /> Rehabilitative Care Plan
                   </h4>
                   
-                  {/* List of currently prescribed poses */}
                   {currentCarePlan.length === 0 ? (
                     <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: 0, fontWeight: 700 }}>
                       No active rehabilitation plan prescribed. Define one below.
@@ -544,7 +524,6 @@ export function DoctorPortal() {
                     </div>
                   )}
 
-                  {/* Builder form */}
                   <div 
                     style={{ 
                       marginTop: 8,
@@ -662,7 +641,6 @@ export function DoctorPortal() {
               );
             })()}
 
-            {/* AI Insights Block */}
             <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -705,7 +683,6 @@ export function DoctorPortal() {
               )}
             </div>
 
-            {/* Chart Area */}
             {patientHistory.length > 0 && selectedSession && (
               <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
@@ -743,7 +720,6 @@ export function DoctorPortal() {
               </div>
             )}
 
-            {/* Workout History Table */}
             <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Workout Practice Records</h4>
               

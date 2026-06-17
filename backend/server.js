@@ -1,4 +1,4 @@
-import 'dotenv/config'; // Load environment variables from .env on startup
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { initDB, dbRun, dbGet, dbAll } from './db.js';
@@ -9,7 +9,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Inngest Event Platform Integration
 import { serve } from 'inngest/express';
 import { inngest } from './inngest/client.js';
 import { generateAICritique } from './inngest/functions.js';
@@ -17,22 +16,15 @@ import { generateAICritique } from './inngest/functions.js';
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Enable CORS and JSON parsing
 app.use(cors());
 app.use(express.json());
 
-// Mount Inngest Serve Middleware endpoint
-// The Inngest dev server / cloud platform will reach out to this route to invoke background jobs
 app.use('/api/inngest', serve({ client: inngest, functions: [generateAICritique] }));
 
-// Initialize Database Schemas on Startup
 initDB().then(() => {
   console.log('[PhysioAlign Backend] Database initialized.');
 });
 
-// --- API Endpoints ---
-
-// 1. Get user profile
 app.get('/api/users/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
   try {
@@ -48,7 +40,7 @@ app.get('/api/users/:clerkId', async (req, res) => {
   }
 });
 
-// 2. Create or Update user profile (Upsert)
+// Upsert user profile
 app.post('/api/users', async (req, res) => {
   const { clerkId, name, email, age, experience, goal, role } = req.body;
   if (!clerkId || !name) {
@@ -61,7 +53,7 @@ app.post('/api/users', async (req, res) => {
     const existingUser = await dbGet('SELECT * FROM users WHERE clerk_id = ?', [clerkId]);
     
     if (existingUser) {
-      // Once registered, access roles should not change during general profile edits
+
       await dbRun(
         'UPDATE users SET name = ?, email = ?, age = ?, experience = ?, goal = ? WHERE clerk_id = ?',
         [name, email, age, experience, goal, clerkId]
@@ -83,7 +75,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-// 3. Save a finished yoga evaluation session (Triggers background Inngest AI critique)
+// Save session and trigger AI review
 app.post('/api/sessions', async (req, res) => {
   const {
     id,
@@ -105,7 +97,7 @@ app.post('/api/sessions', async (req, res) => {
   try {
     const serializedLogs = JSON.stringify(frameLogs || []);
 
-    // Save the session details immediately with a placeholder status for the AI critique
+
     await dbRun(
       `INSERT INTO sessions (
         id, clerk_id, pose_id, pose_name, date, 
@@ -121,7 +113,7 @@ app.post('/api/sessions', async (req, res) => {
 
     console.log(`[PhysioAlign Backend] Session logs stored. Triggering background Inngest AI critique for: ${id}`);
 
-    // Fire the background event asynchronously via Inngest and return immediately
+
     await inngest.send({
       name: 'session.completed',
       data: {
@@ -137,7 +129,7 @@ app.post('/api/sessions', async (req, res) => {
   }
 });
 
-// 4. Fetch all sessions for a specific user
+// Fetch user sessions
 app.get('/api/sessions/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
   try {
@@ -175,7 +167,7 @@ app.get('/api/sessions/:clerkId', async (req, res) => {
   }
 });
 
-// 5. Fetch details of a single session (for polling status checks)
+// Fetch single session detail
 app.get('/api/sessions/detail/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -212,7 +204,7 @@ app.get('/api/sessions/detail/:id', async (req, res) => {
   }
 });
 
-// 6. Delete a session log entry
+// Delete session
 app.delete('/api/sessions/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -229,9 +221,7 @@ app.delete('/api/sessions/:id', async (req, res) => {
   }
 });
 
-// --- DOCTOR PORTAL APIs ---
-
-// Get all patient profiles with aggregated session counts and average scores
+// Doctor Portal APIs
 app.get('/api/doctor/patients', async (req, res) => {
   try {
     const patients = await dbAll(`
@@ -246,7 +236,7 @@ app.get('/api/doctor/patients', async (req, res) => {
       ORDER BY u.name ASC
     `);
     
-    // SQLite returns averages as numbers, but we map to ensure clean integer averages
+
     const formatted = patients.map(p => ({
       ...p,
       sessionCount: Number(p.sessionCount || 0),
@@ -260,7 +250,7 @@ app.get('/api/doctor/patients', async (req, res) => {
   }
 });
 
-// Update care plan for a patient
+// Update care plan
 app.post('/api/doctor/patients/:clerkId/care-plan', async (req, res) => {
   const { clerkId } = req.params;
   const { carePlan } = req.body;
@@ -275,7 +265,7 @@ app.post('/api/doctor/patients/:clerkId/care-plan', async (req, res) => {
   }
 });
 
-// Get session logs for a specific patient
+// Get patient history
 app.get('/api/doctor/patients/:clerkId/history', async (req, res) => {
   const { clerkId } = req.params;
   try {
@@ -292,9 +282,7 @@ app.get('/api/doctor/patients/:clerkId/history', async (req, res) => {
 });
 
 
-// --- ADMIN PORTAL APIs ---
-
-// Get system monitoring and diagnostic telemetry stats
+// Admin Portal APIs
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalUsersObj = await dbGet('SELECT COUNT(*) as count FROM users');
@@ -332,7 +320,7 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-// Get user directory for administrative role updates & account deletions
+// Get all users
 app.get('/api/admin/users', async (req, res) => {
   try {
     const users = await dbAll('SELECT * FROM users ORDER BY role DESC, name ASC');
@@ -343,7 +331,7 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
-// Update a user's role
+// Update user role
 app.post('/api/admin/users/:clerkId/role', async (req, res) => {
   const { clerkId } = req.params;
   const { role } = req.body;
@@ -365,7 +353,7 @@ app.post('/api/admin/users/:clerkId/role', async (req, res) => {
   }
 });
 
-// Assign a doctor to a patient
+// Assign doctor to patient
 app.post('/api/admin/users/:clerkId/doctor', async (req, res) => {
   const { clerkId } = req.params;
   const { doctorId } = req.body;
@@ -379,7 +367,7 @@ app.post('/api/admin/users/:clerkId/doctor', async (req, res) => {
   }
 });
 
-// Delete user account (Cascades session deletes natively in SQL)
+// Delete user account
 app.delete('/api/admin/users/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
   try {
@@ -396,7 +384,7 @@ app.delete('/api/admin/users/:clerkId', async (req, res) => {
   }
 });
 
-// Start listening
+
 app.listen(PORT, () => {
   console.log(`[PhysioAlign Backend] Server running on port ${PORT}`);
 });

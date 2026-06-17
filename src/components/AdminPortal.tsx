@@ -76,7 +76,6 @@ export function AdminPortal() {
 
   useEffect(() => {
     fetchAdminData();
-    // Poll stats every 10 seconds to update uptime/connections
     const interval = setInterval(async () => {
       try {
         const res = await fetch('/api/admin/stats');
@@ -98,7 +97,6 @@ export function AdminPortal() {
         body: JSON.stringify({ role: newRole })
       });
       if (res.ok) {
-        // If updating oneself, update store state role too so routing changes immediately
         if (clerkId === userId && store.getState().userData) {
           store.getState().userData!.role = newRole;
           store.setScreen(newRole === 'doctor' ? 'doctor' : newRole === 'admin' ? 'admin' : 'dashboard');
@@ -173,7 +171,6 @@ export function AdminPortal() {
 
       <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
-        {/* Admin Header Card */}
         <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: 20, top: -10, opacity: 0.15 }} className="wobble">
             <Doodle kind="star" size={120} color="var(--peach)" />
@@ -187,7 +184,6 @@ export function AdminPortal() {
           </p>
         </div>
 
-        {/* Global Telemetry Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           
           <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -231,7 +227,6 @@ export function AdminPortal() {
           </div>
         </div>
 
-        {/* User Management List */}
         <div className="plush" style={{ background: 'white', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div>

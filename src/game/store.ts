@@ -31,7 +31,6 @@ class PhysioStore {
     };
   }
 
-  // --- React Integration ---
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
@@ -47,7 +46,6 @@ class PhysioStore {
     this.listeners.forEach((l) => l());
   }
 
-  // --- Actions ---
   setScreen(screen: Screen) {
     this.state = { ...this.state, screen };
     this.notify();
@@ -115,7 +113,7 @@ class PhysioStore {
 
   async resetOnboarding(clerkId: string) {
     try {
-      // Clear sessions from database for this user
+      // Reset user data and sessions
       const res = await fetch(`/api/sessions/${clerkId}`);
       if (res.ok) {
         const sessions = await res.json();
@@ -170,15 +168,12 @@ class PhysioStore {
 
     const updatedLogs = [...this.state.activeSession.frameLogs, frameLog];
     
-    // Recalculate duration & hold duration
     const durationSeconds = this.state.activeSession.durationSeconds + 1;
     const holdTimeSeconds = this.state.activeSession.holdTimeSeconds + (frameLog.score >= 75 ? 1 : 0);
     
-    // Recalculate average score
     const totalScore = updatedLogs.reduce((sum, log) => sum + log.score, 0);
     const averageScore = Math.round(totalScore / updatedLogs.length);
 
-    // Calculate Grade
     let grade: 'A' | 'B' | 'C' | 'F' = 'F';
     if (averageScore >= 85) grade = 'A';
     else if (averageScore >= 70) grade = 'B';
@@ -234,7 +229,6 @@ class PhysioStore {
         };
         this.notify();
 
-        // Start polling for the generated AI critique in the background
         this.pollSessionCritique(completedSession.id, clerkId);
       }
     } catch (err) {
@@ -260,13 +254,13 @@ class PhysioStore {
               this.notify();
             }
             await this.syncHistory(clerkId);
-            return true; // Stop polling
+            return true;
           }
         }
       } catch (e) {
         console.error('[PhysioStore] Critique polling error:', e);
       }
-      return false; // Keep polling
+      return false;
     };
 
     let attempts = 0;
@@ -319,7 +313,6 @@ class PhysioStore {
 
 export const store = new PhysioStore();
 
-// --- React Hooks ---
 export function useScreen(): Screen {
   return useSyncExternalStore(store.subscribe, () => store.getState().screen);
 }
