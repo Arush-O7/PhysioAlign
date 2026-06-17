@@ -22,6 +22,20 @@ export default function App() {
   const [authView, setAuthView] = useState<'landing' | 'role_select' | 'login'>('landing');
 
   useEffect(() => {
+    const titles: Record<string, string> = {
+      splash: 'PhysioAlign AI',
+      onboarding: 'Setup Profile | PhysioAlign AI',
+      dashboard: 'Dashboard | PhysioAlign AI',
+      library: 'Select Pose | PhysioAlign AI',
+      session: 'Active Practice | PhysioAlign AI',
+      debrief: 'Anatomical Report | PhysioAlign AI',
+      doctor: 'Clinician PT Portal | PhysioAlign AI',
+      admin: 'Admin Supervisor Terminal | PhysioAlign AI',
+    };
+    document.title = titles[screen] || 'PhysioAlign AI';
+  }, [screen]);
+
+  useEffect(() => {
     if (!isLoaded) return;
     
     const hasActiveSession = sessionStorage.getItem('physioalign:session_active');
