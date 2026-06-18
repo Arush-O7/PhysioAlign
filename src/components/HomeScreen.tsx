@@ -1086,9 +1086,40 @@ export function HomeScreen() {
                     {activeCoach.role} • AI Assistant
                   </p>
                 </div>
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className="dot" style={{ background: 'var(--line)', width: 6, height: 6 }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-2)' }}>Online</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Clear chat history with ${activeCoach.name.split(' ').pop()}?`)) {
+                        const defaultMsgs: Record<string, string> = {
+                          anya: "Hello! I am Anya. Welcome to our sacred yoga space. Let's align your body and breath. How can I help you today?",
+                          rocky: "Hey! Rocky here! Let's build strength and master your stability. What goals are we crushing today?",
+                          maya: "Hello, I am Dr. Maya. I can help you safely modify postures to avoid injuries, release muscle stiffness, or assist in rehab. What questions do you have?"
+                        };
+                        setChats(prev => ({
+                          ...prev,
+                          [selectedCoachId]: [{ sender: 'coach', text: defaultMsgs[selectedCoachId], timestamp: Date.now() }]
+                        }));
+                      }
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 0,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'var(--ink-2)',
+                      padding: 4,
+                      opacity: 0.7
+                    }}
+                    title="Clear Chat History"
+                    className="tap"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="dot" style={{ background: 'var(--line)', width: 6, height: 6 }} />
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-2)' }}>Online</span>
+                  </div>
                 </div>
               </div>
 
