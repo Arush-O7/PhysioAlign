@@ -19,6 +19,7 @@ export function OnboardingScreen() {
     (registrationIntent === 'practice_suite' ? 'patient' : registrationIntent as UserData['role']);
 
   const [role] = useState<UserData['role']>(initialRole);
+  const [error, setError] = useState('');
 
   // Input focus states for neobrutalist transitions
   const [isNameFocused, setIsNameFocused] = useState(false);
@@ -39,13 +40,28 @@ export function OnboardingScreen() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !age || !userId) return;
+    if (!userId) return;
 
+    if (!name.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (name.length > 40) {
+      setError('Name is too long (maximum 40 characters).');
+      return;
+    }
+    const ageNum = Number(age);
+    if (!age || isNaN(ageNum) || ageNum < 5 || ageNum > 110) {
+      setError('Please enter a realistic age between 5 and 110.');
+      return;
+    }
+
+    setError('');
     const email = user?.primaryEmailAddress?.emailAddress || '';
 
     store.saveOnboarding({
       name: name.trim(),
-      age: Number(age),
+      age: ageNum,
       experience,
       goal,
       role
@@ -86,6 +102,21 @@ export function OnboardingScreen() {
               </p>
             </div>
           </div>
+
+          {error && (
+            <div style={{
+              background: '#FFEAE6',
+              border: '2.5px solid var(--line)',
+              borderRadius: 'var(--r-sm)',
+              padding: '10px 14px',
+              color: '#FF6B4A',
+              fontSize: 13,
+              fontWeight: 800,
+              boxShadow: '2px 2px 0 var(--line)'
+            }}>
+              ⚠️ {error}
+            </div>
+          )}
 
           {/* Name Field */}
           <div>
