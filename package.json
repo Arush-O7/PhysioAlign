@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:backend": "node backend/server.js",
-    "dev:full": "concurrently \"npm run dev\" \"npm run dev:backend\" \"npx inngest-cli@latest dev -u http://localhost:5001/api/inngest\"",
+    "dev:full": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
@@ -17,9 +17,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
-    "inngest": "^4.7.0",
     "lucide-react": "^0.454.0",
-    "pg": "^8.22.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-webcam": "^7.2.0",

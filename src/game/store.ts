@@ -194,83 +194,53 @@ class PhysioStore {
   }
 
   async completeActiveSession(clerkId: string) {
-    if (!this.state.activeSession) return;
+    const session = this.state.activeSession;
+    if (!session) return;
 
-    const completedSession: SessionData = {
-      ...this.state.activeSession,
-      aiCritique: 'Generating...',
+    // Show generating state in UI while waiting for POST request
+    this.state = {
+      ...this.state,
+      activeSession: {
+        ...session,
+        aiCritique: 'Generating...',
+      },
+      screen: 'debrief',
     };
+    this.notify();
 
     try {
       const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: completedSession.id,
+          id: session.id,
           clerkId,
-          poseId: completedSession.poseId,
-          poseName: completedSession.poseName,
-          date: completedSession.date,
-          durationSeconds: completedSession.durationSeconds,
-          holdTimeSeconds: completedSession.holdTimeSeconds,
-          averageScore: completedSession.averageScore,
-          grade: completedSession.grade,
-          frameLogs: completedSession.frameLogs,
+          poseId: session.poseId,
+          poseName: session.poseName,
+          date: session.date,
+          durationSeconds: session.durationSeconds,
+          holdTimeSeconds: session.holdTimeSeconds,
+          averageScore: session.averageScore,
+          grade: session.grade,
+          frameLogs: session.frameLogs,
         }),
       });
 
       if (res.ok) {
-        const newHistory = [completedSession, ...this.state.sessionHistory];
+        const savedSession: SessionData = await res.json();
+        const newHistory = [savedSession, ...this.state.sessionHistory];
         this.state = {
           ...this.state,
           sessionHistory: newHistory,
-          activeSession: completedSession,
-          screen: 'debrief',
+          activeSession: savedSession,
         };
         this.notify();
-
-        this.pollSessionCritique(completedSession.id, clerkId);
+      } else {
+        console.error('[PhysioStore] Failed to save session to backend, response status:', res.status);
       }
     } catch (err) {
       console.error('[PhysioStore] Failed to save session to backend:', err);
     }
-  }
-
-  async pollSessionCritique(sessionId: string, clerkId: string) {
-    const check = async () => {
-      try {
-        const res = await fetch(`/api/sessions/detail/${sessionId}`);
-        if (res.ok) {
-          const session = await res.json();
-          if (session.aiCritique && session.aiCritique !== 'Generating...') {
-            if (this.state.activeSession?.id === sessionId) {
-              this.state = {
-                ...this.state,
-                activeSession: {
-                  ...this.state.activeSession,
-                  aiCritique: session.aiCritique,
-                },
-              };
-              this.notify();
-            }
-            await this.syncHistory(clerkId);
-            return true;
-          }
-        }
-      } catch (e) {
-        console.error('[PhysioStore] Critique polling error:', e);
-      }
-      return false;
-    };
-
-    let attempts = 0;
-    const interval = setInterval(async () => {
-      attempts++;
-      const isDone = await check();
-      if (isDone || attempts >= 20) {
-        clearInterval(interval);
-      }
-    }, 3000);
   }
 
   async syncHistory(clerkId: string) {

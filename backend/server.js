@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { initDB, dbRun, dbGet, dbAll } from './db.js';
+import { generateAICritiqueSync } from './gemini.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -9,22 +10,17 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { serve } from 'inngest/express';
-import { inngest } from './inngest/client.js';
-import { generateAICritique } from './inngest/functions.js';
-
 const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/inngest', serve({ client: inngest, functions: [generateAICritique] }));
-
 initDB().then(() => {
   console.log('[PhysioAlign Backend] Database initialized.');
 });
 
+// Fetch user profile
 app.get('/api/users/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
   try {
@@ -53,7 +49,6 @@ app.post('/api/users', async (req, res) => {
     const existingUser = await dbGet('SELECT * FROM users WHERE clerk_id = ?', [clerkId]);
     
     if (existingUser) {
-
       await dbRun(
         'UPDATE users SET name = ?, email = ?, age = ?, experience = ?, goal = ? WHERE clerk_id = ?',
         [name, email, age, experience, goal, clerkId]
@@ -75,7 +70,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-// Save session and trigger AI review
+// Save session and generate AI review synchronously
 app.post('/api/sessions', async (req, res) => {
   const {
     id,
@@ -97,7 +92,17 @@ app.post('/api/sessions', async (req, res) => {
   try {
     const serializedLogs = JSON.stringify(frameLogs || []);
 
+    // 1. Fetch user data for personalized AI system prompt instructions
+    const user = await dbGet('SELECT * FROM users WHERE clerk_id = ?', [clerkId]);
+    if (!user) {
+      return res.status(404).json({ error: 'User profile not found for session' });
+    }
 
+    // 2. Generate AI critique synchronously
+    console.log(`[PhysioAlign Backend] Generating synchronous AI critique for session: ${id}`);
+    const aiCritique = await generateAICritiqueSync(req.body, user);
+
+    // 3. Save session to local SQLite database
     await dbRun(
       `INSERT INTO sessions (
         id, clerk_id, pose_id, pose_name, date, 
@@ -107,22 +112,26 @@ app.post('/api/sessions', async (req, res) => {
       [
         id, clerkId, poseId, poseName, date,
         durationSeconds, holdTimeSeconds, averageScore,
-        grade, 'Generating...', serializedLogs
+        grade, aiCritique, serializedLogs
       ]
     );
 
-    console.log(`[PhysioAlign Backend] Session logs stored. Triggering background Inngest AI critique for: ${id}`);
+    console.log(`[PhysioAlign Backend] Session successfully saved with AI Critique for: ${id}`);
 
-
-    await inngest.send({
-      name: 'session.completed',
-      data: {
-        sessionId: id,
-        clerkId: clerkId
-      }
+    // Return the saved session object with the AI critique included
+    res.status(201).json({
+      id,
+      clerkId,
+      poseId,
+      poseName,
+      date,
+      durationSeconds,
+      holdTimeSeconds,
+      averageScore,
+      grade,
+      aiCritique,
+      frameLogs
     });
-
-    res.status(201).json({ success: true, sessionId: id, status: 'Critique generating in background' });
   } catch (error) {
     console.error('Save session failed:', error);
     res.status(500).json({ error: 'Database insert failed' });
@@ -235,7 +244,6 @@ app.get('/api/doctor/patients', async (req, res) => {
       GROUP BY u.clerk_id, u.name, u.email, u.age, u.experience, u.goal, u.role, u.doctor_id, u.care_plan
       ORDER BY u.name ASC
     `);
-    
 
     const formatted = patients.map(p => ({
       ...p,
@@ -281,7 +289,6 @@ app.get('/api/doctor/patients/:clerkId/history', async (req, res) => {
   }
 });
 
-
 // Admin Portal APIs
 app.get('/api/admin/stats', async (req, res) => {
   try {
@@ -290,19 +297,17 @@ app.get('/api/admin/stats', async (req, res) => {
     const doctorsObj = await dbGet("SELECT COUNT(*) as count FROM users WHERE role = 'doctor'");
     const sessionsObj = await dbGet('SELECT COUNT(*) as count FROM sessions');
     
-    let dbSize = 'Cloud Storage';
-    if (!process.env.DATABASE_URL) {
-      try {
-        const dbPath = path.resolve(__dirname, 'database.sqlite');
-        if (fs.existsSync(dbPath)) {
-          const stats = fs.statSync(dbPath);
-          dbSize = (stats.size / 1024 / 1024).toFixed(2) + ' MB';
-        } else {
-          dbSize = '0.05 MB';
-        }
-      } catch (e) {
-        dbSize = 'Unknown';
+    let dbSize = 'Unknown';
+    try {
+      const dbPath = path.resolve(__dirname, 'database.sqlite');
+      if (fs.existsSync(dbPath)) {
+        const stats = fs.statSync(dbPath);
+        dbSize = (stats.size / 1024 / 1024).toFixed(2) + ' MB';
+      } else {
+        dbSize = '0.05 MB';
       }
+    } catch (e) {
+      dbSize = 'Unknown';
     }
     
     res.json({
@@ -310,7 +315,7 @@ app.get('/api/admin/stats', async (req, res) => {
       patients: patientsObj ? patientsObj.count : 0,
       doctors: doctorsObj ? doctorsObj.count : 0,
       sessions: sessionsObj ? sessionsObj.count : 0,
-      dbEngine: process.env.DATABASE_URL ? 'Neon Postgres (Cloud)' : 'SQLite (Local File)',
+      dbEngine: 'SQLite (Local File)',
       dbSize: dbSize,
       uptime: Math.round(process.uptime()) + 's'
     });
@@ -383,7 +388,6 @@ app.delete('/api/admin/users/:clerkId', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete user profile from system' });
   }
 });
-
 
 app.listen(PORT, () => {
   console.log(`[PhysioAlign Backend] Server running on port ${PORT}`);
