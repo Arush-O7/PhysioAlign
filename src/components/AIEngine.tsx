@@ -187,7 +187,7 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
     ];
 
     // 1. Draw Bones (Bridges)
-    ctx.strokeStyle = '#5FCFA0'; // Cozy Mint color
+    ctx.strokeStyle = '#5FCFA0'; // Primary mint outline color
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
 

@@ -6,7 +6,7 @@ import { ClerkProvider } from '@clerk/clerk-react';
 const PUBLISHABLE_KEY = (import.meta as any).env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
-  // Render a beautiful, friendly cozy cartoon instruction panel if Clerk key is missing.
+  // Render a setup guide if Clerk publishable key is missing.
   // This prevents blank-screen runtime crashes and guides the user/recruiter on setup.
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
