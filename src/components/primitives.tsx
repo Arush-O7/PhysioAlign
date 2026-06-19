@@ -465,7 +465,7 @@ export function PhysioLogo({ size = 80, className = '' }) {
     >
       <img 
         src="/logo.png" 
-        alt="PhysioAlign AI Logo" 
+        alt="PhysioAlign Logo" 
         style={{ 
           width: '100%', 
           height: '100%', 

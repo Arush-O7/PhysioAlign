@@ -47,9 +47,9 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
 
         setIsModelLoaded(true);
         if (onStatusChange) onStatusChange({ isLoaded: true, error: null });
-        console.log('[PhysioAlign AI] MediaPipe Pose Landmarker loaded successfully');
+        console.log('[PhysioAlign] MediaPipe Pose Landmarker loaded successfully');
       } catch (err) {
-        console.error('[PhysioAlign AI] Error loading model:', err);
+        console.error('[PhysioAlign] Error loading model:', err);
         setError('Failed to load posture AI model. Please check your internet and reload.');
         if (onStatusChange) onStatusChange({ isLoaded: false, error: 'Failed to load AI model' });
       }
@@ -149,7 +149,7 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
           }
         }
       } catch (err) {
-        console.error('[PhysioAlign AI] Detection loop error:', err);
+        console.error('[PhysioAlign] Detection loop error:', err);
       }
 
       animationFrameIdRef.current = requestAnimationFrame(detectPose);

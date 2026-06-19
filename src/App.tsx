@@ -23,16 +23,16 @@ export default function App() {
 
   useEffect(() => {
     const titles: Record<string, string> = {
-      splash: 'PhysioAlign AI',
-      onboarding: 'Setup Profile | PhysioAlign AI',
-      dashboard: 'Dashboard | PhysioAlign AI',
-      library: 'Select Pose | PhysioAlign AI',
-      session: 'Active Practice | PhysioAlign AI',
-      debrief: 'Anatomical Report | PhysioAlign AI',
-      doctor: 'Clinician PT Portal | PhysioAlign AI',
-      admin: 'Admin Supervisor Terminal | PhysioAlign AI',
+      splash: 'PhysioAlign',
+      onboarding: 'Setup Profile | PhysioAlign',
+      dashboard: 'Dashboard | PhysioAlign',
+      library: 'Select Pose | PhysioAlign',
+      session: 'Active Practice | PhysioAlign',
+      debrief: 'Anatomical Report | PhysioAlign',
+      doctor: 'Clinician PT Portal | PhysioAlign',
+      admin: 'Admin Supervisor Terminal | PhysioAlign',
     };
-    document.title = titles[screen] || 'PhysioAlign AI';
+    document.title = titles[screen] || 'PhysioAlign';
   }, [screen]);
 
   useEffect(() => {
