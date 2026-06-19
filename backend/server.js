@@ -389,6 +389,14 @@ app.delete('/api/admin/users/:clerkId', async (req, res) => {
   }
 });
 
+// Serve static files from the React frontend built folder
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Serve index.html for all other routes so React Router/screen routing works in production
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
 app.listen(PORT, () => {
   console.log(`[PhysioAlign Backend] Server running on port ${PORT}`);
 });
