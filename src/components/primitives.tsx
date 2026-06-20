@@ -81,7 +81,7 @@ export function Wordmark({ size = 32, dark = false }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 6,
+        gap: 10,
         fontFamily: 'Nunito',
         fontWeight: 900,
         fontSize: size,
@@ -89,6 +89,7 @@ export function Wordmark({ size = 32, dark = false }) {
         letterSpacing: '-0.02em',
       }}
     >
+      <PhysioLogo size={Math.round(size * 1.15)} />
       <span style={{ position: 'relative', display: 'inline-block' }}>
         Physio
         <span
@@ -101,7 +102,6 @@ export function Wordmark({ size = 32, dark = false }) {
         >
           Align
         </span>
-        <span style={{ color: 'var(--ink-soft)', marginLeft: 8 }}>AI</span>
       </span>
     </div>
   );
