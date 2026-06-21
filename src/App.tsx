@@ -101,8 +101,7 @@ export default function App() {
             setAuthView('role_select');
           }} 
           onEnterPractice={() => {
-            sessionStorage.setItem('physioalign:registration_intent', 'patient');
-            setAuthView('login');
+            setAuthView('role_select');
           }} 
         />
       );
