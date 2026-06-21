@@ -98,8 +98,7 @@ export default function App() {
       return (
         <LandingScreen 
           onStartLogin={() => {
-            sessionStorage.setItem('physioalign:registration_intent', 'patient');
-            setAuthView('login');
+            setAuthView('role_select');
           }} 
           onEnterPractice={() => {
             sessionStorage.setItem('physioalign:registration_intent', 'patient');
@@ -223,7 +222,7 @@ export default function App() {
       <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, flexDirection: 'column', gap: 16 }}>
         <button
           onClick={() => {
-            setAuthView('landing');
+            setAuthView('role_select');
           }}
           className="tap btn-plush ghost"
           style={{
@@ -233,7 +232,7 @@ export default function App() {
             marginBottom: 8
           }}
         >
-          ← Back to Home
+          ← Back to Selection
         </button>
         
         <div className="popin" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, maxWidth: 440, width: '100%' }}>
