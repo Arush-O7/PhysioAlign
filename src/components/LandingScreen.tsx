@@ -388,7 +388,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
           fontSize: 12,
           boxShadow: 'var(--plush-tiny)'
         }}>Clerk</span>
-        <span>| Created for interactive wellness and posture alignment.</span>
+        <span>| © 2026 PhysioAlign. All rights reserved.</span>
       </footer>
 
     </div>
