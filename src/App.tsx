@@ -158,7 +158,7 @@ export default function App() {
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Patient Portal</h3>
                 <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
-                  Log joints pain scale, practice active recovery poses, track biomechanical accuracy, and review AI coaching logs.
+                  Track your daily pain levels, practice recovery poses with real-time guidance, and view AI coaching feedback.
                 </p>
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function App() {
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Clinician Suite</h3>
                 <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
-                  Monitor patient ROM holds, track compliance statistics, view Recharts recovery trends, and trigger clinical Gemini reports.
+                  Monitor patient workouts and progress, analyze recovery charts, and assign custom physical therapy plans.
                 </p>
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function App() {
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Admin Terminal</h3>
                 <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
-                  Inspect SQL database engine type and directory size telemetry, configure tenant user roles, and trigger cascade deletes.
+                  Manage system database records, configure user accounts and roles, and monitor workspace settings.
                 </p>
               </div>
             </div>
