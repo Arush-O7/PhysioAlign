@@ -377,18 +377,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
         gap: 8,
         flexWrap: 'wrap'
       }}>
-        <span>Secured by</span>
-        <span style={{
-          background: 'white',
-          padding: '4px 10px',
-          borderRadius: 8,
-          border: '2px solid var(--line)',
-          fontWeight: 900,
-          color: 'var(--ink)',
-          fontSize: 12,
-          boxShadow: 'var(--plush-tiny)'
-        }}>Clerk</span>
-        <span>| © 2026 PhysioAlign. All rights reserved.</span>
+        <span>© 2026 PhysioAlign. All rights reserved.</span>
       </footer>
 
     </div>
