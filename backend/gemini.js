@@ -45,7 +45,7 @@ For your level, holding the pose for **${session.holdTimeSeconds} seconds** is a
 export const generateAICritiqueSync = async (session, user) => {
   const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
   if (!apiKey) {
-    console.warn('[PhysioAlign AI] No Gemini API key found. Generating fallback critique.');
+    console.warn('[PhysioAlign] No Gemini API key found. Generating fallback critique.');
     return getMockCritique(session);
   }
 
@@ -97,11 +97,11 @@ export const generateAICritiqueSync = async (session, user) => {
   try {
     return await callCritique(PRIMARY_MODEL);
   } catch (err) {
-    console.warn(`[PhysioAlign AI] Primary model ${PRIMARY_MODEL} failed, trying fallback:`, err);
+    console.warn(`[PhysioAlign] Primary model ${PRIMARY_MODEL} failed, trying fallback:`, err);
     try {
       return await callCritique(LITE_MODEL);
     } catch (liteErr) {
-      console.error('[PhysioAlign AI] Fallback model also failed:', liteErr);
+      console.error('[PhysioAlign] Fallback model also failed:', liteErr);
       return getMockCritique(session);
     }
   }

@@ -1,6 +1,6 @@
-# PhysioAlign AI - Physical Therapy & Yoga Evaluation App
+# PhysioAlign - Physical Therapy & Yoga Evaluation App
 
-PhysioAlign AI is a browser-based application designed to help users track and improve their physical therapy and yoga movements. It uses real-time computer vision in the browser to measure joint angles and provides automated feedback to guide alignment adjustments.
+PhysioAlign is a browser-based application designed to help users track and improve their physical therapy and yoga movements. It uses real-time computer vision in the browser to measure joint angles and provides automated feedback to guide alignment adjustments.
 
 ---
 
