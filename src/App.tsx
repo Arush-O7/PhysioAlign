@@ -27,7 +27,7 @@ export default function App() {
 
     const initGoogle = () => {
       if ((window as any).google) {
-        const client_id = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '1090333256086-p7c6i05v0v3qfe91qef63h9qplu06ec0.apps.googleusercontent.com';
+        const client_id = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '303655418647-jmkugqbao9oc38na1qigl309qsa7gg96.apps.googleusercontent.com';
         (window as any).google.accounts.id.initialize({
           client_id,
           callback: (response: any) => {
