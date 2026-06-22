@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from '../utils/auth';
 import { useUserData } from '../game/store';
 import { SessionData, UserData } from '../game/types';
 import { TopBar, Doodle } from './primitives';

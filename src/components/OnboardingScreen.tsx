@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { store, useUserData } from '../game/store';
 import { UserData } from '../game/types';
 import { TopBar, PhysioLogo } from './primitives';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '../utils/auth';
 
 export function OnboardingScreen() {
   const existingUser = useUserData();

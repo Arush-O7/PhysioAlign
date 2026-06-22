@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth, useUser, SignIn } from '@clerk/clerk-react';
+import { useAuth, useUser, setSavedUser, decodeJwt } from './utils/auth';
 import { store, useScreen } from './game/store';
 import { SplashScreen } from './components/SplashScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
@@ -20,6 +20,43 @@ export default function App() {
   const { user } = useUser();
   const [isSyncing, setIsSyncing] = useState(false);
   const [authView, setAuthView] = useState<'landing' | 'role_select' | 'login'>('landing');
+
+  // Load and initialize Google Sign-in button when login screen is rendered
+  useEffect(() => {
+    if (authView !== 'login') return;
+
+    const initGoogle = () => {
+      if ((window as any).google) {
+        const client_id = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '1090333256086-p7c6i05v0v3qfe91qef63h9qplu06ec0.apps.googleusercontent.com';
+        (window as any).google.accounts.id.initialize({
+          client_id,
+          callback: (response: any) => {
+            const payload = decodeJwt(response.credential);
+            if (payload) {
+              setSavedUser({
+                id: payload.sub,
+                name: payload.name,
+                email: payload.email,
+                picture: payload.picture
+              });
+            }
+          }
+        });
+        
+        const buttonDiv = document.getElementById("google-signin-button");
+        if (buttonDiv) {
+          (window as any).google.accounts.id.renderButton(
+            buttonDiv,
+            { theme: "outline", size: "large", width: 280 }
+          );
+        }
+      } else {
+        setTimeout(initGoogle, 100);
+      }
+    };
+
+    initGoogle();
+  }, [authView]);
 
   useEffect(() => {
     const titles: Record<string, string> = {
@@ -264,41 +301,42 @@ export default function App() {
             </p>
           </div>
 
-          <SignIn 
-            appearance={{
-              elements: {
-                rootBox: {
-                  width: '100%',
-                  maxWidth: '400px',
-                  margin: '0 auto'
-                },
-                cardBox: {
-                  width: '100%',
-                  border: '3.5px solid var(--line)',
-                  borderRadius: 'var(--r-md)',
-                  boxShadow: 'var(--plush-sm)',
-                  overflow: 'hidden',
-                  background: 'white'
-                },
-                card: {
-                  border: 'none',
-                  boxShadow: 'none',
-                  background: 'white',
-                  width: '100%'
-                },
-                footer: {
-                  borderTop: '3.5px solid var(--line)',
-                  background: 'var(--cream)'
-                },
-                headerTitle: { fontFamily: 'Nunito', fontWeight: 900 },
-                headerSubtitle: { fontFamily: 'Nunito', fontWeight: 700 },
-                socialButtonsBlockButton: { border: '2.5px solid var(--line)', boxShadow: '0 2px 0 var(--line)', borderRadius: 12, fontWeight: 800 },
-                formButtonPrimary: { border: '2.5px solid var(--line)', boxShadow: '0 3px 0 var(--line)', background: 'var(--butter)', color: 'var(--ink)', borderRadius: 12, fontWeight: 800 },
-                formButtonPrimary__hover: { background: 'var(--butter-deep)' },
-                footerActionLink: { color: 'var(--peach-deep)' }
-              }
-            }} 
-          />
+          {/* Custom Google Sign-In Card */}
+          <div style={{
+            width: '100%',
+            maxWidth: '400px',
+            background: 'white',
+            border: '3.5px solid var(--line)',
+            borderRadius: 'var(--r-md)',
+            boxShadow: 'var(--plush-sm)',
+            overflow: 'hidden',
+            padding: '32px 24px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 16
+          }}>
+            <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Sign in to PhysioAlign</h3>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', margin: 0, lineHeight: 1.5 }}>
+              Use your Google account credentials to securely authenticate.
+            </p>
+            <div 
+              style={{ 
+                marginTop: 12, 
+                display: 'flex', 
+                justifyContent: 'center', 
+                width: '100%',
+                border: '2.5px solid var(--line)',
+                borderRadius: '12px',
+                padding: '12px',
+                background: 'white',
+                boxShadow: '0 3px 0 var(--line)'
+              }}
+            >
+              <div id="google-signin-button"></div>
+            </div>
+          </div>
 
         </div>
       </div>

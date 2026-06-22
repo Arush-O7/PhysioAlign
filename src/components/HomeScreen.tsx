@@ -1,6 +1,6 @@
 import { store, useSessionHistory, useUserData, useActiveTab } from '../game/store';
 import { useEffect, useState, useRef } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '../utils/auth';
 import { SessionData } from '../game/types';
 import { POSES } from '../data/poses';
 import { TopBar, Doodle, CuteFace } from './primitives';

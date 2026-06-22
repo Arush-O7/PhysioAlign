@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, User } from 'lucide-react';
 import { store, useScreen, useActiveTab } from '../game/store';
-import { UserButton } from '@clerk/clerk-react';
+import { UserButton } from '../utils/auth';
 
 // --- DOODLE ICONS ---
 export type DoodleKind = 'star' | 'flower' | 'heart' | 'cross' | 'leaf';

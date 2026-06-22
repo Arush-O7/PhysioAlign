@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '../utils/auth';
 import { Wordmark, TopBar, PhysioLogo } from './primitives';
 import { store } from '../game/store';
 import { 

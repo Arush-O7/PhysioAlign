@@ -5,7 +5,7 @@ import { AIEngine } from './AIEngine';
 import { playAudioCue, speakFeedback } from '../utils/audioFeedback';
 import { Keypoint } from '../utils/angleCalculations';
 import { TopBar } from './primitives';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '../utils/auth';
 import { Play, Pause, Square, AlertCircle, CheckCircle, HeartPulse } from 'lucide-react';
 
 export function SessionScreen() {
