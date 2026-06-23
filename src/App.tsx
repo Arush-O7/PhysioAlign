@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth, useUser, setSavedUser, decodeJwt, signInWithEmailPassword, signUpWithEmailPassword } from './utils/auth';
+import { useAuth, setSavedUser, decodeJwt, signInWithEmailPassword, signUpWithEmailPassword } from './utils/auth';
 import { store, useScreen } from './game/store';
 import { SplashScreen } from './components/SplashScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
@@ -17,7 +17,6 @@ import { User, Stethoscope, Shield, ArrowLeft } from 'lucide-react';
 export default function App() {
   const screen = useScreen();
   const { isLoaded, isSignedIn, userId, signOut } = useAuth();
-  const { user } = useUser();
   const [isSyncing, setIsSyncing] = useState(false);
   const [authView, setAuthView] = useState<'landing' | 'role_select' | 'login'>('landing');
 
@@ -118,7 +117,10 @@ export default function App() {
 
   // Sync auth status with database
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !userId || !user) return;
+    if (!isLoaded || !isSignedIn || !userId) return;
+
+    // If user data is already populated, we've successfully synced. Do not trigger it again on navigation or re-render.
+    if (store.getState().userData) return;
 
     const syncUser = async () => {
       setIsSyncing(true);
@@ -143,15 +145,13 @@ export default function App() {
         }
       } catch (err) {
         console.error('[PhysioAlign] Failed to sync user profile with backend, routing to onboarding:', err);
-        store.getState().userData = null;
-        store.setScreen('onboarding');
       } finally {
         setIsSyncing(false);
       }
     };
 
     syncUser();
-  }, [isLoaded, isSignedIn, userId, user]);
+  }, [isLoaded, isSignedIn, userId]);
 
   if (!isLoaded) {
     return (

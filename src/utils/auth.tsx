@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 // Decodes a JWT token returned by Google Identity Services
 export const decodeJwt = (token: string) => {
@@ -119,15 +119,17 @@ export function useUser() {
     });
   }, []);
 
-  const clerkFormattedUser = user ? {
-    id: user.id,
-    fullName: user.name,
-    firstName: user.name ? user.name.split(' ')[0] : '',
-    imageUrl: user.picture,
-    primaryEmailAddress: {
-      emailAddress: user.email
-    }
-  } : null;
+  const clerkFormattedUser = useMemo(() => {
+    return user ? {
+      id: user.id,
+      fullName: user.name,
+      firstName: user.name ? user.name.split(' ')[0] : '',
+      imageUrl: user.picture,
+      primaryEmailAddress: {
+        emailAddress: user.email
+      }
+    } : null;
+  }, [user]);
 
   return {
     isLoaded: true,
