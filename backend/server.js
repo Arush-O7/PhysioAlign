@@ -6,6 +6,7 @@ import { generateAICritiqueSync } from './gemini.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,85 @@ app.use(express.json());
 
 initDB().then(() => {
   console.log('[PhysioAlign Backend] Database initialized.');
+});
+
+// Hash password with salt using built-in crypto (PBKDF2)
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return `${salt}:${hash}`;
+}
+
+// Verify password using PBKDF2
+function verifyPassword(password, storedValue) {
+  if (!storedValue || !storedValue.includes(':')) return false;
+  const [salt, originalHash] = storedValue.split(':');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return hash === originalHash;
+}
+
+// Sign up a new user with email and password
+app.post('/api/auth/signup', async (req, res) => {
+  const { name, email, password, role } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Missing required fields: name, email, or password' });
+  }
+
+  const userRole = role || 'patient';
+  const emailLower = email.toLowerCase().trim();
+
+  try {
+    const existingUser = await dbGet('SELECT * FROM users WHERE LOWER(email) = ?', [emailLower]);
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const customId = `usr_${crypto.randomBytes(8).toString('hex')}`;
+    const passwordHash = hashPassword(password);
+
+    await dbRun(
+      'INSERT INTO users (clerk_id, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)',
+      [customId, name, emailLower, passwordHash, userRole]
+    );
+
+    console.log(`[PhysioAlign Backend] Custom email account created: ${customId} (${userRole})`);
+
+    const newUser = await dbGet('SELECT clerk_id, name, email, role FROM users WHERE clerk_id = ?', [customId]);
+    res.json(newUser);
+  } catch (error) {
+    console.error('Signup failed:', error);
+    res.status(500).json({ error: 'Failed to create account' });
+  }
+});
+
+// Log in an existing user with email and password
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Missing required fields: email or password' });
+  }
+
+  const emailLower = email.toLowerCase().trim();
+
+  try {
+    const user = await dbGet('SELECT * FROM users WHERE LOWER(email) = ? AND password_hash IS NOT NULL', [emailLower]);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const isValid = verifyPassword(password, user.password_hash);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    console.log(`[PhysioAlign Backend] Custom email login successful for: ${user.clerk_id}`);
+    
+    const { password_hash, ...safeUser } = user;
+    res.json(safeUser);
+  } catch (error) {
+    console.error('Login failed:', error);
+    res.status(500).json({ error: 'Failed to authenticate' });
+  }
 });
 
 // Fetch user profile

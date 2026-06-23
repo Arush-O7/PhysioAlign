@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth, useUser, setSavedUser, decodeJwt } from './utils/auth';
+import { useAuth, useUser, setSavedUser, decodeJwt, signInWithEmailPassword, signUpWithEmailPassword } from './utils/auth';
 import { store, useScreen } from './game/store';
 import { SplashScreen } from './components/SplashScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
@@ -20,6 +20,37 @@ export default function App() {
   const { user } = useUser();
   const [isSyncing, setIsSyncing] = useState(false);
   const [authView, setAuthView] = useState<'landing' | 'role_select' | 'login'>('landing');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [formMode, setFormMode] = useState<'signin' | 'signup'>('signin');
+  const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    setIsSubmitting(true);
+
+    try {
+      const registrationIntent = sessionStorage.getItem('physioalign:registration_intent') || 'patient';
+      if (formMode === 'signup') {
+        if (!name.trim()) throw new Error('Name is required');
+        if (!email.trim()) throw new Error('Email is required');
+        if (password.length < 6) throw new Error('Password must be at least 6 characters');
+        await signUpWithEmailPassword(name, email, password, registrationIntent);
+      } else {
+        if (!email.trim()) throw new Error('Email is required');
+        if (!password) throw new Error('Password is required');
+        await signInWithEmailPassword(email, password);
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'An error occurred during authentication');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Load and initialize Google Sign-in button when login screen is rendered
   useEffect(() => {
@@ -299,9 +330,7 @@ export default function App() {
             <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)', marginTop: 12, maxWidth: 300 }}>
               Sign in with your Google account to access your workspace environment.
             </p>
-          </div>
-
-          {/* Custom Google Sign-In Card */}
+          </div>          {/* Custom Authentication Card (Email/Password & Google Sign-In) */}
           <div style={{
             width: '100%',
             maxWidth: '400px',
@@ -310,31 +339,188 @@ export default function App() {
             borderRadius: 'var(--r-md)',
             boxShadow: 'var(--plush-sm)',
             overflow: 'hidden',
-            padding: '32px 24px',
-            textAlign: 'center',
+            padding: '24px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: 16
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Sign in to PhysioAlign</h3>
-            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', margin: 0, lineHeight: 1.5 }}>
-              Use your Google account credentials to securely authenticate.
-            </p>
-            <div 
-              style={{ 
-                marginTop: 12, 
-                display: 'flex', 
-                justifyContent: 'center', 
+            {/* Toggle Tabs */}
+            <div style={{ display: 'flex', width: '100%', border: '2.5px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
+              <button
+                type="button"
+                onClick={() => { setFormMode('signin'); setFormError(''); }}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: formMode === 'signin' ? 'var(--butter)' : 'white',
+                  borderRight: '2.5px solid var(--line)',
+                  color: 'var(--ink)',
+                  fontFamily: 'Nunito'
+                }}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFormMode('signup'); setFormError(''); }}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: formMode === 'signup' ? 'var(--butter)' : 'white',
+                  color: 'var(--ink)',
+                  fontFamily: 'Nunito'
+                }}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: '8px 0 0 0' }}>
+              {formMode === 'signin' ? 'Sign in with Email' : 'Create an Account'}
+            </h3>
+
+            {formError && (
+              <div style={{
                 width: '100%',
-                border: '2.5px solid var(--line)',
-                borderRadius: '12px',
-                padding: '12px',
-                background: 'white',
-                boxShadow: '0 3px 0 var(--line)'
-              }}
-            >
-              <div id="google-signin-button"></div>
+                background: 'var(--peach)',
+                border: '2px solid var(--line)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 800,
+                color: 'var(--ink)',
+                textAlign: 'left'
+              }}>
+                ⚠️ {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleEmailAuth} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {formMode === 'signup' && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, width: '100%' }}>
+                  <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      border: '2.5px solid var(--line)',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      fontFamily: 'Nunito',
+                      color: 'var(--ink)',
+                      boxShadow: '0 2px 0 var(--line)'
+                    }}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, width: '100%' }}>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Email Address</label>
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    border: '2.5px solid var(--line)',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    fontFamily: 'Nunito',
+                    color: 'var(--ink)',
+                    boxShadow: '0 2px 0 var(--line)'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, width: '100%' }}>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    border: '2.5px solid var(--line)',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    fontFamily: 'Nunito',
+                    color: 'var(--ink)',
+                    boxShadow: '0 2px 0 var(--line)'
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="tap"
+                style={{
+                  width: '100%',
+                  background: 'var(--mint)',
+                  border: '2.5px solid var(--line)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  fontWeight: 900,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: '0 3px 0 var(--line)',
+                  color: 'var(--ink)',
+                  marginTop: 8,
+                  fontFamily: 'Nunito'
+                }}
+              >
+                {isSubmitting ? 'Processing...' : formMode === 'signin' ? 'Sign In' : 'Sign Up'}
+              </button>
+            </form>
+
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', margin: '8px 0' }}>
+              <hr style={{ flex: 1, border: 'none', borderTop: '2px solid var(--line)', margin: 0 }} />
+              <span style={{ padding: '0 10px', fontSize: 11, fontWeight: 800, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>or</span>
+              <hr style={{ flex: 1, border: 'none', borderTop: '2px solid var(--line)', margin: 0 }} />
+            </div>
+
+            {/* Google Sign-in Option */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-soft)', margin: 0, textTransform: 'uppercase' }}>
+                Continue with Google
+              </p>
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  width: '100%',
+                  border: '2.5px solid var(--line)',
+                  borderRadius: '12px',
+                  padding: '10px',
+                  background: 'white',
+                  boxShadow: '0 3px 0 var(--line)'
+                }}
+              >
+                <div id="google-signin-button"></div>
+              </div>
             </div>
           </div>
 

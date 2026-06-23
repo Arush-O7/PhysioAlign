@@ -43,6 +43,50 @@ export const setSavedUser = (user: any) => {
   notify();
 };
 
+export const signInWithEmailPassword = async (email: string, password: string) => {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to sign in');
+  }
+
+  setSavedUser({
+    id: data.clerk_id,
+    name: data.name,
+    email: data.email,
+    picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.name)}`
+  });
+
+  return data;
+};
+
+export const signUpWithEmailPassword = async (name: string, email: string, password: string, role: string) => {
+  const response = await fetch('/api/auth/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password, role })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to sign up');
+  }
+
+  setSavedUser({
+    id: data.clerk_id,
+    name: data.name,
+    email: data.email,
+    picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.name)}`
+  });
+
+  return data;
+};
+
 export function useAuth() {
   const [user, setUser] = useState(getSavedUser);
 

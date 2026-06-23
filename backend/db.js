@@ -46,7 +46,6 @@ export const dbAll = (sql, params = []) => {
 // Initialize table schemas
 export const initDB = async () => {
   try {
-    // Create Users Table
     await dbRun(`
       CREATE TABLE IF NOT EXISTS users (
         clerk_id TEXT PRIMARY KEY,
@@ -57,7 +56,8 @@ export const initDB = async () => {
         goal TEXT,
         role TEXT DEFAULT 'patient',
         doctor_id TEXT,
-        care_plan TEXT
+        care_plan TEXT,
+        password_hash TEXT
       )
     `);
     
@@ -79,6 +79,13 @@ export const initDB = async () => {
     try {
       await dbRun("ALTER TABLE users ADD COLUMN care_plan TEXT");
       console.log('[PhysioAlign DB] Database migration: Added care_plan column to users table.');
+    } catch (e) {
+      // Column already exists, safe to ignore
+    }
+
+    try {
+      await dbRun("ALTER TABLE users ADD COLUMN password_hash TEXT");
+      console.log('[PhysioAlign DB] Database migration: Added password_hash column to users table.');
     } catch (e) {
       // Column already exists, safe to ignore
     }
