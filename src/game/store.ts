@@ -169,7 +169,7 @@ class PhysioStore {
     const updatedLogs = [...this.state.activeSession.frameLogs, frameLog];
     
     const durationSeconds = this.state.activeSession.durationSeconds + 1;
-    const holdTimeSeconds = this.state.activeSession.holdTimeSeconds + (frameLog.score >= 75 ? 1 : 0);
+    const holdTimeSeconds = this.state.activeSession.holdTimeSeconds + (frameLog.score >= 70 ? 1 : 0);
     
     const totalScore = updatedLogs.reduce((sum, log) => sum + log.score, 0);
     const averageScore = Math.round(totalScore / updatedLogs.length);

@@ -21,7 +21,7 @@ export const POSES: PoseConfig[] = [
     ],
     visibilityRequirements: ['LEFT_KNEE', 'RIGHT_KNEE', 'LEFT_HIP', 'RIGHT_HIP', 'LEFT_SHOULDER', 'RIGHT_SHOULDER'],
     targetAngles: {
-      leftKnee: { min: 165, max: 180, optimal: 175, label: 'Standing Leg (Knee)' },
+      leftKnee: { min: 155, max: 180, optimal: 175, label: 'Standing Leg (Knee)' },
       rightKnee: { min: 35, max: 80, optimal: 55, label: 'Bent Leg (Knee)' },
       leftShoulder: { min: 145, max: 180, optimal: 170, label: 'Shoulder Extension' },
       rightShoulder: { min: 145, max: 180, optimal: 170, label: 'Shoulder Extension' }
@@ -308,10 +308,10 @@ export const evaluatePose = (poseId: string, angles: Record<string, number>): Po
     const bentKneeName = isLeftStanding ? 'rightKnee' : 'leftKnee';
     const bentKneeLabel = isLeftStanding ? 'Right Knee (Bent)' : 'Left Knee (Bent)';
 
-    // Standing knee evaluation (Ideal: 165 - 180)
-    const standingDev = Math.max(0, 165 - standingKnee, standingKnee - 180);
-    jointDeviations[standingKneeName] = { current: standingKnee, ideal: '165° - 180°', error: standingDev > 5 };
-    if (standingDev > 5) {
+    // Standing knee evaluation (Ideal: 155 - 180)
+    const standingDev = Math.max(0, 155 - standingKnee, standingKnee - 180);
+    jointDeviations[standingKneeName] = { current: standingKnee, ideal: '155° - 180°', error: standingDev > 10 };
+    if (standingDev > 10) {
       totalScore -= 20;
       criticalErrorsCount++;
       corrections.push(`${standingKneeLabel}: Straighten your standing leg knee.`);
@@ -347,7 +347,7 @@ export const evaluatePose = (poseId: string, angles: Record<string, number>): Po
       if (current === undefined) continue;
 
       const dev = Math.max(0, target.min - current, current - target.max);
-      const isErr = dev > 10;
+      const isErr = dev > 15;
       jointDeviations[joint] = { current, ideal: `${target.min}° - ${target.max}°`, error: isErr };
 
       if (isErr) {
