@@ -38,31 +38,24 @@ export const POSE_LANDMARKS = {
  * θ = arccos( (V1 · V2) / (||V1|| * ||V2||) )
  */
 export const getAngle = (p1: Keypoint, p2: Keypoint, p3: Keypoint): number => {
-  // Vector 1 from vertex p2 to p1
+  // Vector 1 from vertex p2 to p1 (2D projection)
   const vector1 = {
     x: p1.x - p2.x,
     y: p1.y - p2.y,
-    z: p1.z - p2.z,
   };
 
-  // Vector 2 from vertex p2 to p3
+  // Vector 2 from vertex p2 to p3 (2D projection)
   const vector2 = {
     x: p3.x - p2.x,
     y: p3.y - p2.y,
-    z: p3.z - p2.z,
   };
 
-  // Dot product of vector1 and vector2
-  const dotProduct =
-    vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
+  // Dot product of vector1 and vector2 in 2D
+  const dotProduct = vector1.x * vector2.x + vector1.y * vector2.y;
 
-  // Magnitudes of vector1 and vector2
-  const magnitude1 = Math.sqrt(
-    vector1.x ** 2 + vector1.y ** 2 + vector1.z ** 2
-  );
-  const magnitude2 = Math.sqrt(
-    vector2.x ** 2 + vector2.y ** 2 + vector2.z ** 2
-  );
+  // Magnitudes of vector1 and vector2 in 2D
+  const magnitude1 = Math.sqrt(vector1.x ** 2 + vector1.y ** 2);
+  const magnitude2 = Math.sqrt(vector2.x ** 2 + vector2.y ** 2);
 
   // Avoid division by zero
   if (magnitude1 * magnitude2 === 0) return 0;

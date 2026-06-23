@@ -326,19 +326,29 @@ export const evaluatePose = (poseId: string, angles: Record<string, number>): Po
       corrections.push(`${bentKneeLabel}: Place your foot higher on the inner thigh or lower on the calf.`);
     }
 
-    // Shoulders (Ideal: 145 - 180)
+    // Shoulders (Ideal: 140 - 180 for Overhead OR 10 - 60 for Prayer hands)
     const leftS = angles.leftShoulder || 0;
     const rightS = angles.rightShoulder || 0;
-    const leftSDev = Math.max(0, 145 - leftS, leftS - 180);
-    const rightSDev = Math.max(0, 145 - rightS, rightS - 180);
     
-    jointDeviations.leftShoulder = { current: leftS, ideal: '145° - 180°', error: leftSDev > 10 };
-    jointDeviations.rightShoulder = { current: rightS, ideal: '145° - 180°', error: rightSDev > 10 };
+    // Check overhead deviation (Ideal: 140 - 180)
+    const leftSDevOverhead = Math.max(0, 140 - leftS, leftS - 180);
+    const rightSDevOverhead = Math.max(0, 140 - rightS, rightS - 180);
+    
+    // Check prayer hands deviation (Ideal: 10 - 60)
+    const leftSDevPrayer = Math.max(0, 10 - leftS, leftS - 60);
+    const rightSDevPrayer = Math.max(0, 10 - rightS, rightS - 60);
+    
+    // Accept whichever style the user is practicing (minimum deviation)
+    const leftSDev = Math.min(leftSDevOverhead, leftSDevPrayer);
+    const rightSDev = Math.min(rightSDevOverhead, rightSDevPrayer);
+    
+    jointDeviations.leftShoulder = { current: leftS, ideal: '10°-60° (Prayer) OR 140°-180° (Overhead)', error: leftSDev > 15 };
+    jointDeviations.rightShoulder = { current: rightS, ideal: '10°-60° (Prayer) OR 140°-180° (Overhead)', error: rightSDev > 15 };
 
-    if (leftSDev > 10 || rightSDev > 10) {
+    if (leftSDev > 15 || rightSDev > 15) {
       totalScore -= 15;
       minorErrorsCount++;
-      corrections.push('Shoulders: Reach your arms higher overhead, keeping them long.');
+      corrections.push('Shoulders: Raise arms straight overhead OR place hands in prayer position.');
     }
   } else {
     // Standard linear pose evaluation
