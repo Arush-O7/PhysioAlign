@@ -32,6 +32,10 @@ export function SessionScreen() {
   const [feedback, setFeedback] = useState<PoseFeedback | null>(null);
   const [isCalibrating, setIsCalibrating] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [customTargetHold, setCustomTargetHold] = useState<number>(() => {
+    return prescribedTargetHold || 30;
+  });
+  const [targetReached, setTargetReached] = useState(false);
   
   const timerRef = useRef<any>(null);
   const lastAudioFeedbackTimeRef = useRef(0);
@@ -41,11 +45,27 @@ export function SessionScreen() {
   useEffect(() => {
     if (pose) {
       store.startSession(pose.id, pose.name);
+      setTargetReached(false);
+      
+      // Calculate prescribed hold for the new pose
+      let newPrescribed: number | null = null;
+      if (userData?.care_plan) {
+        try {
+          const plan = JSON.parse(userData.care_plan);
+          const match = plan.find((item: any) => item.poseId === pose.id);
+          if (match) {
+            newPrescribed = match.targetHold;
+          }
+        } catch (e) {
+          console.error('Failed to parse care plan in session screen', e);
+        }
+      }
+      setCustomTargetHold(newPrescribed || 30);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [activePoseId]);
+  }, [activePoseId, userData?.care_plan]);
 
   useEffect(() => {
     if (sessionActive) {
@@ -90,6 +110,20 @@ export function SessionScreen() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [sessionActive]);
+
+  useEffect(() => {
+    if (activeSession && activeSession.holdTimeSeconds >= customTargetHold && !targetReached && sessionActive) {
+      setTargetReached(true);
+      playAudioCue('success');
+      speakFeedback('Target reached! Great job! You can now exit or keep holding.');
+    }
+  }, [activeSession?.holdTimeSeconds, customTargetHold, targetReached, sessionActive]);
+
+  useEffect(() => {
+    if (activeSession && activeSession.holdTimeSeconds < customTargetHold) {
+      setTargetReached(false);
+    }
+  }, [activeSession?.holdTimeSeconds, customTargetHold]);
 
   const handlePoseDetected = useCallback((data: { keypoints: Keypoint[]; angles: Record<string, number> }) => {
     if (!pose) return;
@@ -208,6 +242,40 @@ export function SessionScreen() {
     <div className="screen" style={{ background: 'var(--cream)', minHeight: '100vh' }}>
       <TopBar here={2} steps={['Dashboard', 'Pose Select', 'Evaluation']} showProfile={false} />
 
+      {targetReached && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          background: 'var(--mint)',
+          border: '3px solid var(--line)',
+          borderRadius: 'var(--r-md)',
+          boxShadow: 'var(--plush-sm)',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          animation: 'pop-in 400ms cubic-bezier(.5,1.7,.4,1) forwards',
+        }}>
+          <CheckCircle size={24} color="var(--ink)" />
+          <div>
+            <h4 style={{ fontWeight: 900, fontSize: 16, color: 'var(--ink)' }}>Target Hold Reached!</h4>
+            <p style={{ fontWeight: 700, fontSize: 13, margin: '2px 0 0', color: 'var(--ink-2)', opacity: 0.9 }}>
+              Excellent alignment. You held the posture for {customTargetHold} seconds.
+            </p>
+          </div>
+          <button 
+            onClick={() => setTargetReached(false)} 
+            className="btn-plush ghost tap" 
+            style={{ padding: '6px 12px', fontSize: 12, border: '2px solid var(--line)', boxShadow: 'none' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {isAnalyzing && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
@@ -273,16 +341,62 @@ export function SessionScreen() {
               <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Correct Posture Hold
               </span>
-              <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--mint-deep)', marginTop: 4, marginBottom: prescribedTargetHold ? 4 : 0 }}>
+              <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--mint-deep)', marginTop: 4, marginBottom: 4 }}>
                 {activeSession.holdTimeSeconds}s
               </h2>
-              {prescribedTargetHold && (
-                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--rose-deep)' }}>
-                  Goal: {prescribedTargetHold}s (Prescribed)
-                </div>
-              )}
+              <div style={{ fontSize: 11, fontWeight: 800, color: prescribedTargetHold && prescribedTargetHold === customTargetHold ? 'var(--rose-deep)' : 'var(--peach-deep)' }}>
+                Goal: {customTargetHold}s {prescribedTargetHold && prescribedTargetHold === customTargetHold ? '(Prescribed)' : '(Custom)'}
+              </div>
             </div>
           </div>
+
+          {!sessionActive && activeSession.durationSeconds === 0 && (
+            <div className="plush popin" style={{ padding: 20, background: 'var(--cream-2)' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8, color: 'var(--ink)' }}>
+                🎯 Target Hold Goal
+              </h3>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 14 }}>
+                Adjust how long you want to hold this posture. A voice cue will trigger when you reach this target.
+              </p>
+              
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+                <button 
+                  onClick={() => setCustomTargetHold(prev => Math.max(5, prev - 5))}
+                  className="btn-plush ghost tap"
+                  style={{ padding: 0, width: 40, height: 40, borderRadius: 10, fontSize: 18 }}
+                  type="button"
+                >
+                  -
+                </button>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <span style={{ fontSize: 24, fontWeight: 900, color: 'var(--ink)' }}>{customTargetHold}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)', marginLeft: 4 }}>seconds</span>
+                </div>
+                <button 
+                  onClick={() => setCustomTargetHold(prev => Math.min(300, prev + 5))}
+                  className="btn-plush ghost tap"
+                  style={{ padding: 0, width: 40, height: 40, borderRadius: 10, fontSize: 18 }}
+                  type="button"
+                >
+                  +
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[10, 20, 30, 45, 60, 90].map(seconds => (
+                  <button
+                    key={seconds}
+                    onClick={() => setCustomTargetHold(seconds)}
+                    className={`chip tap ${customTargetHold === seconds ? 'peach' : ''}`}
+                    style={{ border: '2px solid var(--line)', padding: '4px 10px', fontSize: 12, fontWeight: 800 }}
+                    type="button"
+                  >
+                    {seconds}s
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
 
           <div className="plush" style={{
