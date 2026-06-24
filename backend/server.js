@@ -379,23 +379,18 @@ app.get('/api/admin/stats', async (req, res) => {
     
     let dbSize = 'Unknown';
     try {
-      const dbPath = path.resolve(__dirname, 'database.sqlite');
-      if (fs.existsSync(dbPath)) {
-        const stats = fs.statSync(dbPath);
-        dbSize = (stats.size / 1024 / 1024).toFixed(2) + ' MB';
-      } else {
-        dbSize = '0.05 MB';
-      }
+      const dbSizeObj = await dbGet("SELECT pg_size_pretty(pg_database_size(current_database())) as size");
+      dbSize = dbSizeObj ? dbSizeObj.size : 'Unknown';
     } catch (e) {
       dbSize = 'Unknown';
     }
     
     res.json({
-      totalUsers: totalUsersObj ? totalUsersObj.count : 0,
-      patients: patientsObj ? patientsObj.count : 0,
-      doctors: doctorsObj ? doctorsObj.count : 0,
-      sessions: sessionsObj ? sessionsObj.count : 0,
-      dbEngine: 'SQLite (Local File)',
+      totalUsers: totalUsersObj ? Number(totalUsersObj.count) : 0,
+      patients: patientsObj ? Number(patientsObj.count) : 0,
+      doctors: doctorsObj ? Number(doctorsObj.count) : 0,
+      sessions: sessionsObj ? Number(sessionsObj.count) : 0,
+      dbEngine: 'Supabase (PostgreSQL)',
       dbSize: dbSize,
       uptime: Math.round(process.uptime()) + 's'
     });
