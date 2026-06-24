@@ -350,6 +350,141 @@ export const evaluatePose = (poseId: string, angles: Record<string, number>): Po
       minorErrorsCount++;
       corrections.push('Shoulders: Raise arms straight overhead OR place hands in prayer position.');
     }
+  } else if (poseId === 'warrior-ii') {
+    const leftK = angles.leftKnee || 180;
+    const rightK = angles.rightKnee || 180;
+    
+    const isRightFront = Math.abs(rightK - 95) < Math.abs(leftK - 95);
+    
+    const frontKnee = isRightFront ? rightK : leftK;
+    const frontKneeName = isRightFront ? 'rightKnee' : 'leftKnee';
+    const frontKneeLabel = isRightFront ? 'Right Knee (Front)' : 'Left Knee (Front)';
+    
+    const backKnee = isRightFront ? leftK : rightK;
+    const backKneeName = isRightFront ? 'leftKnee' : 'rightKnee';
+    const backKneeLabel = isRightFront ? 'Left Knee (Back)' : 'Right Knee (Back)';
+
+    // Front knee evaluation (Ideal: 80 - 110)
+    const frontDev = Math.max(0, 80 - frontKnee, frontKnee - 110);
+    const isFrontErr = frontDev > 15;
+    jointDeviations[frontKneeName] = { current: frontKnee, ideal: '80° - 110°', error: isFrontErr };
+    if (isFrontErr) {
+      if (frontDev > 25) {
+        totalScore -= 20;
+        criticalErrorsCount++;
+        corrections.push(`${frontKneeLabel}: Front knee is bent too deep or too shallow.`);
+      } else {
+        totalScore -= 10;
+        minorErrorsCount++;
+        corrections.push(`${frontKneeLabel}: Adjust your front knee bend slightly.`);
+      }
+    }
+
+    // Back knee evaluation (Ideal: 155 - 180)
+    const backDev = Math.max(0, 155 - backKnee, backKnee - 180);
+    const isBackErr = backDev > 15;
+    jointDeviations[backKneeName] = { current: backKnee, ideal: '155° - 180°', error: isBackErr };
+    if (isBackErr) {
+      if (backDev > 25) {
+        totalScore -= 20;
+        criticalErrorsCount++;
+        corrections.push(`${backKneeLabel}: Straighten your back leg knee.`);
+      } else {
+        totalScore -= 10;
+        minorErrorsCount++;
+        corrections.push(`${backKneeLabel}: Keep your back leg knee long and straight.`);
+      }
+    }
+
+    // Shoulders check (Ideal: 80 - 105)
+    const leftS = angles.leftShoulder || 0;
+    const rightS = angles.rightShoulder || 0;
+    const leftSDev = Math.max(0, 80 - leftS, leftS - 105);
+    const rightSDev = Math.max(0, 80 - rightS, rightS - 105);
+    
+    jointDeviations.leftShoulder = { current: leftS, ideal: '80° - 105°', error: leftSDev > 15 };
+    jointDeviations.rightShoulder = { current: rightS, ideal: '80° - 105°', error: rightSDev > 15 };
+
+    if (leftSDev > 15 || rightSDev > 15) {
+      totalScore -= 10;
+      minorErrorsCount++;
+      corrections.push('Shoulders: Extend both arms parallel to the floor at shoulder height.');
+    }
+
+    // Elbows check (Ideal: 160 - 180)
+    const leftE = angles.leftElbow || 0;
+    const rightE = angles.rightElbow || 0;
+    const leftEDev = Math.max(0, 160 - leftE, leftE - 180);
+    const rightEDev = Math.max(0, 160 - rightE, rightE - 180);
+    
+    jointDeviations.leftElbow = { current: leftE, ideal: '160° - 180°', error: leftEDev > 15 };
+    jointDeviations.rightElbow = { current: rightE, ideal: '160° - 180°', error: rightEDev > 15 };
+
+    if (leftEDev > 15 || rightEDev > 15) {
+      totalScore -= 10;
+      minorErrorsCount++;
+      corrections.push('Elbows: Straighten both elbows to extend your reach.');
+    }
+  } else if (poseId === 'warrior-i') {
+    const leftK = angles.leftKnee || 180;
+    const rightK = angles.rightKnee || 180;
+    
+    const isRightFront = Math.abs(rightK - 100) < Math.abs(leftK - 100);
+    
+    const frontKnee = isRightFront ? rightK : leftK;
+    const frontKneeName = isRightFront ? 'rightKnee' : 'leftKnee';
+    const frontKneeLabel = isRightFront ? 'Right Knee (Front)' : 'Left Knee (Front)';
+    
+    const backKnee = isRightFront ? leftK : rightK;
+    const backKneeName = isRightFront ? 'leftKnee' : 'rightKnee';
+    const backKneeLabel = isRightFront ? 'Left Knee (Back)' : 'Right Knee (Back)';
+
+    // Front knee evaluation (Ideal: 85 - 115)
+    const frontDev = Math.max(0, 85 - frontKnee, frontKnee - 115);
+    const isFrontErr = frontDev > 15;
+    jointDeviations[frontKneeName] = { current: frontKnee, ideal: '85° - 115°', error: isFrontErr };
+    if (isFrontErr) {
+      if (frontDev > 25) {
+        totalScore -= 20;
+        criticalErrorsCount++;
+        corrections.push(`${frontKneeLabel}: Front knee is bent too deep or too shallow.`);
+      } else {
+        totalScore -= 10;
+        minorErrorsCount++;
+        corrections.push(`${frontKneeLabel}: Adjust your front knee bend slightly.`);
+      }
+    }
+
+    // Back knee evaluation (Ideal: 155 - 180)
+    const backDev = Math.max(0, 155 - backKnee, backKnee - 180);
+    const isBackErr = backDev > 15;
+    jointDeviations[backKneeName] = { current: backKnee, ideal: '155° - 180°', error: isBackErr };
+    if (isBackErr) {
+      if (backDev > 25) {
+        totalScore -= 20;
+        criticalErrorsCount++;
+        corrections.push(`${backKneeLabel}: Straighten your back leg knee.`);
+      } else {
+        totalScore -= 10;
+        minorErrorsCount++;
+        corrections.push(`${backKneeLabel}: Keep your back leg knee straight.`);
+      }
+    }
+
+    // Shoulders check (Ideal: 140 - 180)
+    const leftS = angles.leftShoulder || 0;
+    const rightS = angles.rightShoulder || 0;
+    const leftSDev = Math.max(0, 140 - leftS, leftS - 180);
+    const rightSDev = Math.max(0, 140 - rightS, rightS - 180);
+    
+    jointDeviations.leftShoulder = { current: leftS, ideal: '140° - 180°', error: leftSDev > 15 };
+    jointDeviations.rightShoulder = { current: rightS, ideal: '140° - 180°', error: rightSDev > 15 };
+
+    if (leftSDev > 15 || rightSDev > 15) {
+      totalScore -= 15;
+      minorErrorsCount++;
+      corrections.push('Shoulders: Reach your arms straight overhead.');
+    }
   } else {
     // Standard linear pose evaluation
     for (const [joint, target] of Object.entries(pose.targetAngles)) {
