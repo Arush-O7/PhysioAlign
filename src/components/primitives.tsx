@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { X, User } from 'lucide-react';
+import { X, User, LogOut } from 'lucide-react';
 import { store, useScreen, useActiveTab } from '../game/store';
-import { UserButton } from '../utils/auth';
+import { UserButton, useAuth } from '../utils/auth';
 
 // --- DOODLE ICONS ---
 export type DoodleKind = 'star' | 'flower' | 'heart' | 'cross' | 'leaf';
@@ -159,6 +159,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
   const currentScreen = useScreen();
   const activeTab = useActiveTab();
   const [helpOpen, setHelpOpen] = useState(false);
+  const { isSignedIn, signOut } = useAuth();
 
   const isLinkActive = (item: 'landing' | 'dashboard' | 'library' | 'consult') => {
     if (item === 'landing') return currentScreen === 'landing';
@@ -249,6 +250,32 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
 
       {showProfile ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {isSignedIn && (
+            <button
+              onClick={signOut}
+              className="tap"
+              style={{
+                background: 'var(--rose)',
+                border: '2.5px solid var(--line)',
+                borderRadius: 'var(--r-sm)',
+                padding: '6px 12px',
+                fontFamily: 'inherit',
+                fontSize: 13,
+                fontWeight: 900,
+                color: 'var(--ink)',
+                cursor: 'pointer',
+                boxShadow: '0 2.5px 0 var(--line)',
+                transition: 'all 100ms',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+            >
+              <LogOut size={14} style={{ strokeWidth: 3 }} />
+              Log Out
+            </button>
+          )}
+
           <button
             onClick={() => store.setScreen('onboarding')}
             className="tap"
