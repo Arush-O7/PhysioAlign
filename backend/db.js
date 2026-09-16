@@ -68,35 +68,11 @@ export const initDB = async () => {
       )
     `);
     
-    // Defensive migrations
-    try {
-      await dbRun("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'patient'");
-      console.log('[PhysioAlign DB] Database migration: Added role column to users table.');
-    } catch (e) {
-      // Column already exists, safe to ignore
+    // older databases were created before these columns existed
+    for (const column of ["role TEXT DEFAULT 'patient'", 'doctor_id TEXT', 'care_plan TEXT', 'password_hash TEXT']) {
+      await dbRun(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${column}`);
     }
 
-    try {
-      await dbRun("ALTER TABLE users ADD COLUMN doctor_id TEXT");
-      console.log('[PhysioAlign DB] Database migration: Added doctor_id column to users table.');
-    } catch (e) {
-      // Column already exists, safe to ignore
-    }
-
-    try {
-      await dbRun("ALTER TABLE users ADD COLUMN care_plan TEXT");
-      console.log('[PhysioAlign DB] Database migration: Added care_plan column to users table.');
-    } catch (e) {
-      // Column already exists, safe to ignore
-    }
-
-    try {
-      await dbRun("ALTER TABLE users ADD COLUMN password_hash TEXT");
-      console.log('[PhysioAlign DB] Database migration: Added password_hash column to users table.');
-    } catch (e) {
-      // Column already exists, safe to ignore
-    }
-    
     console.log('[PhysioAlign DB] Users table verified/created.');
 
     // Create Sessions Table
