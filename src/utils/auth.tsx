@@ -28,8 +28,12 @@ const notify = () => {
 
 // Local storage helpers
 export const getSavedUser = () => {
-  const saved = localStorage.getItem('physioalign:google_user');
-  return saved ? JSON.parse(saved) : null;
+  try {
+    const saved = localStorage.getItem('physioalign:google_user');
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
 };
 
 export const setSavedUser = (user: any) => {
