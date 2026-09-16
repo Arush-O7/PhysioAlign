@@ -15,11 +15,10 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
-app.use(express.json());
+// frame logs are sent with every session, 100kb default is too small for long holds
+app.use(express.json({ limit: '5mb' }));
 
-initDB().then(() => {
-  console.log('[PhysioAlign Backend] Database initialized.');
-});
+const ROLES = ['patient', 'doctor', 'admin'];
 
 // Hash password with salt using built-in crypto (PBKDF2)
 function hashPassword(password) {
@@ -32,8 +31,42 @@ function hashPassword(password) {
 function verifyPassword(password, storedValue) {
   if (!storedValue || !storedValue.includes(':')) return false;
   const [salt, originalHash] = storedValue.split(':');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return hash === originalHash;
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512');
+  const expected = Buffer.from(originalHash, 'hex');
+  return expected.length === hash.length && crypto.timingSafeEqual(hash, expected);
+}
+
+function stripSecrets(user) {
+  if (!user) return user;
+  const { password_hash, ...rest } = user;
+  return rest;
+}
+
+function parseFrameLogs(row) {
+  if (!row.frame_logs) return [];
+  try {
+    return JSON.parse(row.frame_logs);
+  } catch (e) {
+    console.error('Failed to parse frame logs for session:', row.id, e);
+    return [];
+  }
+}
+
+// db rows are snake_case, the frontend expects camelCase
+function toSession(row) {
+  return {
+    id: row.id,
+    clerkId: row.clerk_id,
+    poseId: row.pose_id,
+    poseName: row.pose_name,
+    date: row.date,
+    durationSeconds: row.duration_seconds,
+    holdTimeSeconds: row.hold_time_seconds,
+    averageScore: row.average_score,
+    grade: row.grade,
+    aiCritique: row.ai_critique,
+    frameLogs: parseFrameLogs(row)
+  };
 }
 
 // Sign up a new user with email and password
@@ -44,6 +77,9 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 
   const userRole = role || 'patient';
+  if (!ROLES.includes(userRole)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
   const emailLower = email.toLowerCase().trim();
 
   try {
@@ -92,8 +128,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     console.log(`[PhysioAlign Backend] Custom email login successful for: ${user.clerk_id}`);
     
-    const { password_hash, ...safeUser } = user;
-    res.json(safeUser);
+    res.json(stripSecrets(user));
   } catch (error) {
     console.error('Login failed:', error);
     res.status(500).json({ error: 'Failed to authenticate' });
@@ -106,7 +141,7 @@ app.get('/api/users/:clerkId', async (req, res) => {
   try {
     const user = await dbGet('SELECT * FROM users WHERE clerk_id = ?', [clerkId]);
     if (user) {
-      res.json(user);
+      res.json(stripSecrets(user));
     } else {
       res.status(404).json({ error: 'User profile not found' });
     }
@@ -124,6 +159,9 @@ app.post('/api/users', async (req, res) => {
   }
 
   const userRole = role || 'patient';
+  if (!ROLES.includes(userRole)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
 
   try {
     const existingUser = await dbGet('SELECT * FROM users WHERE clerk_id = ?', [clerkId]);
@@ -143,7 +181,7 @@ app.post('/api/users', async (req, res) => {
     }
 
     const updatedUser = await dbGet('SELECT * FROM users WHERE clerk_id = ?', [clerkId]);
-    res.json(updatedUser);
+    res.json(stripSecrets(updatedUser));
   } catch (error) {
     console.error('Upsert user failed:', error);
     res.status(500).json({ error: 'Database update failed' });
@@ -224,32 +262,7 @@ app.get('/api/sessions/:clerkId', async (req, res) => {
   try {
     const rows = await dbAll('SELECT * FROM sessions WHERE clerk_id = ? ORDER BY date DESC', [clerkId]);
     
-    const sessions = rows.map(row => {
-      let frameLogs = [];
-      try {
-        if (row.frame_logs) {
-          frameLogs = JSON.parse(row.frame_logs);
-        }
-      } catch (e) {
-        console.error('Failed to parse frame logs for session:', row.id, e);
-      }
-
-      return {
-        id: row.id,
-        clerkId: row.clerk_id,
-        poseId: row.pose_id,
-        poseName: row.pose_name,
-        date: row.date,
-        durationSeconds: row.duration_seconds,
-        holdTimeSeconds: row.hold_time_seconds,
-        averageScore: row.average_score,
-        grade: row.grade,
-        aiCritique: row.ai_critique,
-        frameLogs
-      };
-    });
-
-    res.json(sessions);
+    res.json(rows.map(toSession));
   } catch (error) {
     console.error('Fetch sessions failed:', error);
     res.status(500).json({ error: 'Database fetch failed' });
@@ -262,28 +275,7 @@ app.get('/api/sessions/detail/:id', async (req, res) => {
   try {
     const row = await dbGet('SELECT * FROM sessions WHERE id = ?', [id]);
     if (row) {
-      let frameLogs = [];
-      try {
-        if (row.frame_logs) {
-          frameLogs = JSON.parse(row.frame_logs);
-        }
-      } catch (e) {
-        console.error('Failed to parse single session frame logs:', e);
-      }
-
-      res.json({
-        id: row.id,
-        clerkId: row.clerk_id,
-        poseId: row.pose_id,
-        poseName: row.pose_name,
-        date: row.date,
-        durationSeconds: row.duration_seconds,
-        holdTimeSeconds: row.hold_time_seconds,
-        averageScore: row.average_score,
-        grade: row.grade,
-        aiCritique: row.ai_critique,
-        frameLogs
-      });
+      res.json(toSession(row));
     } else {
       res.status(404).json({ error: 'Session log entry not found' });
     }
@@ -344,7 +336,10 @@ app.post('/api/doctor/patients/:clerkId/care-plan', async (req, res) => {
   const { carePlan } = req.body;
   try {
     const serializedPlan = JSON.stringify(carePlan || []);
-    await dbRun('UPDATE users SET care_plan = ? WHERE clerk_id = ?', [serializedPlan, clerkId]);
+    const result = await dbRun('UPDATE users SET care_plan = ? WHERE clerk_id = ?', [serializedPlan, clerkId]);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
     console.log(`[PhysioAlign Backend] Doctor updated care plan for patient: ${clerkId}`);
     res.json({ success: true, carePlan });
   } catch (error) {
@@ -358,11 +353,7 @@ app.get('/api/doctor/patients/:clerkId/history', async (req, res) => {
   const { clerkId } = req.params;
   try {
     const sessions = await dbAll('SELECT * FROM sessions WHERE clerk_id = ? ORDER BY date DESC', [clerkId]);
-    const parsed = sessions.map(s => ({
-      ...s,
-      frameLogs: s.frame_logs ? JSON.parse(s.frame_logs) : []
-    }));
-    res.json(parsed);
+    res.json(sessions.map(toSession));
   } catch (error) {
     console.error('Fetch patient history failed:', error);
     res.status(500).json({ error: 'Failed to fetch patient history logs' });
@@ -404,7 +395,7 @@ app.get('/api/admin/stats', async (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
   try {
     const users = await dbAll('SELECT * FROM users ORDER BY role DESC, name ASC');
-    res.json(users);
+    res.json(users.map(stripSecrets));
   } catch (error) {
     console.error('Fetch admin users failed:', error);
     res.status(500).json({ error: 'Failed to fetch user directory' });
@@ -464,6 +455,11 @@ app.delete('/api/admin/users/:clerkId', async (req, res) => {
   }
 });
 
+// unknown api routes should 404 instead of falling through to index.html
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
 // Serve static files from the React frontend built folder
 app.use(express.static(path.join(__dirname, '../dist')));
 
@@ -472,6 +468,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`[PhysioAlign Backend] Server running on port ${PORT}`);
+initDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`[PhysioAlign Backend] Server running on port ${PORT}`);
+  });
 });
