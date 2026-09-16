@@ -274,13 +274,16 @@ export function HomeScreen() {
 
   const computeStreak = (sessions: SessionData[]): number => {
     if (sessions.length === 0) return 0;
-    const dates = new Set(
-      sessions.map((s) => new Date(s.date).toISOString().slice(0, 10))
-    );
+    // toISOString() is UTC, which puts early morning sessions on the wrong day
+    const dates = new Set(sessions.map((s) => new Date(s.date).toDateString()));
     let streak = 0;
     const cursor = new Date();
+    // haven't practised yet today, the streak from yesterday still counts
+    if (!dates.has(cursor.toDateString())) {
+      cursor.setDate(cursor.getDate() - 1);
+    }
     for (;;) {
-      const key = cursor.toISOString().slice(0, 10);
+      const key = cursor.toDateString();
       if (dates.has(key)) {
         streak++;
         cursor.setDate(cursor.getDate() - 1);
