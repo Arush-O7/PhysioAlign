@@ -5,12 +5,13 @@ import { calculateAngles, Keypoint } from '../utils/angleCalculations';
 
 interface AIEngineProps {
   onPoseDetected: (data: { keypoints: Keypoint[]; angles: Record<string, number> }) => void;
+  onPoseLost?: () => void;
   onStatusChange?: (status: { isLoaded: boolean; error: string | null }) => void;
   poseImage?: string;
   poseName?: string;
 }
 
-export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseName }: AIEngineProps) => {
+export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, poseImage, poseName }: AIEngineProps) => {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -25,9 +26,12 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
   const frameCountRef = useRef(0);
   const lastFpsTimeRef = useRef(performance.now());
   const lastTimestampRef = useRef(0);
+  const personVisibleRef = useRef(false);
 
   // Initialize MediaPipe Pose Landmarker
   useEffect(() => {
+    let cancelled = false;
+
     const loadModel = async () => {
       try {
         const { PoseLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
@@ -36,7 +40,7 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
           'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm'
         );
 
-        poseDetectorRef.current = await PoseLandmarker.createFromOptions(vision, {
+        const detector = await PoseLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
             delegate: 'GPU',
@@ -45,10 +49,18 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
           numPoses: 1,
         });
 
+        // component unmounted while the model was still downloading
+        if (cancelled) {
+          detector.close();
+          return;
+        }
+        poseDetectorRef.current = detector;
+
         setIsModelLoaded(true);
         if (onStatusChange) onStatusChange({ isLoaded: true, error: null });
         console.log('[PhysioAlign] MediaPipe Pose Landmarker loaded successfully');
       } catch (err) {
+        if (cancelled) return;
         console.error('[PhysioAlign] Error loading model:', err);
         setError('Failed to load posture AI model. Please check your internet and reload.');
         if (onStatusChange) onStatusChange({ isLoaded: false, error: 'Failed to load AI model' });
@@ -58,11 +70,13 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
     loadModel();
 
     return () => {
+      cancelled = true;
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
       if (poseDetectorRef.current) {
         poseDetectorRef.current.close();
+        poseDetectorRef.current = null;
       }
     };
   }, []);
@@ -111,6 +125,7 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
 
           if (results.landmarks && results.landmarks.length > 0) {
             const landmarks = results.landmarks[0];
+            personVisibleRef.current = true;
 
             // Convert to our Keypoint format
             const keypoints: Keypoint[] = landmarks.map((landmark: any) => ({
@@ -141,6 +156,10 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
               lastFpsTimeRef.current = now;
             }
           } else {
+            if (personVisibleRef.current) {
+              personVisibleRef.current = false;
+              onPoseLost?.();
+            }
             // Clear canvas if no person is detected
             if (canvas) {
               const ctx = canvas.getContext('2d');
@@ -164,7 +183,7 @@ export const AIEngine = memo(({ onPoseDetected, onStatusChange, poseImage, poseN
         cancelAnimationFrame(animationFrameIdRef.current);
       }
     };
-  }, [isCameraActive, isModelLoaded, onPoseDetected]);
+  }, [isCameraActive, isModelLoaded, onPoseDetected, onPoseLost]);
 
   // Draw pose skeleton connections
   const drawSkeleton = (keypoints: Keypoint[], canvas: HTMLCanvasElement) => {

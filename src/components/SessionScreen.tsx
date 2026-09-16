@@ -192,6 +192,12 @@ export function SessionScreen() {
     }
   }, [pose]);
 
+  const handlePoseLost = useCallback(() => {
+    // otherwise the timer keeps logging the last good frame and hold time keeps going up
+    poseDataRef.current = null;
+    setIsCalibrating(true);
+  }, []);
+
   const handleStart = () => {
     setSessionActive(true);
     speakFeedback('Starting practice. Align your joints.');
@@ -297,7 +303,7 @@ export function SessionScreen() {
       <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <AIEngine onPoseDetected={handlePoseDetected} poseImage={pose.image} poseName={pose.name} />
+          <AIEngine onPoseDetected={handlePoseDetected} onPoseLost={handlePoseLost} poseImage={pose.image} poseName={pose.name} />
 
           <div className="plush" style={{ padding: 18, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', gap: 12 }}>
