@@ -51,6 +51,11 @@ class PhysioStore {
     this.notify();
   }
 
+  setUserData(userData: UserData | null) {
+    this.state = { ...this.state, userData };
+    this.notify();
+  }
+
   setActiveTab(activeTab: 'dashboard' | 'trends' | 'consult') {
     this.state = { ...this.state, screen: 'dashboard', activeTab };
     this.notify();

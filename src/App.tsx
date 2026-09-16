@@ -128,7 +128,7 @@ export default function App() {
         const res = await fetch(`/api/users/${userId}`);
         if (res.ok) {
           const profile = await res.json();
-          store.getState().userData = {
+          store.setUserData({
             name: profile.name,
             age: profile.age,
             experience: profile.experience,
@@ -136,11 +136,16 @@ export default function App() {
             role: profile.role,
             doctor_id: profile.doctor_id,
             care_plan: profile.care_plan
-          };
-          const nextScreen = profile.role === 'doctor' ? 'doctor' : profile.role === 'admin' ? 'admin' : 'dashboard';
-          store.setScreen(nextScreen);
+          });
+          // email signups only have name/role, so patients still need to fill in onboarding
+          if (profile.role === 'patient' && !profile.age) {
+            store.setScreen('onboarding');
+          } else {
+            const nextScreen = profile.role === 'doctor' ? 'doctor' : profile.role === 'admin' ? 'admin' : 'dashboard';
+            store.setScreen(nextScreen);
+          }
         } else if (res.status === 404) {
-          store.getState().userData = null;
+          store.setUserData(null);
           store.setScreen('onboarding');
         }
       } catch (err) {

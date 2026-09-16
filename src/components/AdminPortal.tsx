@@ -97,8 +97,9 @@ export function AdminPortal() {
         body: JSON.stringify({ role: newRole })
       });
       if (res.ok) {
-        if (clerkId === userId && store.getState().userData) {
-          store.getState().userData!.role = newRole;
+        const currentUser = store.getState().userData;
+        if (clerkId === userId && currentUser) {
+          store.setUserData({ ...currentUser, role: newRole });
           store.setScreen(newRole === 'doctor' ? 'doctor' : newRole === 'admin' ? 'admin' : 'dashboard');
         }
         await fetchAdminData();
