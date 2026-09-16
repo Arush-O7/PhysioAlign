@@ -1,80 +1,87 @@
-# PhysioAlign - Physical Therapy & Yoga Evaluation App
+# PhysioAlign
 
-PhysioAlign is a browser-based application designed to help users track and improve their physical therapy and yoga movements. It uses real-time computer vision in the browser to measure joint angles and provides automated feedback to guide alignment adjustments.
+PhysioAlign turns a laptop webcam into a posture checker for yoga and physio exercises. You pick a pose, stand in front of the camera, and it tracks your joints live, tells you what to fix (on screen and out loud), and times how long you hold good form. After the session, Gemini writes up a short report on what went well and what to work on.
 
----
+There are three roles:
 
-## Key Features
+- **Patients** practise poses, log daily pain levels, see their progress charts and chat with one of three AI coaches.
+- **Doctors** see their patients' session history, export it as CSV, and assign a care plan (which poses, how long to hold, how often).
+- **Admins** manage accounts, change roles and assign patients to doctors.
 
-1. **Local Computer Vision**: Uses MediaPipe Pose Landmarker to run pose tracking entirely in the browser. This means no video or motion data is sent to a server, keeping it fast and private.
-2. **Angle Calculation**: Measures joint angles in 3D using vector math, comparing current positioning against target ranges for selected poses.
-3. **Structured AI Coaching**: Generates a detailed evaluation of joint alignment, giving specific tips for adjustment and safety precautions.
-4. **Clean Neobrutalist UI**: Built with a clean, high-contrast neobrutalist aesthetic featuring clear visual feedback, smooth transitions, and simple styling.
-5. **Interactive Progress Charts**: Visualizes practice sessions with real-time accuracy scoring over time using Recharts.
+## How it works
 
----
+Pose tracking runs fully in the browser with MediaPipe's Pose Landmarker (lite model, WASM + GPU). Video never leaves your machine; only the per-second scores and angles get saved.
 
-## Tech Stack
+For each frame the app takes the 2D landmark positions and works out the angle at each joint (knees, hips, elbows, shoulders, ankles) from the two neighbouring points. Each pose in [`src/data/poses.ts`](src/data/poses.ts) has a target range per joint. A frame starts at 100 and loses points for every joint that's outside its range. Tree Pose, Warrior I and Warrior II have their own checks so they work whichever leg is in front and whether your hands are overhead or in prayer position.
 
-- **Frontend**: React 18.3, TypeScript, Vite
-- **Styling**: Pure CSS (using custom neobrutalist styling rules)
-- **Computer Vision**: `@mediapipe/tasks-vision` (running Pose Landmarker via WebAssembly)
-- **AI Core**: `@google/generative-ai` (client-side generation for session debriefs)
-- **Charts**: `recharts` for tracking hold consistency
-- **State Management**: Lightweight state store using `useSyncExternalStore` for reactive UI updates without extra dependencies
+Once a second the current score is logged. Any second at 70 or above counts towards hold time. When you finish, the log goes to the backend, which asks Gemini for a critique and saves the whole session in Postgres.
 
----
+Supported poses: Tree, Warrior I, Warrior II, Downward Dog, Cobra, Chair, Plank, Bridge and Triangle.
 
-## Project Structure
+## Stack
 
-```
-PhysioAlign/
-├── package.json
-├── vite.config.ts
-├── tsconfig.json
-├── index.html
-├── src/
-│   ├── main.tsx
-│   ├── App.tsx
-│   ├── styles/
-│   │   └── global.css          # Neobrutalist theme definitions & utility classes
-│   ├── game/
-│   │   ├── store.ts            # Application router, logs, and local storage state
-│   │   └── types.ts            # TypeScript interfaces
-│   ├── data/
-│   │   └── poses.ts            # Target angles and criteria for each pose
-│   ├── utils/
-│   │   ├── angleCalculations.ts # 3D vector math for joint angles
-│   │   ├── audioFeedback.ts     # Audio tones and Speech Synthesis API integration
-│   │   └── geminiService.ts     # Client-side AI feedback generator
-│   └── components/
-│       ├── primitives.tsx      # Reusable UI primitives (buttons, layout cards, etc.)
-│       ├── AIEngine.tsx        # Camera loader, MediaPipe worker, and canvas rendering
-│       ├── SplashScreen.tsx    # Welcome screen
-│       ├── OnboardingScreen.tsx # Setup user profiles
-│       ├── HomeScreen.tsx      # Dashboard containing activity logs and streaks
-│       ├── PoseLibraryScreen.tsx# Pose selection list
-│       ├── SessionScreen.tsx   # Active camera calibration and real-time feedback meters
-│       └── DebriefScreen.tsx   # Visual breakdown of session metrics and AI critique
-```
+- React 18 + TypeScript, built with Vite
+- `@mediapipe/tasks-vision` for pose detection
+- Express backend with PostgreSQL (I use Supabase, but any Postgres works)
+- Google Gemini (`gemini-2.5-flash`, falls back to `-lite`) for reports and coach chat
+- Recharts for the graphs
+- Plain CSS, no UI framework. State lives in a small store built on `useSyncExternalStore`.
 
----
+## Running it locally
 
-## Setup & Running Locally
+You'll need Node 18+ and a Postgres database.
 
-### 1. Install Dependencies
 ```bash
+git clone https://github.com/Arush-O7/PhysioAlign.git
+cd PhysioAlign
 npm install
+cp .env.example .env   # then fill in the values
+npm run dev:full
 ```
 
-### 2. Add API Key
-Create a `.env` file in the root folder:
-```env
-VITE_GEMINI_API_KEY=your_api_key_here
-```
+`dev:full` starts Vite on http://localhost:5173 and the API on port 5001 (Vite proxies `/api` to it). The tables are created automatically the first time the server starts.
 
-### 3. Start Development Server
+### Environment variables
+
+| Variable | What it's for |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection string. SSL is turned on automatically unless the host is localhost. |
+| `VITE_GEMINI_API_KEY` | Gemini key from [AI Studio](https://aistudio.google.com/). Without it the app still works, but you get canned reports. |
+| `VITE_GOOGLE_CLIENT_ID` | OAuth client ID for "Sign in with Google". Email/password login works without it. |
+| `PORT` | Optional, defaults to 5001. |
+
+To check that the database connection works, run `npm run db:check`. It inserts a throwaway user and deletes it again.
+
+### Production build
+
 ```bash
-npm run dev
+npm run build
+npm start
 ```
-Open `http://localhost:5173` in your browser, allow camera access, and select a pose to begin.
+
+Express serves the built `dist/` folder along with the API, so it's a single process to deploy.
+
+## Project layout
+
+```
+backend/
+  server.js        API routes (auth, sessions, doctor + admin endpoints)
+  db.js            pg pool and schema setup
+  gemini.js        session critique prompt
+scripts/
+  check-db.js      quick database connectivity test
+src/
+  components/      screens (landing, session, debrief, doctor/admin portals...)
+  data/poses.ts    pose definitions and scoring
+  game/store.ts    app state and API calls
+  utils/           angle maths, audio cues, auth, Gemini client
+```
+
+## Known limitations
+
+This is a project, not a medical device, so don't use it in place of an actual physiotherapist.
+
+- There's no server-side session or token check yet. The API trusts the user ID the client sends, so the doctor and admin endpoints aren't protected. Don't deploy it anywhere public with real patient data until that's fixed.
+- Google sign-in decodes the ID token in the browser and doesn't verify it on the server.
+- The coach chat and doctor insight call Gemini from the browser, so `VITE_GEMINI_API_KEY` ends up in the JS bundle. Use a restricted key.
+- The angles come from a 2D projection, so it works best when you stand side-on or facing the camera, depending on the pose.
