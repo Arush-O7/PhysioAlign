@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const PRIMARY_MODEL = 'gemini-1.5-flash';
-const LITE_MODEL = 'gemini-1.5-flash';
+const PRIMARY_MODEL = 'gemini-2.5-flash';
+const LITE_MODEL = 'gemini-2.5-flash-lite';
 
 const getSystemInstruction = (userData) => {
   return `
