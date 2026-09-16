@@ -179,7 +179,9 @@ export function SessionScreen() {
       if (evaluation.severity !== 'success') {
         const errorCue = evaluation.corrections[0];
         if (errorCue) {
-          speakFeedback(errorCue.split(':')[1] || errorCue);
+          // "Label: Adjust slightly. Current: 95°, ideal: ..." -> "Adjust slightly."
+          const spoken = errorCue.slice(errorCue.indexOf(':') + 1).split(/\s*Current:/)[0].trim();
+          speakFeedback(spoken || errorCue);
           lastAudioFeedbackTimeRef.current = now;
         }
       } else {
