@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { generateDoctorInsight } from '../utils/geminiService';
 import { sanitizeHtml } from '../utils/sanitize';
+import { apiFetch } from '../utils/api';
 
 interface PatientRecord extends UserData {
   clerk_id: string;
@@ -62,7 +63,7 @@ export function DoctorPortal() {
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/doctor/patients');
+      const res = await apiFetch('/api/doctor/patients');
       if (res.ok) {
         const data = await res.json();
         setPatients(data);
@@ -85,7 +86,7 @@ export function DoctorPortal() {
     setAiReport('');
     try {
       setHistoryLoading(true);
-      const res = await fetch(`/api/doctor/patients/${patient.clerk_id}/history`);
+      const res = await apiFetch(`/api/doctor/patients/${patient.clerk_id}/history`);
       if (res.ok) {
         const data = await res.json();
         setPatientHistory(data);
@@ -105,7 +106,7 @@ export function DoctorPortal() {
     setGeneratingAi(true);
     setAiReport('');
     try {
-      const insight = await generateDoctorInsight(selectedPatient, patientHistory);
+      const insight = await generateDoctorInsight(selectedPatient);
       // gemini sometimes wraps the html in a code fence even when told not to
       setAiReport(sanitizeHtml(insight.replace(/^\s*```(?:html)?\s*|\s*```\s*$/g, '')));
     } catch (e) {
@@ -146,9 +147,8 @@ export function DoctorPortal() {
     if (!selectedPatient) return;
     try {
       setIsUpdatingCarePlan(true);
-      const res = await fetch(`/api/doctor/patients/${selectedPatient.clerk_id}/care-plan`, {
+      const res = await apiFetch(`/api/doctor/patients/${selectedPatient.clerk_id}/care-plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ carePlan: updatedPlan })
       });
       if (res.ok) {

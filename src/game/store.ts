@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { apiFetch } from '../utils/api';
 import { Screen, UserData, SessionData, Tweaks, HOLD_SCORE_THRESHOLD } from './types';
 
 interface PhysioState {
@@ -61,15 +62,13 @@ class PhysioStore {
     this.notify();
   }
 
-  async saveOnboarding(userData: UserData, clerkId: string, email: string) {
+  // returns an error message if the profile couldn't be saved
+  async saveOnboarding(userData: UserData): Promise<string | null> {
     try {
-      const res = await fetch('/api/users', {
+      const res = await apiFetch('/api/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          clerkId,
           name: userData.name,
-          email,
           age: userData.age,
           experience: userData.experience,
           goal: userData.goal,
@@ -77,53 +76,41 @@ class PhysioStore {
         }),
       });
 
-      const nextScreen = userData.role === 'doctor' ? 'doctor' : userData.role === 'admin' ? 'admin' : 'dashboard';
-
-      if (res.ok) {
-        const profile = await res.json();
-        this.state = {
-          ...this.state,
-          userData: {
-            name: profile.name,
-            age: profile.age,
-            experience: profile.experience,
-            goal: profile.goal,
-            role: profile.role,
-            doctor_id: profile.doctor_id,
-            care_plan: profile.care_plan
-          },
-          screen: profile.role === 'doctor' ? 'doctor' : profile.role === 'admin' ? 'admin' : 'dashboard',
-        };
-        this.notify();
-      } else {
-        console.warn('[PhysioStore] Backend profile save returned error, falling back to local state.');
-        this.state = {
-          ...this.state,
-          userData,
-          screen: nextScreen,
-        };
-        this.notify();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return data.error || 'Could not save your profile. Please try again.';
       }
-    } catch (err) {
-      console.error('[PhysioStore] Failed to save profile to backend, falling back to local state:', err);
-      const nextScreen = userData.role === 'doctor' ? 'doctor' : userData.role === 'admin' ? 'admin' : 'dashboard';
+
+      const profile = await res.json();
       this.state = {
         ...this.state,
-        userData,
-        screen: nextScreen,
+        userData: {
+          name: profile.name,
+          age: profile.age,
+          experience: profile.experience,
+          goal: profile.goal,
+          role: profile.role,
+          doctor_id: profile.doctor_id,
+          care_plan: profile.care_plan
+        },
+        screen: profile.role === 'doctor' ? 'doctor' : profile.role === 'admin' ? 'admin' : 'dashboard',
       };
       this.notify();
+      return null;
+    } catch (err) {
+      console.error('[PhysioStore] Failed to save profile to backend:', err);
+      return 'Could not reach the server. Please try again.';
     }
   }
 
   async resetOnboarding(clerkId: string) {
     try {
       // Reset user data and sessions
-      const res = await fetch(`/api/sessions/${clerkId}`);
+      const res = await apiFetch(`/api/sessions/${clerkId}`);
       if (res.ok) {
         const sessions = await res.json();
         for (const s of sessions) {
-          await fetch(`/api/sessions/${s.id}`, { method: 'DELETE' });
+          await apiFetch(`/api/sessions/${s.id}`, { method: 'DELETE' });
         }
       }
       
@@ -198,7 +185,7 @@ class PhysioStore {
     this.notify();
   }
 
-  async completeActiveSession(clerkId: string) {
+  async completeActiveSession() {
     const session = this.state.activeSession;
     if (!session) return;
 
@@ -214,12 +201,10 @@ class PhysioStore {
     this.notify();
 
     try {
-      const res = await fetch('/api/sessions', {
+      const res = await apiFetch('/api/sessions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: session.id,
-          clerkId,
           poseId: session.poseId,
           poseName: session.poseName,
           date: session.date,
@@ -265,7 +250,7 @@ class PhysioStore {
 
   async syncHistory(clerkId: string) {
     try {
-      const res = await fetch(`/api/sessions/${clerkId}`);
+      const res = await apiFetch(`/api/sessions/${clerkId}`);
       if (res.ok) {
         const history = await res.json();
         this.state = {
@@ -281,7 +266,7 @@ class PhysioStore {
 
   async deleteSession(sessionId: string, clerkId: string) {
     try {
-      const res = await fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
       if (res.ok) {
         await this.syncHistory(clerkId);
       }

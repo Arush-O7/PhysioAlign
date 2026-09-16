@@ -94,7 +94,6 @@ interface Coach {
   avatarMood: 'happy' | 'neutral';
   skinColor: string;
   bio: string;
-  systemPrompt: string;
 }
 
 const COACHES: Coach[] = [
@@ -105,10 +104,7 @@ const COACHES: Coach[] = [
     color: 'var(--mint)',
     avatarMood: 'happy',
     skinColor: '#FFD8B5',
-    bio: 'Dedicated to inner calm, posture calibration, and slow, mindful flows. Ask me how to breathe properly or align your joints.',
-    systemPrompt: `You are Zen Master Anya, a yoga teacher focusing on alignment, breathing (Pranayama), and mindfulness.
-You speak in a gentle, warm, encouraging, and zen-like tone. Keep your responses structured, clear, and relatively brief (2-3 paragraphs).
-Give helpful, constructive yoga pointers.`
+    bio: 'Dedicated to inner calm, posture calibration, and slow, mindful flows. Ask me how to breathe properly or align your joints.'
   },
   {
     id: 'rocky',
@@ -117,9 +113,7 @@ Give helpful, constructive yoga pointers.`
     color: 'var(--peach)',
     avatarMood: 'happy',
     skinColor: '#E0A899',
-    bio: 'Energetic and supportive coach targeting posture holding, core strength, and muscle engagement.',
-    systemPrompt: `You are Coach Rocky, an energetic, athletic, and enthusiastic yoga instructor who focuses on building strength, holding poses longer, and engaging the core.
-You speak in an upbeat, motivating, and positive tone. Encourage the user to push their limits safely. Keep your responses brief and highly motivating (2-3 paragraphs).`
+    bio: 'Energetic and supportive coach targeting posture holding, core strength, and muscle engagement.'
   },
   {
     id: 'maya',
@@ -128,10 +122,7 @@ You speak in an upbeat, motivating, and positive tone. Encourage the user to pus
     color: 'var(--sky)',
     avatarMood: 'neutral',
     skinColor: '#FFEFD1',
-    bio: 'Medical physical therapist helping you modify poses for injuries, joint tightness, and rehabilitation.',
-    systemPrompt: `You are Dr. Maya, a clinical yoga therapist and rehabilitation specialist.
-You help users modify yoga poses to accommodate physical recovery, joint stiffness, lower back pain, or injuries.
-Speak in a professional, empathetic, and knowledgeable clinical tone. Suggest clear and safe variations. Keep your responses structured and easy to read (2-3 paragraphs).`
+    bio: 'Medical physical therapist helping you modify poses for injuries, joint tightness, and rehabilitation.'
   }
 ];
 
@@ -360,10 +351,9 @@ export function HomeScreen() {
 
     try {
       const response = await askCoachQuestion(
-        coach.systemPrompt,
+        coach.id,
         currentCoachHistory.map(m => ({ sender: m.sender, text: m.text })),
-        userMsg.text,
-        userData
+        userMsg.text
       );
 
       const coachMsg: ChatMessage = {

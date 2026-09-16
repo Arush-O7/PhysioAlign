@@ -38,7 +38,9 @@ export function OnboardingScreen() {
     }
   }, [user, existingUser]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
 
@@ -57,15 +59,16 @@ export function OnboardingScreen() {
     }
 
     setError('');
-    const email = user?.primaryEmailAddress?.emailAddress || '';
-
-    store.saveOnboarding({
+    setIsSaving(true);
+    const saveError = await store.saveOnboarding({
       name: name.trim(),
       age: ageNum,
       experience,
       goal,
       role
-    }, userId, email);
+    });
+    setIsSaving(false);
+    if (saveError) setError(saveError);
   };
 
   const handleBack = () => {
@@ -276,6 +279,7 @@ export function OnboardingScreen() {
             </button>
             <button
               type="submit"
+              disabled={isSaving}
               className="btn-plush primary"
               style={{ flex: 1, padding: '12px', fontSize: 16 }}
             >

@@ -218,7 +218,7 @@ export function SessionScreen() {
     speakFeedback('Saving posture metrics. Preparing report.');
 
     try {
-      await store.completeActiveSession(userId);
+      await store.completeActiveSession();
     } catch (e) {
       console.error('[SessionScreen] Failed to complete session:', e);
     } finally {

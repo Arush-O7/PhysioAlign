@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../utils/auth';
+import { apiFetch } from '../utils/api';
 import { store, useUserData } from '../game/store';
 import { TopBar, Doodle } from './primitives';
 import { 
@@ -57,8 +58,8 @@ export function AdminPortal() {
     try {
       setLoading(true);
       const [statsRes, usersRes] = await Promise.all([
-        fetch('/api/admin/stats'),
-        fetch('/api/admin/users')
+        apiFetch('/api/admin/stats'),
+        apiFetch('/api/admin/users')
       ]);
       
       if (statsRes.ok && usersRes.ok) {
@@ -78,7 +79,7 @@ export function AdminPortal() {
     fetchAdminData();
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('/api/admin/stats');
+        const res = await apiFetch('/api/admin/stats');
         if (res.ok) {
           const statsData = await res.json();
           setStats(statsData);
@@ -91,9 +92,8 @@ export function AdminPortal() {
   const handleChangeRole = async (clerkId: string, newRole: 'patient' | 'doctor' | 'admin') => {
     try {
       setUpdatingId(clerkId);
-      const res = await fetch(`/api/admin/users/${clerkId}/role`, {
+      const res = await apiFetch(`/api/admin/users/${clerkId}/role`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole })
       });
       if (res.ok) {
@@ -117,9 +117,8 @@ export function AdminPortal() {
   const handleAssignDoctor = async (patientClerkId: string, doctorClerkId: string) => {
     try {
       setUpdatingId(patientClerkId);
-      const res = await fetch(`/api/admin/users/${patientClerkId}/doctor`, {
+      const res = await apiFetch(`/api/admin/users/${patientClerkId}/doctor`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ doctorId: doctorClerkId || null })
       });
       if (res.ok) {
@@ -146,7 +145,7 @@ export function AdminPortal() {
     
     try {
       setUpdatingId(clerkId);
-      const res = await fetch(`/api/admin/users/${clerkId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/admin/users/${clerkId}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchAdminData();
       } else {

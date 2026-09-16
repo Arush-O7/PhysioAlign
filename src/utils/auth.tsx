@@ -1,19 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 
-// Decodes a JWT token returned by Google Identity Services
-export const decodeJwt = (token: string) => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    return null;
-  }
-};
-
 // Global authentication state listeners
 let listeners: Array<() => void> = [];
 const subscribe = (listener: () => void) => {
@@ -30,7 +16,9 @@ const notify = () => {
 export const getSavedUser = () => {
   try {
     const saved = localStorage.getItem('physioalign:google_user');
-    return saved ? JSON.parse(saved) : null;
+    const user = saved ? JSON.parse(saved) : null;
+    // sessions saved before tokens existed can't talk to the api anymore
+    return user?.token ? user : null;
   } catch {
     return null;
   }
@@ -47,49 +35,47 @@ export const setSavedUser = (user: any) => {
   notify();
 };
 
-export const signInWithEmailPassword = async (email: string, password: string) => {
-  const response = await fetch('/api/auth/login', {
+type AuthResponse = {
+  user: { clerk_id?: string; id?: string; name: string; email: string; picture?: string };
+  token: string;
+};
+
+const saveAuthResponse = (data: AuthResponse) => {
+  const { user, token } = data;
+  setSavedUser({
+    id: user.clerk_id || user.id,
+    name: user.name,
+    email: user.email,
+    picture: user.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.name)}`,
+    token,
+  });
+};
+
+const postAuth = async (url: string, body: object, fallbackError: string) => {
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify(body)
   });
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to sign in');
+    throw new Error(data.error || fallbackError);
   }
 
-  setSavedUser({
-    id: data.clerk_id,
-    name: data.name,
-    email: data.email,
-    picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.name)}`
-  });
-
-  return data;
+  saveAuthResponse(data);
+  return data.user;
 };
 
-export const signUpWithEmailPassword = async (name: string, email: string, password: string, role: string) => {
-  const response = await fetch('/api/auth/signup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password, role })
-  });
+export const signInWithEmailPassword = (email: string, password: string) =>
+  postAuth('/api/auth/login', { email, password }, 'Failed to sign in');
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to sign up');
-  }
+export const signUpWithEmailPassword = (name: string, email: string, password: string, role: string) =>
+  postAuth('/api/auth/signup', { name, email, password, role }, 'Failed to sign up');
 
-  setSavedUser({
-    id: data.clerk_id,
-    name: data.name,
-    email: data.email,
-    picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.name)}`
-  });
-
-  return data;
-};
+// the credential is checked by the backend, we don't trust the decoded token here
+export const signInWithGoogle = (credential: string) =>
+  postAuth('/api/auth/google', { credential }, 'Google sign-in failed');
 
 export function useAuth() {
   const [user, setUser] = useState(getSavedUser);

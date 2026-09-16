@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useAuth, setSavedUser, decodeJwt, signInWithEmailPassword, signUpWithEmailPassword } from './utils/auth';
+import { useAuth, signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle } from './utils/auth';
+import { apiFetch } from './utils/api';
 import { store, useScreen } from './game/store';
 import { SplashScreen } from './components/SplashScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
@@ -60,15 +61,12 @@ export default function App() {
         const client_id = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '303655418647-jmkugqbao9oc38na1qigl309qsa7gg96.apps.googleusercontent.com';
         (window as any).google.accounts.id.initialize({
           client_id,
-          callback: (response: any) => {
-            const payload = decodeJwt(response.credential);
-            if (payload) {
-              setSavedUser({
-                id: payload.sub,
-                name: payload.name,
-                email: payload.email,
-                picture: payload.picture
-              });
+          callback: async (response: any) => {
+            setFormError('');
+            try {
+              await signInWithGoogle(response.credential);
+            } catch (err: any) {
+              setFormError(err.message || 'Google sign-in failed');
             }
           }
         });
@@ -125,7 +123,7 @@ export default function App() {
     const syncUser = async () => {
       setIsSyncing(true);
       try {
-        const res = await fetch(`/api/users/${userId}`);
+        const res = await apiFetch(`/api/users/${userId}`);
         if (res.ok) {
           const profile = await res.json();
           store.setUserData({
