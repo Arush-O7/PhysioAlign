@@ -26,6 +26,7 @@ import {
   CartesianGrid 
 } from 'recharts';
 import { generateDoctorInsight } from '../utils/geminiService';
+import { sanitizeHtml } from '../utils/sanitize';
 
 interface PatientRecord extends UserData {
   clerk_id: string;
@@ -105,7 +106,8 @@ export function DoctorPortal() {
     setAiReport('');
     try {
       const insight = await generateDoctorInsight(selectedPatient, patientHistory);
-      setAiReport(insight);
+      // gemini sometimes wraps the html in a code fence even when told not to
+      setAiReport(sanitizeHtml(insight.replace(/^\s*```(?:html)?\s*|\s*```\s*$/g, '')));
     } catch (e) {
       console.error(e);
       setAiReport('<p>Error generating report. Please check API Key and try again.</p>');

@@ -2,6 +2,7 @@ import { store, useActiveSession, useUserData } from '../game/store';
 import { TopBar, Doodle } from './primitives';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from 'recharts';
 import { Activity, Clock, ArrowRight } from 'lucide-react';
+import { escapeHtml } from '../utils/sanitize';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
 
 export function DebriefScreen() {
@@ -146,7 +147,7 @@ export function DebriefScreen() {
             <div className="ai-critique-content" dangerouslySetInnerHTML={{
               __html: activeSession.aiCritique 
                 // Convert simple markdown elements returned from Gemini into HTML tags:
-                ? activeSession.aiCritique
+                ? escapeHtml(activeSession.aiCritique)
                     .replace(/### (.*)/g, '<h3 style="font-size: 18px; font-weight: 800; color: var(--ink); margin: 18px 0 8px; border-bottom: 2px dashed var(--line); padding-bottom: 4px;">$1</h3>')
                     .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--ink); font-weight: 800;">$1</strong>')
                     .replace(/\*(.*?)\*/g, '<em style="color: var(--ink-soft); font-style: italic;">$1</em>')
