@@ -8,8 +8,10 @@
     "dev:backend": "node backend/server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
     "start": "node backend/server.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:check": "node scripts/check-db.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
