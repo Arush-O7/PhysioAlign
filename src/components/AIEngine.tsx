@@ -136,7 +136,14 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
             }));
 
             // Calculate joint angles
-            const angles = calculateAngles(keypoints);
+            const world = results.worldLandmarks?.[0];
+            const worldKeypoints: Keypoint[] | undefined = world?.map((landmark: any) => ({
+              x: landmark.x,
+              y: landmark.y,
+              z: landmark.z,
+              visibility: landmark.visibility || 0,
+            }));
+            const angles = calculateAngles(keypoints, worldKeypoints);
 
             if (angles) {
               onPoseDetected({ keypoints, angles });

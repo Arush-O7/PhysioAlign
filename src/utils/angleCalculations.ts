@@ -30,115 +30,54 @@ export const POSE_LANDMARKS = {
 };
 
 /**
- * Calculate the angle between three points (p1, p2, p3)
- * where p2 is the vertex (e.g. elbow vertex between shoulder and wrist)
- * 
- * In vector geometry, the angle θ between vector V1 (p1 - p2) and vector V2 (p3 - p2) is:
- * cos(θ) = (V1 · V2) / (||V1|| * ||V2||)
- * θ = arccos( (V1 · V2) / (||V1|| * ||V2||) )
+ * Angle at p2 between p1 and p3: acos((V1 · V2) / (|V1| |V2|)).
+ * With world landmarks this is a real 3D joint angle, so it doesn't change
+ * depending on which way you face the camera.
  */
-export const getAngle = (p1: Keypoint, p2: Keypoint, p3: Keypoint): number => {
-  // Vector 1 from vertex p2 to p1 (2D projection)
-  const vector1 = {
-    x: p1.x - p2.x,
-    y: p1.y - p2.y,
-  };
+export const getAngle = (p1: Keypoint, p2: Keypoint, p3: Keypoint, use3d = false): number => {
+  const v1 = { x: p1.x - p2.x, y: p1.y - p2.y, z: use3d ? p1.z - p2.z : 0 };
+  const v2 = { x: p3.x - p2.x, y: p3.y - p2.y, z: use3d ? p3.z - p2.z : 0 };
 
-  // Vector 2 from vertex p2 to p3 (2D projection)
-  const vector2 = {
-    x: p3.x - p2.x,
-    y: p3.y - p2.y,
-  };
+  const dotProduct = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+  const magnitude1 = Math.hypot(v1.x, v1.y, v1.z);
+  const magnitude2 = Math.hypot(v2.x, v2.y, v2.z);
 
-  // Dot product of vector1 and vector2 in 2D
-  const dotProduct = vector1.x * vector2.x + vector1.y * vector2.y;
-
-  // Magnitudes of vector1 and vector2 in 2D
-  const magnitude1 = Math.sqrt(vector1.x ** 2 + vector1.y ** 2);
-  const magnitude2 = Math.sqrt(vector2.x ** 2 + vector2.y ** 2);
-
-  // Avoid division by zero
   if (magnitude1 * magnitude2 === 0) return 0;
 
-  // Calculate angle in radians
-  const angleRad = Math.acos(dotProduct / (magnitude1 * magnitude2));
+  // clamp, rounding can push the ratio just past ±1 and acos returns NaN
+  const cos = Math.min(1, Math.max(-1, dotProduct / (magnitude1 * magnitude2)));
+  return Math.round((Math.acos(cos) * 180) / Math.PI);
+};
 
-  // Convert to degrees
-  const angleDeg = (angleRad * 180) / Math.PI;
+const L = POSE_LANDMARKS;
 
-  return Math.round(angleDeg);
+// [first point, vertex, last point] for each joint
+const JOINTS: Record<string, [number, number, number]> = {
+  leftKnee: [L.LEFT_HIP, L.LEFT_KNEE, L.LEFT_ANKLE],
+  rightKnee: [L.RIGHT_HIP, L.RIGHT_KNEE, L.RIGHT_ANKLE],
+  leftHip: [L.LEFT_SHOULDER, L.LEFT_HIP, L.LEFT_KNEE],
+  rightHip: [L.RIGHT_SHOULDER, L.RIGHT_HIP, L.RIGHT_KNEE],
+  leftElbow: [L.LEFT_SHOULDER, L.LEFT_ELBOW, L.LEFT_WRIST],
+  rightElbow: [L.RIGHT_SHOULDER, L.RIGHT_ELBOW, L.RIGHT_WRIST],
+  leftShoulder: [L.LEFT_ELBOW, L.LEFT_SHOULDER, L.LEFT_HIP],
+  rightShoulder: [L.RIGHT_ELBOW, L.RIGHT_SHOULDER, L.RIGHT_HIP],
+  leftAnkle: [L.LEFT_KNEE, L.LEFT_ANKLE, L.LEFT_FOOT_INDEX],
+  rightAnkle: [L.RIGHT_KNEE, L.RIGHT_ANKLE, L.RIGHT_FOOT_INDEX],
 };
 
 /**
- * Calculate all relevant joint angles based on body coordinates
+ * Joint angles for the whole body. Pass MediaPipe's world landmarks (metres,
+ * hip-centred) to get 3D angles. The normalised image landmarks are only a 2D
+ * fallback, and they're skewed by the camera's aspect ratio.
  */
-export const calculateAngles = (keypoints: Keypoint[]): Record<string, number> | null => {
-  if (!keypoints || keypoints.length < 33) return null;
+export const calculateAngles = (keypoints: Keypoint[], worldKeypoints?: Keypoint[]): Record<string, number> | null => {
+  const use3d = !!worldKeypoints && worldKeypoints.length >= 33;
+  const points = use3d ? worldKeypoints! : keypoints;
+  if (!points || points.length < 33) return null;
 
-  try {
-    return {
-      // Knee: Hip -> Knee -> Ankle
-      leftKnee: getAngle(
-        keypoints[POSE_LANDMARKS.LEFT_HIP],
-        keypoints[POSE_LANDMARKS.LEFT_KNEE],
-        keypoints[POSE_LANDMARKS.LEFT_ANKLE]
-      ),
-      rightKnee: getAngle(
-        keypoints[POSE_LANDMARKS.RIGHT_HIP],
-        keypoints[POSE_LANDMARKS.RIGHT_KNEE],
-        keypoints[POSE_LANDMARKS.RIGHT_ANKLE]
-      ),
-
-      // Hip: Shoulder -> Hip -> Knee
-      leftHip: getAngle(
-        keypoints[POSE_LANDMARKS.LEFT_SHOULDER],
-        keypoints[POSE_LANDMARKS.LEFT_HIP],
-        keypoints[POSE_LANDMARKS.LEFT_KNEE]
-      ),
-      rightHip: getAngle(
-        keypoints[POSE_LANDMARKS.RIGHT_SHOULDER],
-        keypoints[POSE_LANDMARKS.RIGHT_HIP],
-        keypoints[POSE_LANDMARKS.RIGHT_KNEE]
-      ),
-
-      // Elbow: Shoulder -> Elbow -> Wrist
-      leftElbow: getAngle(
-        keypoints[POSE_LANDMARKS.LEFT_SHOULDER],
-        keypoints[POSE_LANDMARKS.LEFT_ELBOW],
-        keypoints[POSE_LANDMARKS.LEFT_WRIST]
-      ),
-      rightElbow: getAngle(
-        keypoints[POSE_LANDMARKS.RIGHT_SHOULDER],
-        keypoints[POSE_LANDMARKS.RIGHT_ELBOW],
-        keypoints[POSE_LANDMARKS.RIGHT_WRIST]
-      ),
-
-      // Shoulder: Elbow -> Shoulder -> Hip
-      leftShoulder: getAngle(
-        keypoints[POSE_LANDMARKS.LEFT_ELBOW],
-        keypoints[POSE_LANDMARKS.LEFT_SHOULDER],
-        keypoints[POSE_LANDMARKS.LEFT_HIP]
-      ),
-      rightShoulder: getAngle(
-        keypoints[POSE_LANDMARKS.RIGHT_ELBOW],
-        keypoints[POSE_LANDMARKS.RIGHT_SHOULDER],
-        keypoints[POSE_LANDMARKS.RIGHT_HIP]
-      ),
-
-      // Ankle: Knee -> Ankle -> Foot Index
-      leftAnkle: getAngle(
-        keypoints[POSE_LANDMARKS.LEFT_KNEE],
-        keypoints[POSE_LANDMARKS.LEFT_ANKLE],
-        keypoints[POSE_LANDMARKS.LEFT_FOOT_INDEX]
-      ),
-      rightAnkle: getAngle(
-        keypoints[POSE_LANDMARKS.RIGHT_KNEE],
-        keypoints[POSE_LANDMARKS.RIGHT_ANKLE],
-        keypoints[POSE_LANDMARKS.RIGHT_FOOT_INDEX]
-      ),
-    };
-  } catch (error) {
-    console.error('[angleCalculations] Error in angle mapping:', error);
-    return null;
+  const angles: Record<string, number> = {};
+  for (const [joint, [a, b, c]] of Object.entries(JOINTS)) {
+    angles[joint] = getAngle(points[a], points[b], points[c], use3d);
   }
+  return angles;
 };
