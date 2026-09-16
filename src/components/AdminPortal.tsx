@@ -33,6 +33,7 @@ interface UserRow {
   goal: string;
   role: 'patient' | 'doctor' | 'admin';
   doctor_id?: string | null;
+  approved?: boolean;
 }
 
 export function AdminPortal() {
@@ -109,6 +110,23 @@ export function AdminPortal() {
     } catch (e) {
       console.error(e);
       alert('Role change error');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleApproveDoctor = async (clerkId: string) => {
+    try {
+      setUpdatingId(clerkId);
+      const res = await apiFetch(`/api/admin/users/${clerkId}/approve`, { method: 'POST' });
+      if (res.ok) {
+        await fetchAdminData();
+      } else {
+        alert('Failed to approve doctor');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error approving doctor');
     } finally {
       setUpdatingId(null);
     }
@@ -366,6 +384,27 @@ export function AdminPortal() {
                           <option value="doctor">Doctor</option>
                           <option value="admin">Admin</option>
                         </select>
+                        {u.role === 'doctor' && u.approved === false && (
+                          <button
+                            onClick={() => handleApproveDoctor(u.clerk_id)}
+                            disabled={updatingId === u.clerk_id}
+                            className="tap"
+                            style={{
+                              marginLeft: 8,
+                              padding: '6px 10px',
+                              border: '2px solid var(--line)',
+                              borderRadius: 'var(--r-sm)',
+                              background: 'var(--butter)',
+                              fontFamily: 'inherit',
+                              fontWeight: 900,
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              boxShadow: '2px 2px 0 var(--line)'
+                            }}
+                          >
+                            Approve
+                          </button>
+                        )}
                       </td>
 
                       <td style={{ padding: '14px 8px' }}>
@@ -387,7 +426,7 @@ export function AdminPortal() {
                             }}
                           >
                             <option value="">No Doctor Assigned</option>
-                            {users.filter(usr => usr.role === 'doctor').map(doc => (
+                            {users.filter(usr => usr.role === 'doctor' && usr.approved !== false).map(doc => (
                               <option key={doc.clerk_id} value={doc.clerk_id}>Dr. {doc.name}</option>
                             ))}
                           </select>

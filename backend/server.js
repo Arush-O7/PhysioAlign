@@ -12,7 +12,8 @@ import {
   canSelfAssignAdmin,
   requireAuth,
   requireRole,
-  isStaff,
+  canViewPatient,
+  rateLimit,
 } from './auth.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -24,6 +25,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// render puts the app behind a proxy, needed so req.ip is the real client ip
+app.set('trust proxy', 1);
+
 // the frontend is served from the same origin in production, so only
 // open up cors when an origin is configured explicitly
 if (process.env.CORS_ORIGIN) {
@@ -33,6 +37,12 @@ if (process.env.CORS_ORIGIN) {
 app.use(express.json({ limit: '5mb' }));
 
 const ROLES = ['patient', 'doctor', 'admin'];
+
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true });
+});
+
+app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 20 }));
 
 function stripSecrets(user) {
   if (!user) return user;
@@ -102,13 +112,13 @@ app.post('/api/auth/signup', async (req, res) => {
     const customId = `usr_${crypto.randomBytes(8).toString('hex')}`;
 
     await dbRun(
-      'INSERT INTO users (clerk_id, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)',
-      [customId, name, emailLower, hashPassword(password), roleCheck.role]
+      'INSERT INTO users (clerk_id, name, email, password_hash, role, approved) VALUES (?, ?, ?, ?, ?, ?)',
+      [customId, name, emailLower, hashPassword(password), roleCheck.role, roleCheck.role !== 'doctor']
     );
 
     console.log(`[PhysioAlign Backend] Custom email account created: ${customId} (${roleCheck.role})`);
 
-    const newUser = await dbGet('SELECT clerk_id, name, email, role FROM users WHERE clerk_id = ?', [customId]);
+    const newUser = await dbGet('SELECT clerk_id, name, email, role, approved FROM users WHERE clerk_id = ?', [customId]);
     res.json({ user: newUser, token: createToken(customId) });
   } catch (error) {
     console.error('Signup failed:', error);
@@ -170,11 +180,11 @@ app.use('/api', requireAuth);
 // Fetch user profile
 app.get('/api/users/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
-  if (clerkId !== req.auth.id && !isStaff(req.auth)) {
-    return res.status(403).json({ error: 'Not allowed' });
-  }
 
   try {
+    if (!(await canViewPatient(req.auth, clerkId))) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
     const user = await dbGet('SELECT * FROM users WHERE clerk_id = ?', [clerkId]);
     if (user) {
       res.json(stripSecrets(user));
@@ -211,8 +221,8 @@ app.post('/api/users', async (req, res) => {
         return res.status(403).json({ error: roleCheck.error });
       }
       await dbRun(
-        'INSERT INTO users (clerk_id, name, email, age, experience, goal, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [clerkId, name, email, age, experience, goal, roleCheck.role]
+        'INSERT INTO users (clerk_id, name, email, age, experience, goal, role, approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [clerkId, name, email, age, experience, goal, roleCheck.role, roleCheck.role !== 'doctor']
       );
       console.log(`[PhysioAlign Backend] Profile created for user: ${clerkId} (${roleCheck.role})`);
     }
@@ -290,11 +300,11 @@ app.post('/api/sessions', async (req, res) => {
 // Fetch user sessions
 app.get('/api/sessions/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
-  if (clerkId !== req.auth.id && !isStaff(req.auth)) {
-    return res.status(403).json({ error: 'Not allowed' });
-  }
 
   try {
+    if (!(await canViewPatient(req.auth, clerkId))) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
     const rows = await dbAll('SELECT * FROM sessions WHERE clerk_id = ? ORDER BY date DESC', [clerkId]);
     res.json(rows.map(toSession));
   } catch (error) {
@@ -308,7 +318,7 @@ app.get('/api/sessions/detail/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const row = await dbGet('SELECT * FROM sessions WHERE id = ?', [id]);
-    if (!row || (row.clerk_id !== req.auth.id && !isStaff(req.auth))) {
+    if (!row || !(await canViewPatient(req.auth, row.clerk_id))) {
       return res.status(404).json({ error: 'Session log entry not found' });
     }
     res.json(toSession(row));
@@ -364,7 +374,21 @@ app.post('/api/coach/chat', async (req, res) => {
 // Doctor Portal APIs
 app.use('/api/doctor', requireRole('doctor', 'admin'));
 
+// every /patients/:clerkId route is limited to the doctor's own patients
+app.use('/api/doctor/patients/:clerkId', async (req, res, next) => {
+  try {
+    if (!(await canViewPatient(req.auth, req.params.clerkId))) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    next();
+  } catch (error) {
+    console.error('Patient access check failed:', error);
+    res.status(500).json({ error: 'Failed to check access' });
+  }
+});
+
 app.get('/api/doctor/patients', async (req, res) => {
+  const onlyMine = req.auth.role === 'doctor';
   try {
     const patients = await dbAll(`
       SELECT
@@ -373,10 +397,10 @@ app.get('/api/doctor/patients', async (req, res) => {
         AVG(s.average_score) as avgScore
       FROM users u
       LEFT JOIN sessions s ON u.clerk_id = s.clerk_id
-      WHERE u.role = 'patient'
+      WHERE u.role = 'patient' ${onlyMine ? 'AND u.doctor_id = ?' : ''}
       GROUP BY u.clerk_id, u.name, u.email, u.age, u.experience, u.goal, u.role, u.doctor_id, u.care_plan
       ORDER BY u.name ASC
-    `);
+    `, onlyMine ? [req.auth.id] : []);
 
     const formatted = patients.map(p => ({
       ...p,
@@ -491,7 +515,8 @@ app.post('/api/admin/users/:clerkId/role', async (req, res) => {
   }
 
   try {
-    const result = await dbRun('UPDATE users SET role = ? WHERE clerk_id = ?', [role, clerkId]);
+    // an admin picking the role counts as approving it
+    const result = await dbRun('UPDATE users SET role = ?, approved = TRUE WHERE clerk_id = ?', [role, clerkId]);
     if (result.changes > 0) {
       console.log(`[PhysioAlign Backend] Admin updated role for user: ${clerkId} -> ${role}`);
       res.json({ success: true, role });
@@ -504,11 +529,33 @@ app.post('/api/admin/users/:clerkId/role', async (req, res) => {
   }
 });
 
+// Approve a doctor account
+app.post('/api/admin/users/:clerkId/approve', async (req, res) => {
+  const { clerkId } = req.params;
+  try {
+    const result = await dbRun("UPDATE users SET approved = TRUE WHERE clerk_id = ? AND role = 'doctor'", [clerkId]);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Doctor not found' });
+    }
+    console.log(`[PhysioAlign Backend] Admin approved doctor: ${clerkId}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Approve doctor failed:', error);
+    res.status(500).json({ error: 'Failed to approve doctor' });
+  }
+});
+
 // Assign doctor to patient
 app.post('/api/admin/users/:clerkId/doctor', async (req, res) => {
   const { clerkId } = req.params;
   const { doctorId } = req.body;
   try {
+    if (doctorId) {
+      const doctor = await dbGet("SELECT 1 FROM users WHERE clerk_id = ? AND role = 'doctor' AND approved", [doctorId]);
+      if (!doctor) {
+        return res.status(400).json({ error: 'Pick an approved doctor' });
+      }
+    }
     await dbRun('UPDATE users SET doctor_id = ? WHERE clerk_id = ?', [doctorId || null, clerkId]);
     console.log(`[PhysioAlign Backend] Admin assigned doctor: ${doctorId} to patient: ${clerkId}`);
     res.json({ success: true, doctorId });

@@ -69,7 +69,8 @@ export const initDB = async () => {
     `);
     
     // older databases were created before these columns existed
-    for (const column of ["role TEXT DEFAULT 'patient'", 'doctor_id TEXT', 'care_plan TEXT', 'password_hash TEXT']) {
+    // approved defaults to true so doctors that existed before approvals keep access
+    for (const column of ["role TEXT DEFAULT 'patient'", 'doctor_id TEXT', 'care_plan TEXT', 'password_hash TEXT', 'approved BOOLEAN NOT NULL DEFAULT TRUE']) {
       await dbRun(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${column}`);
     }
 

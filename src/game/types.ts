@@ -1,4 +1,4 @@
-export type Screen = 'landing' | 'splash' | 'onboarding' | 'dashboard' | 'library' | 'session' | 'debrief' | 'doctor' | 'admin';
+export type Screen = 'landing' | 'splash' | 'onboarding' | 'dashboard' | 'library' | 'session' | 'debrief' | 'doctor' | 'admin' | 'pending';
 
 // a second only counts towards hold time when the score is at or above this
 export const HOLD_SCORE_THRESHOLD = 70;
@@ -8,9 +8,10 @@ export interface UserData {
   age: number;
   experience: 'beginner' | 'intermediate' | 'advanced';
   goal: 'flexibility' | 'strength' | 'balance' | 'rehabilitation';
-  role: 'patient' | 'doctor' | 'admin';
+  role: 'patient' | 'doctor' | 'admin' | 'pending';
   doctor_id?: string | null;
   care_plan?: string | null;
+  approved?: boolean;
 }
 
 export type JointName =

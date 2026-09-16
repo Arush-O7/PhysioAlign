@@ -2,6 +2,26 @@ import { useSyncExternalStore } from 'react';
 import { apiFetch } from '../utils/api';
 import { Screen, UserData, SessionData, Tweaks, HOLD_SCORE_THRESHOLD } from './types';
 
+export function profileFromApi(profile: any): UserData {
+  return {
+    name: profile.name,
+    age: profile.age,
+    experience: profile.experience,
+    goal: profile.goal,
+    role: profile.role,
+    doctor_id: profile.doctor_id,
+    care_plan: profile.care_plan,
+    approved: profile.approved !== false,
+  };
+}
+
+export function screenForProfile(profile: UserData): Screen {
+  if (profile.role === 'admin') return 'admin';
+  if (profile.role === 'doctor') return profile.approved === false ? 'pending' : 'doctor';
+  // email signups only have name/role, so patients still need to fill in onboarding
+  return profile.age ? 'dashboard' : 'onboarding';
+}
+
 interface PhysioState {
   screen: Screen;
   activeTab: 'dashboard' | 'trends' | 'consult';
@@ -81,19 +101,11 @@ class PhysioStore {
         return data.error || 'Could not save your profile. Please try again.';
       }
 
-      const profile = await res.json();
+      const profile = profileFromApi(await res.json());
       this.state = {
         ...this.state,
-        userData: {
-          name: profile.name,
-          age: profile.age,
-          experience: profile.experience,
-          goal: profile.goal,
-          role: profile.role,
-          doctor_id: profile.doctor_id,
-          care_plan: profile.care_plan
-        },
-        screen: profile.role === 'doctor' ? 'doctor' : profile.role === 'admin' ? 'admin' : 'dashboard',
+        userData: profile,
+        screen: screenForProfile(profile),
       };
       this.notify();
       return null;

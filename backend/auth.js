@@ -122,12 +122,14 @@ export async function requireAuth(req, res, next) {
 
   try {
     // role is read fresh each time so admin changes apply straight away
-    const user = await dbGet('SELECT clerk_id, name, email, role FROM users WHERE clerk_id = ?', [data.sub]);
+    const user = await dbGet('SELECT clerk_id, name, email, role, approved FROM users WHERE clerk_id = ?', [data.sub]);
+    // doctors waiting for approval get no staff access
+    const role = user?.role === 'doctor' && !user.approved ? 'pending_doctor' : user?.role || null;
     req.auth = {
       id: data.sub,
       email: user?.email || data.email || null,
       user: user || null,
-      role: user?.role || null,
+      role,
     };
     next();
   } catch (error) {
@@ -143,4 +145,39 @@ export const requireRole = (...roles) => (req, res, next) => {
   next();
 };
 
-export const isStaff = (auth) => auth.role === 'doctor' || auth.role === 'admin';
+// admins can see everyone, doctors only the patients assigned to them
+export async function canViewPatient(auth, patientId) {
+  if (patientId === auth.id || auth.role === 'admin') return true;
+  if (auth.role !== 'doctor') return false;
+  const patient = await dbGet('SELECT doctor_id FROM users WHERE clerk_id = ?', [patientId]);
+  return patient?.doctor_id === auth.id;
+}
+
+// simple in-memory limiter for the auth routes. render runs a single instance,
+// so there's no need for redis here
+export function rateLimit({ windowMs, max }) {
+  const hits = new Map();
+
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of hits) {
+      if (entry.resetAt <= now) hits.delete(key);
+    }
+  }, windowMs).unref();
+
+  return (req, res, next) => {
+    const now = Date.now();
+    const key = req.ip;
+    let entry = hits.get(key);
+    if (!entry || entry.resetAt <= now) {
+      entry = { count: 0, resetAt: now + windowMs };
+      hits.set(key, entry);
+    }
+    entry.count++;
+    if (entry.count > max) {
+      res.set('Retry-After', String(Math.ceil((entry.resetAt - now) / 1000)));
+      return res.status(429).json({ error: 'Too many attempts, please try again in a few minutes' });
+    }
+    next();
+  };
+}

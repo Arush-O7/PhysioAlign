@@ -248,6 +248,7 @@ export function DoctorPortal() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Active Recovery Registrants</h3>
+              {doctorData?.role === 'admin' && (
               <div style={{ display: 'flex', background: 'var(--cream)', border: '2.5px solid var(--line)', borderRadius: 10, padding: 3 }}>
                 <button
                   onClick={() => setActiveFilterTab('my')}
@@ -284,6 +285,7 @@ export function DoctorPortal() {
                   All Patients
                 </button>
               </div>
+              )}
             </div>
             <div style={{ position: 'relative', width: '100%', maxWidth: 320 }}>
               <Search 

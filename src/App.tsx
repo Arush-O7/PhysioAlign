@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth, signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle } from './utils/auth';
 import { apiFetch } from './utils/api';
-import { store, useScreen } from './game/store';
+import { store, useScreen, profileFromApi, screenForProfile } from './game/store';
 import { SplashScreen } from './components/SplashScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { HomeScreen } from './components/HomeScreen';
@@ -12,6 +12,7 @@ import { Wordmark, PhysioLogo } from './components/primitives';
 import { LandingScreen } from './components/LandingScreen';
 import { DoctorPortal } from './components/DoctorPortal';
 import { AdminPortal } from './components/AdminPortal';
+import { PendingApprovalScreen } from './components/PendingApprovalScreen';
 import './styles/global.css';
 import { User, Stethoscope, Shield, ArrowLeft } from 'lucide-react';
 
@@ -96,6 +97,7 @@ export default function App() {
       debrief: 'Anatomical Report | PhysioAlign',
       doctor: 'Clinician PT Portal | PhysioAlign',
       admin: 'Admin Supervisor Terminal | PhysioAlign',
+      pending: 'Awaiting Approval | PhysioAlign',
     };
     document.title = titles[screen] || 'PhysioAlign';
   }, [screen]);
@@ -125,23 +127,9 @@ export default function App() {
       try {
         const res = await apiFetch(`/api/users/${userId}`);
         if (res.ok) {
-          const profile = await res.json();
-          store.setUserData({
-            name: profile.name,
-            age: profile.age,
-            experience: profile.experience,
-            goal: profile.goal,
-            role: profile.role,
-            doctor_id: profile.doctor_id,
-            care_plan: profile.care_plan
-          });
-          // email signups only have name/role, so patients still need to fill in onboarding
-          if (profile.role === 'patient' && !profile.age) {
-            store.setScreen('onboarding');
-          } else {
-            const nextScreen = profile.role === 'doctor' ? 'doctor' : profile.role === 'admin' ? 'admin' : 'dashboard';
-            store.setScreen(nextScreen);
-          }
+          const profile = profileFromApi(await res.json());
+          store.setUserData(profile);
+          store.setScreen(screenForProfile(profile));
         } else if (res.status === 404) {
           store.setUserData(null);
           store.setScreen('onboarding');
@@ -551,6 +539,7 @@ export default function App() {
       {screen === 'debrief' && <DebriefScreen />}
       {screen === 'doctor' && <DoctorPortal />}
       {screen === 'admin' && <AdminPortal />}
+      {screen === 'pending' && <PendingApprovalScreen />}
     </div>
   );
 }
