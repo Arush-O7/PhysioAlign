@@ -23,7 +23,7 @@ Supported poses: Tree, Warrior I, Warrior II, Downward Dog, Cobra, Chair, Plank,
 - React 18 + TypeScript, built with Vite
 - `@mediapipe/tasks-vision` for pose detection
 - Express backend with PostgreSQL (I use Supabase, but any Postgres works)
-- Google Gemini (`gemini-2.5-flash`, falls back to `-lite`) for reports and coach chat
+- Google Gemini (`gemini-2.5-flash`, falls back to `-lite`) for reports and coach chat, called only from the server
 - Recharts for the graphs
 - Plain CSS, no UI framework. State lives in a small store built on `useSyncExternalStore`.
 
@@ -46,8 +46,11 @@ npm run dev:full
 | Variable | What it's for |
 | --- | --- |
 | `DATABASE_URL` | Postgres connection string. SSL is turned on automatically unless the host is localhost. |
-| `VITE_GEMINI_API_KEY` | Gemini key from [AI Studio](https://aistudio.google.com/). Without it the app still works, but you get canned reports. |
+| `AUTH_SECRET` | Signs login tokens. Use a long random string (`openssl rand -hex 32`). If it's missing, a random one is used and everyone gets logged out when the server restarts. |
+| `GEMINI_API_KEY` | Gemini key from [AI Studio](https://aistudio.google.com/). Only the backend reads it. Without it the app still works, but you get canned reports. |
 | `VITE_GOOGLE_CLIENT_ID` | OAuth client ID for "Sign in with Google". Email/password login works without it. |
+| `ADMIN_EMAILS` | Optional, comma separated. Only these emails can sign up as admin. If it's empty, only the first account can pick admin. |
+| `CORS_ORIGIN` | Optional. Only needed if the frontend is hosted somewhere other than the API. |
 | `PORT` | Optional, defaults to 5001. |
 
 To check that the database connection works, run `npm run db:check`. It inserts a throwaway user and deletes it again.
@@ -66,22 +69,31 @@ Express serves the built `dist/` folder along with the API, so it's a single pro
 ```
 backend/
   server.js        API routes (auth, sessions, doctor + admin endpoints)
+  auth.js          tokens, password hashing, google token check, role checks
   db.js            pg pool and schema setup
-  gemini.js        session critique prompt
+  gemini.js        session critique, coach chat and doctor insight prompts
 scripts/
   check-db.js      quick database connectivity test
 src/
   components/      screens (landing, session, debrief, doctor/admin portals...)
   data/poses.ts    pose definitions and scoring
   game/store.ts    app state and API calls
-  utils/           angle maths, audio cues, auth, Gemini client
+  utils/           angle maths, audio cues, auth and api helpers
 ```
 
-## Known limitations
+## Auth and roles
+
+Email/password and Google sign-in both end with the server handing back a signed token (HMAC-SHA256, valid for 7 days). The frontend sends it with every API call. The server works out who you are from the token and never from IDs in the request body. Google ID tokens are checked with Google before a token is issued. Passwords are hashed with PBKDF2 (210k iterations), and older hashes are upgraded the next time that user logs in.
+
+- Patients can only read and delete their own sessions and profile.
+- Doctors and admins can see patient data. Only admins can reach the admin endpoints.
+- Roles are read from the database on every request, so a promotion or demotion applies straight away.
+- Nobody can make themselves an admin: see `ADMIN_EMAILS` above. After the first admin exists, other admins are promoted from the admin portal.
+
+## Limitations
 
 This is a project, not a medical device, so don't use it in place of an actual physiotherapist.
 
-- There's no server-side session or token check yet. The API trusts the user ID the client sends, so the doctor and admin endpoints aren't protected. Don't deploy it anywhere public with real patient data until that's fixed.
-- Google sign-in decodes the ID token in the browser and doesn't verify it on the server.
-- The coach chat and doctor insight call Gemini from the browser, so `VITE_GEMINI_API_KEY` ends up in the JS bundle. Use a restricted key.
+- Anyone can sign up as a doctor, and doctors can see every patient, not just the ones assigned to them. That's fine for a demo but would need an approval step for real use.
 - The angles come from a 2D projection, so it works best when you stand side-on or facing the camera, depending on the pose.
+- There's no rate limiting on login yet.
