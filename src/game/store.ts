@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { Screen, UserData, SessionData, Tweaks } from './types';
+import { Screen, UserData, SessionData, Tweaks, HOLD_SCORE_THRESHOLD } from './types';
 
 interface PhysioState {
   screen: Screen;
@@ -169,7 +169,7 @@ class PhysioStore {
     const updatedLogs = [...this.state.activeSession.frameLogs, frameLog];
     
     const durationSeconds = this.state.activeSession.durationSeconds + 1;
-    const holdTimeSeconds = this.state.activeSession.holdTimeSeconds + (frameLog.score >= 70 ? 1 : 0);
+    const holdTimeSeconds = this.state.activeSession.holdTimeSeconds + (frameLog.score >= HOLD_SCORE_THRESHOLD ? 1 : 0);
     
     const totalScore = updatedLogs.reduce((sum, log) => sum + log.score, 0);
     const averageScore = Math.round(totalScore / updatedLogs.length);

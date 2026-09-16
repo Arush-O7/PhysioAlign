@@ -2,6 +2,7 @@ import { store, useActiveSession, useUserData } from '../game/store';
 import { TopBar, Doodle } from './primitives';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from 'recharts';
 import { Activity, Clock, ArrowRight } from 'lucide-react';
+import { HOLD_SCORE_THRESHOLD } from '../game/types';
 
 export function DebriefScreen() {
   const activeSession = useActiveSession();
@@ -114,8 +115,7 @@ export function DebriefScreen() {
                       color: 'var(--ink)'
                     }}
                   />
-                  {/* Perfect hold threshold boundary line at 75% */}
-                  <ReferenceLine y={75} stroke="var(--peach-deep)" strokeDasharray="5 5" label={{ value: 'Ideal Alignment Threshold (75%)', position: 'top', fill: 'var(--ink-soft)', fontSize: 10, fontWeight: 800 }} />
+                  <ReferenceLine y={HOLD_SCORE_THRESHOLD} stroke="var(--peach-deep)" strokeDasharray="5 5" label={{ value: `Hold Threshold (${HOLD_SCORE_THRESHOLD}%)`, position: 'top', fill: 'var(--ink-soft)', fontSize: 10, fontWeight: 800 }} />
                   <Area type="monotone" dataKey="score" stroke="var(--line)" strokeWidth={3} fillOpacity={1} fill="url(#scoreColor)" />
                 </AreaChart>
               </ResponsiveContainer>

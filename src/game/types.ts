@@ -1,5 +1,8 @@
 export type Screen = 'landing' | 'splash' | 'onboarding' | 'dashboard' | 'library' | 'session' | 'debrief' | 'doctor' | 'admin';
 
+// a second only counts towards hold time when the score is at or above this
+export const HOLD_SCORE_THRESHOLD = 70;
+
 export interface UserData {
   name: string;
   age: number;

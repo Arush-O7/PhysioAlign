@@ -5,6 +5,7 @@ import { AIEngine } from './AIEngine';
 import { playAudioCue, speakFeedback } from '../utils/audioFeedback';
 import { Keypoint } from '../utils/angleCalculations';
 import { TopBar } from './primitives';
+import { HOLD_SCORE_THRESHOLD } from '../game/types';
 import { useAuth } from '../utils/auth';
 import { Play, Pause, Square, AlertCircle, CheckCircle, HeartPulse } from 'lucide-react';
 
@@ -81,10 +82,10 @@ export function SessionScreen() {
 
 
           const score = currentData.score;
-          if (score >= 75 && lastStateSeverityRef.current !== 'success') {
+          if (score >= HOLD_SCORE_THRESHOLD && lastStateSeverityRef.current !== 'success') {
             playAudioCue('success');
             lastStateSeverityRef.current = 'success';
-          } else if (score < 75 && score >= 50 && lastStateSeverityRef.current !== 'warning') {
+          } else if (score < HOLD_SCORE_THRESHOLD && score >= 50 && lastStateSeverityRef.current !== 'warning') {
             playAudioCue('info');
             lastStateSeverityRef.current = 'warning';
           } else if (score < 50 && lastStateSeverityRef.current !== 'error') {
