@@ -237,10 +237,25 @@ class PhysioStore {
         this.notify();
       } else {
         console.error('[PhysioStore] Failed to save session to backend, response status:', res.status);
+        this.markCritiqueFailed();
       }
     } catch (err) {
       console.error('[PhysioStore] Failed to save session to backend:', err);
+      this.markCritiqueFailed();
     }
+  }
+
+  // without this the debrief screen stays stuck on the loading state
+  private markCritiqueFailed() {
+    if (!this.state.activeSession) return;
+    this.state = {
+      ...this.state,
+      activeSession: {
+        ...this.state.activeSession,
+        aiCritique: "Couldn't save this session or generate a report. Check that the backend is running and try again.",
+      },
+    };
+    this.notify();
   }
 
   async syncHistory(clerkId: string) {
