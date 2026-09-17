@@ -36,21 +36,36 @@ export const translateQuery = (sql) => {
   return sql.replace(/\?/g, () => `$${paramIndex++}`);
 };
 
-export const dbRun = async (sql, params = []) => {
+// 42703 = undefined column, 42P01 = undefined table. happens when the schema
+// setup couldn't run at boot (e.g. the database was paused), so run it now and retry once
+const SCHEMA_ERRORS = new Set(['42703', '42P01']);
+let schemaFix = null;
+
+const query = async (sql, params) => {
   const pgSql = translateQuery(sql);
-  const res = await pool.query(pgSql, params);
+  try {
+    return await pool.query(pgSql, params);
+  } catch (error) {
+    if (!SCHEMA_ERRORS.has(error.code)) throw error;
+    console.warn('[PhysioAlign DB] Schema out of date, running setup again:', error.message);
+    schemaFix ??= initDB().finally(() => { schemaFix = null; });
+    await schemaFix;
+    return pool.query(pgSql, params);
+  }
+};
+
+export const dbRun = async (sql, params = []) => {
+  const res = await query(sql, params);
   return { lastID: null, changes: res.rowCount };
 };
 
 export const dbGet = async (sql, params = []) => {
-  const pgSql = translateQuery(sql);
-  const res = await pool.query(pgSql, params);
+  const res = await query(sql, params);
   return res.rows[0];
 };
 
 export const dbAll = async (sql, params = []) => {
-  const pgSql = translateQuery(sql);
-  const res = await pool.query(pgSql, params);
+  const res = await query(sql, params);
   return res.rows;
 };
 
@@ -58,7 +73,7 @@ export const dbAll = async (sql, params = []) => {
 export const initDB = async () => {
   try {
     // Create Users Table
-    await dbRun(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         clerk_id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -76,13 +91,13 @@ export const initDB = async () => {
     // older databases were created before these columns existed
     // approved defaults to true so doctors that existed before approvals keep access
     for (const column of ["role TEXT DEFAULT 'patient'", 'doctor_id TEXT', 'care_plan TEXT', 'password_hash TEXT', 'approved BOOLEAN NOT NULL DEFAULT TRUE']) {
-      await dbRun(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${column}`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${column}`);
     }
 
     console.log('[PhysioAlign DB] Users table verified/created.');
 
     // Create Sessions Table
-    await dbRun(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         clerk_id TEXT REFERENCES users(clerk_id) ON DELETE CASCADE,

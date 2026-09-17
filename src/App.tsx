@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth, signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle } from './utils/auth';
 import { apiFetch } from './utils/api';
-import { store, useScreen, profileFromApi, screenForProfile } from './game/store';
+import { store, useScreen, useUserData, profileFromApi, screenForProfile } from './game/store';
 import { SplashScreen } from './components/SplashScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { HomeScreen } from './components/HomeScreen';
@@ -18,6 +18,7 @@ import { User, Stethoscope, Shield, ArrowLeft } from 'lucide-react';
 
 export default function App() {
   const screen = useScreen();
+  const userData = useUserData();
   const { isLoaded, isSignedIn, userId, signOut } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState('');
@@ -549,6 +550,13 @@ export default function App() {
         <h3 style={{ fontFamily: 'Nunito', fontWeight: 800 }}>Syncing profile logs...</h3>
       </div>
     );
+  }
+
+  // the logo and nav buttons can switch screens before the profile has loaded,
+  // and nothing on those screens can be saved without one
+  const needsProfile = !userData && !['splash', 'landing', 'onboarding'].includes(screen);
+  if (needsProfile) {
+    return <OnboardingScreen />;
   }
 
   return (
