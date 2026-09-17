@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { apiFetch } from '../utils/api';
+import { logSaveTiming } from '../utils/perf';
 import { Screen, UserData, SessionData, Tweaks, HOLD_SCORE_THRESHOLD } from './types';
 
 export function profileFromApi(profile: any): UserData {
@@ -213,20 +214,25 @@ class PhysioStore {
     this.notify();
 
     try {
+      const payloadString = JSON.stringify({
+        id: session.id,
+        poseId: session.poseId,
+        poseName: session.poseName,
+        date: session.date,
+        durationSeconds: session.durationSeconds,
+        holdTimeSeconds: session.holdTimeSeconds,
+        averageScore: session.averageScore,
+        grade: session.grade,
+        frameLogs: session.frameLogs,
+      });
+      const saveStart = performance.now();
+
       const res = await apiFetch('/api/sessions', {
         method: 'POST',
-        body: JSON.stringify({
-          id: session.id,
-          poseId: session.poseId,
-          poseName: session.poseName,
-          date: session.date,
-          durationSeconds: session.durationSeconds,
-          holdTimeSeconds: session.holdTimeSeconds,
-          averageScore: session.averageScore,
-          grade: session.grade,
-          frameLogs: session.frameLogs,
-        }),
+        body: payloadString,
       });
+
+      logSaveTiming(performance.now() - saveStart, session.frameLogs.length, payloadString.length);
 
       if (res.ok) {
         const savedSession: SessionData = await res.json();

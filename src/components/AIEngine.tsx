@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, AlertCircle } from 'lucide-react';
 import { calculateAngles, Keypoint } from '../utils/angleCalculations';
+import { recordFrame } from '../utils/perf';
 
 interface AIEngineProps {
   onPoseDetected: (data: { keypoints: Keypoint[]; angles: Record<string, number> }) => void;
@@ -121,6 +122,7 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
         lastTimestampRef.current = timestamp;
 
         if (poseDetectorRef.current) {
+          const t0 = performance.now();
           const results = poseDetectorRef.current.detectForVideo(video, timestamp);
 
           if (results.landmarks && results.landmarks.length > 0) {
@@ -148,6 +150,11 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
             if (angles) {
               onPoseDetected({ keypoints, angles });
             }
+
+            recordFrame(
+              performance.now() - t0,
+              keypoints.some((kp) => kp.visibility > 0 && kp.visibility < 0.6)
+            );
 
             // Draw skeleton overlay
             if (canvas) {
