@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { dbGet } from './db.js';
+import { dbGet, isConnectionError, DB_UNAVAILABLE } from './db.js';
 
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PBKDF2_ITERATIONS = 210000;
@@ -133,7 +133,10 @@ export async function requireAuth(req, res, next) {
     };
     next();
   } catch (error) {
-    console.error('Auth lookup failed:', error);
+    console.error('Auth lookup failed:', error.message);
+    if (isConnectionError(error)) {
+      return res.status(503).json({ error: DB_UNAVAILABLE });
+    }
     res.status(500).json({ error: 'Failed to check session' });
   }
 }

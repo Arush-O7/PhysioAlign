@@ -12,10 +12,15 @@ if (!connectionString) {
   console.warn('[PhysioAlign DB] WARNING: DATABASE_URL environment variable is not defined.');
 }
 
-console.log('[PhysioAlign DB] Connecting to Supabase PostgreSQL database.');
+// supabase's direct host (db.<ref>.supabase.co) is ipv6 only, render can't reach it
+if (connectionString && /@db\.[a-z0-9]+\.supabase\.co/.test(connectionString)) {
+  console.warn('[PhysioAlign DB] DATABASE_URL uses the direct Supabase host, which is IPv6 only. ' +
+    'On Render use the Session pooler URL from Supabase > Connect instead.');
+}
 
 const pool = new Pool({
   connectionString,
+  connectionTimeoutMillis: 10000,
   ssl: connectionString && (connectionString.includes('localhost') || connectionString.includes('127.0.0.1'))
     ? false
     : { rejectUnauthorized: false }
@@ -93,9 +98,19 @@ export const initDB = async () => {
       )
     `);
     console.log('[PhysioAlign DB] Sessions table verified/created.');
+    return true;
   } catch (error) {
     console.error('[PhysioAlign DB] Schema initialization failed:', error.message);
+    return false;
   }
 };
+
+// connection level failures, as opposed to a bad query
+export const isConnectionError = (error) =>
+  /ECONNREFUSED|ETIMEDOUT|ENOTFOUND|ENETUNREACH|EHOSTUNREACH|timeout|not available|terminat/i.test(
+    `${error?.code || ''} ${error?.message || ''}`
+  );
+
+export const DB_UNAVAILABLE = "Can't reach the database right now. Please try again in a minute.";
 
 export default { dbRun, dbGet, dbAll, initDB, pool };

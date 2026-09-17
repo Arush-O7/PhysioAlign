@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { initDB, dbRun, dbGet, dbAll } from './db.js';
+import { initDB, dbRun, dbGet, dbAll, isConnectionError, DB_UNAVAILABLE } from './db.js';
 import { generateAICritiqueSync, askCoach, generateDoctorInsight, COACH_IDS } from './gemini.js';
 import {
   createToken,
@@ -38,8 +38,14 @@ app.use(express.json({ limit: '5mb' }));
 
 const ROLES = ['patient', 'doctor', 'admin'];
 
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
+// render uses this, so a dead database shows up as an unhealthy service
+app.get('/api/health', async (req, res) => {
+  try {
+    await dbGet('SELECT 1');
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(503).json({ ok: false, error: error.message });
+  }
 });
 
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 20 }));
@@ -122,7 +128,7 @@ app.post('/api/auth/signup', async (req, res) => {
     res.json({ user: newUser, token: createToken(customId) });
   } catch (error) {
     console.error('Signup failed:', error);
-    res.status(500).json({ error: 'Failed to create account' });
+    res.status(isConnectionError(error) ? 503 : 500).json({ error: isConnectionError(error) ? DB_UNAVAILABLE : 'Failed to create account' });
   }
 });
 
@@ -151,7 +157,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ user: stripSecrets(user), token: createToken(user.clerk_id) });
   } catch (error) {
     console.error('Login failed:', error);
-    res.status(500).json({ error: 'Failed to authenticate' });
+    res.status(isConnectionError(error) ? 503 : 500).json({ error: isConnectionError(error) ? DB_UNAVAILABLE : 'Failed to authenticate' });
   }
 });
 
@@ -231,7 +237,7 @@ app.post('/api/users', async (req, res) => {
     res.json(stripSecrets(updatedUser));
   } catch (error) {
     console.error('Upsert user failed:', error);
-    res.status(500).json({ error: 'Database update failed' });
+    res.status(isConnectionError(error) ? 503 : 500).json({ error: isConnectionError(error) ? DB_UNAVAILABLE : 'Database update failed' });
   }
 });
 
@@ -590,6 +596,14 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
+// any database connection failure that reaches here gets a readable message
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(isConnectionError(err) ? 503 : 500).json({
+    error: isConnectionError(err) ? DB_UNAVAILABLE : 'Something went wrong',
+  });
+});
+
 // Serve static files from the React frontend built folder
 app.use(express.static(path.join(__dirname, '../dist')));
 
@@ -598,8 +612,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-initDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`[PhysioAlign Backend] Server running on port ${PORT}`);
-  });
+// keep retrying the schema setup if the database isn't reachable at boot,
+// otherwise new columns would be missing once it comes back
+async function initWithRetry() {
+  if (await initDB()) return;
+  console.warn('[PhysioAlign Backend] Database not ready, retrying schema setup in 30s');
+  setTimeout(initWithRetry, 30000).unref();
+}
+
+app.listen(PORT, () => {
+  console.log(`[PhysioAlign Backend] Server running on port ${PORT}`);
+  initWithRetry();
 });

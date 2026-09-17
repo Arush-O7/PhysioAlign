@@ -20,6 +20,8 @@ export default function App() {
   const screen = useScreen();
   const { isLoaded, isSignedIn, userId, signOut } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState('');
+  const [syncAttempt, setSyncAttempt] = useState(0);
   const [authView, setAuthView] = useState<'landing' | 'role_select' | 'login'>('landing');
 
   const [email, setEmail] = useState('');
@@ -124,6 +126,7 @@ export default function App() {
 
     const syncUser = async () => {
       setIsSyncing(true);
+      setSyncError('');
       try {
         const res = await apiFetch(`/api/users/${userId}`);
         if (res.ok) {
@@ -133,16 +136,20 @@ export default function App() {
         } else if (res.status === 404) {
           store.setUserData(null);
           store.setScreen('onboarding');
+        } else {
+          const data = await res.json().catch(() => ({}));
+          setSyncError(data.error || 'Could not load your profile.');
         }
       } catch (err) {
-        console.error('[PhysioAlign] Failed to sync user profile with backend, routing to onboarding:', err);
+        console.error('[PhysioAlign] Failed to sync user profile with backend:', err);
+        setSyncError('Could not reach the server.');
       } finally {
         setIsSyncing(false);
       }
     };
 
     syncUser();
-  }, [isLoaded, isSignedIn, userId]);
+  }, [isLoaded, isSignedIn, userId, syncAttempt]);
 
   if (!isLoaded) {
     return (
@@ -515,6 +522,22 @@ export default function App() {
             </div>
           </div>
 
+        </div>
+      </div>
+    );
+  }
+
+  if (syncError && !isSyncing) {
+    return (
+      <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, textAlign: 'center' }}>
+        <h3 style={{ fontFamily: 'Nunito', fontWeight: 800 }}>{syncError}</h3>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn-plush primary" style={{ padding: '10px 24px' }} onClick={() => setSyncAttempt((n) => n + 1)}>
+            Try again
+          </button>
+          <button className="btn-plush ghost" style={{ padding: '10px 24px' }} onClick={signOut}>
+            Sign out
+          </button>
         </div>
       </div>
     );
