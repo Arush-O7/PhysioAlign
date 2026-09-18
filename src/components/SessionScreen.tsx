@@ -5,6 +5,7 @@ import { AIEngine } from './AIEngine';
 import { playAudioCue, speakFeedback } from '../utils/audioFeedback';
 import { Keypoint } from '../utils/angleCalculations';
 import { TopBar } from './primitives';
+import { AngleSmoother, Stabilizer } from '../utils/smoothing';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
 import { useAuth } from '../utils/auth';
 import { Play, Pause, Square, AlertCircle, CheckCircle, HeartPulse } from 'lucide-react';
@@ -31,6 +32,11 @@ export function SessionScreen() {
   const timerRef = useRef<any>(null);
   const lastAudioFeedbackTimeRef = useRef(0);
   const lastStateSeverityRef = useRef<'success' | 'warning' | 'error'>('error');
+  // see scripts/bench-smoothing.ts for how much these cut feedback flicker
+  const smootherRef = useRef(new AngleSmoother());
+  const stabilizerRef = useRef(
+    new Stabilizer<PoseFeedback>((f) => `${f.severity}|${(f.corrections[0] || '').split(':')[0]}`, 250)
+  );
   const poseDataRef = useRef<{ angles: Record<string, number>; feedbackMessage: string; score: number } | null>(null);
 
   useEffect(() => {
@@ -125,6 +131,8 @@ export function SessionScreen() {
 
     if (missingJoints.length > 2) {
       setIsCalibrating(true);
+      smootherRef.current.reset();
+      stabilizerRef.current.reset();
       const calibrateFeedback: PoseFeedback = {
         score: 0,
         corrections: ['Step back so your full body is visible in the frame.'],
@@ -140,18 +148,21 @@ export function SessionScreen() {
     setIsCalibrating(false);
 
 
-    const evaluation = evaluatePose(pose.id, data.angles);
+    // score the smoothed angles, and only change the on-screen/spoken cue once
+    // the new one has held for 250ms so it doesn't flicker at range boundaries
+    const now = performance.now();
+    const angles = smootherRef.current.smooth(data.angles, now);
+    const live = evaluatePose(pose.id, angles);
+    const evaluation = stabilizerRef.current.update(live, now);
     setFeedback(evaluation);
 
-
     poseDataRef.current = {
-      angles: data.angles,
-      feedbackMessage: evaluation.corrections[0] || 'Perfect Alignment',
-      score: evaluation.score
+      angles,
+      feedbackMessage: live.corrections[0] || 'Perfect Alignment',
+      score: live.score
     };
 
     // Voice feedback (throttled to 5s)
-    const now = Date.now();
     if (now - lastAudioFeedbackTimeRef.current > 5000) {
       if (evaluation.severity !== 'success') {
         const errorCue = evaluation.corrections[0];
@@ -174,6 +185,8 @@ export function SessionScreen() {
   const handlePoseLost = useCallback(() => {
     // otherwise the timer keeps logging the last good frame and hold time keeps going up
     poseDataRef.current = null;
+    smootherRef.current.reset();
+    stabilizerRef.current.reset();
     setIsCalibrating(true);
   }, []);
 
