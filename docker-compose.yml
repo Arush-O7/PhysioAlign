@@ -1,0 +1,36 @@
+# local stack: docker compose up --build, then open http://localhost:5001
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: physio
+      POSTGRES_PASSWORD: physio
+      POSTGRES_DB: physio
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U physio']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    environment:
+      DATABASE_URL: postgres://physio:physio@db:5432/physio?sslmode=disable
+      AUTH_SECRET: ${AUTH_SECRET:-local-dev-secret-change-me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    ports:
+      - '5001:5001'
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
