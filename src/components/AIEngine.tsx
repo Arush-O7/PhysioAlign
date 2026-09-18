@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, AlertCircle } from 'lucide-react';
 import { calculateAngles, Keypoint } from '../utils/angleCalculations';
+import { createPoseDetector, PoseDetector, PoseResult } from '../utils/poseDetector';
 import { recordFrame } from '../utils/perf';
 
 interface AIEngineProps {
@@ -20,172 +21,127 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fps, setFps] = useState(0);
+  const [detectorMode, setDetectorMode] = useState<PoseDetector['mode'] | null>(null);
 
-  const poseDetectorRef = useRef<any>(null);
+  const detectorRef = useRef<PoseDetector | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
   const lastVideoTimeRef = useRef(-1);
   const frameCountRef = useRef(0);
   const lastFpsTimeRef = useRef(performance.now());
   const lastTimestampRef = useRef(0);
   const personVisibleRef = useRef(false);
+  const busyRef = useRef(false);
 
-  // Initialize MediaPipe Pose Landmarker
+  // Load the pose model, in a web worker when the browser supports it
   useEffect(() => {
     let cancelled = false;
 
-    const loadModel = async () => {
-      try {
-        const { PoseLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
-
-        const vision = await FilesetResolver.forVisionTasks(
-          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm'
-        );
-
-        const detector = await PoseLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-            delegate: 'GPU',
-          },
-          runningMode: 'VIDEO',
-          numPoses: 1,
-        });
-
+    createPoseDetector()
+      .then((detector) => {
         // component unmounted while the model was still downloading
         if (cancelled) {
           detector.close();
           return;
         }
-        poseDetectorRef.current = detector;
-
+        detectorRef.current = detector;
+        setDetectorMode(detector.mode);
         setIsModelLoaded(true);
-        if (onStatusChange) onStatusChange({ isLoaded: true, error: null });
-        console.log('[PhysioAlign] MediaPipe Pose Landmarker loaded successfully');
-      } catch (err) {
+        onStatusChange?.({ isLoaded: true, error: null });
+        console.log(`[PhysioAlign] Pose model loaded (${detector.mode}, ${detector.delegate})`);
+      })
+      .catch((err) => {
         if (cancelled) return;
         console.error('[PhysioAlign] Error loading model:', err);
         setError('Failed to load posture AI model. Please check your internet and reload.');
-        if (onStatusChange) onStatusChange({ isLoaded: false, error: 'Failed to load AI model' });
-      }
-    };
-
-    loadModel();
+        onStatusChange?.({ isLoaded: false, error: 'Failed to load AI model' });
+      });
 
     return () => {
       cancelled = true;
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
-      if (poseDetectorRef.current) {
-        poseDetectorRef.current.close();
-        poseDetectorRef.current = null;
-      }
+      detectorRef.current?.close();
+      detectorRef.current = null;
     };
   }, []);
 
-  // Prediction loop
+  // Prediction loop. only one frame is in flight at a time, so a slow frame is
+  // dropped instead of queueing up behind the camera
   useEffect(() => {
-    const detectPose = async () => {
-      if (
-        !isCameraActive ||
-        !isModelLoaded ||
-        !webcamRef.current ||
-        !webcamRef.current.video ||
-        webcamRef.current.video.readyState !== 4
-      ) {
-        animationFrameIdRef.current = requestAnimationFrame(detectPose);
+    // dispatchMs is what the main thread spent handing the frame over (worker mode)
+    const handleResult = (result: PoseResult, frameStart: number, dispatchMs: number, inWorker: boolean) => {
+      const handleStart = performance.now();
+      const canvas = canvasRef.current;
+      if (!result.landmarks) {
+        if (personVisibleRef.current) {
+          personVisibleRef.current = false;
+          onPoseLost?.();
+        }
+        const ctx = canvas?.getContext('2d');
+        if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
       }
 
-      const video = webcamRef.current.video;
-      const canvas = canvasRef.current;
+      personVisibleRef.current = true;
+      const keypoints = result.landmarks;
+      const angles = calculateAngles(keypoints, result.worldLandmarks ?? undefined);
+      if (angles) onPoseDetected({ keypoints, angles });
+
+      if (canvas) drawSkeleton(keypoints, canvas);
+
+      const now = performance.now();
+      const handlingMs = now - handleStart;
+      recordFrame({
+        // camera frame in to feedback out, including the model
+        totalMs: now - frameStart,
+        // how long the ui thread was blocked for this frame
+        mainThreadMs: (inWorker ? dispatchMs : result.inferenceMs) + handlingMs,
+        lowVisibility: keypoints.some((kp) => kp.visibility > 0 && kp.visibility < 0.6),
+      });
+
+      frameCountRef.current++;
+      if (now - lastFpsTimeRef.current >= 1000) {
+        setFps(frameCountRef.current);
+        frameCountRef.current = 0;
+        lastFpsTimeRef.current = now;
+      }
+    };
+
+    const detectPose = () => {
+      animationFrameIdRef.current = requestAnimationFrame(detectPose);
+
+      const detector = detectorRef.current;
+      const video = webcamRef.current?.video;
+      if (!detector || busyRef.current || !video || video.readyState !== 4) return;
 
       // Skip processing if the video frame hasn't updated
-      if (video.currentTime === lastVideoTimeRef.current) {
-        animationFrameIdRef.current = requestAnimationFrame(detectPose);
-        return;
-      }
+      if (video.currentTime === lastVideoTimeRef.current) return;
       lastVideoTimeRef.current = video.currentTime;
 
       // Ensure canvas matches video dimensions
-      if (canvas) {
-        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-        }
+      const canvas = canvasRef.current;
+      if (canvas && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
       }
 
-      try {
-        let timestamp = performance.now();
-        if (timestamp <= lastTimestampRef.current) {
-          timestamp = lastTimestampRef.current + 1;
-        }
-        lastTimestampRef.current = timestamp;
+      let timestamp = performance.now();
+      if (timestamp <= lastTimestampRef.current) timestamp = lastTimestampRef.current + 1;
+      lastTimestampRef.current = timestamp;
 
-        if (poseDetectorRef.current) {
-          const t0 = performance.now();
-          const results = poseDetectorRef.current.detectForVideo(video, timestamp);
+      busyRef.current = true;
+      const frameStart = performance.now();
+      const pending = detector.detect(video, timestamp);
+      // on the worker path the main thread only pays for grabbing the frame
+      const dispatchMs = performance.now() - frameStart;
 
-          if (results.landmarks && results.landmarks.length > 0) {
-            const landmarks = results.landmarks[0];
-            personVisibleRef.current = true;
-
-            // Convert to our Keypoint format
-            const keypoints: Keypoint[] = landmarks.map((landmark: any) => ({
-              x: landmark.x,
-              y: landmark.y,
-              z: landmark.z,
-              visibility: landmark.visibility || 0,
-            }));
-
-            // Calculate joint angles
-            const world = results.worldLandmarks?.[0];
-            const worldKeypoints: Keypoint[] | undefined = world?.map((landmark: any) => ({
-              x: landmark.x,
-              y: landmark.y,
-              z: landmark.z,
-              visibility: landmark.visibility || 0,
-            }));
-            const angles = calculateAngles(keypoints, worldKeypoints);
-
-            if (angles) {
-              onPoseDetected({ keypoints, angles });
-            }
-
-            recordFrame(
-              performance.now() - t0,
-              keypoints.some((kp) => kp.visibility > 0 && kp.visibility < 0.6)
-            );
-
-            // Draw skeleton overlay
-            if (canvas) {
-              drawSkeleton(keypoints, canvas);
-            }
-
-            // Calculate FPS
-            frameCountRef.current++;
-            const now = performance.now();
-            if (now - lastFpsTimeRef.current >= 1000) {
-              setFps(frameCountRef.current);
-              frameCountRef.current = 0;
-              lastFpsTimeRef.current = now;
-            }
-          } else {
-            if (personVisibleRef.current) {
-              personVisibleRef.current = false;
-              onPoseLost?.();
-            }
-            // Clear canvas if no person is detected
-            if (canvas) {
-              const ctx = canvas.getContext('2d');
-              if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('[PhysioAlign] Detection loop error:', err);
-      }
-
-      animationFrameIdRef.current = requestAnimationFrame(detectPose);
+      pending
+        .then((result) => handleResult(result, frameStart, dispatchMs, detector.mode === 'worker'))
+        .catch((err) => console.error('[PhysioAlign] Detection error:', err))
+        .finally(() => {
+          busyRef.current = false;
+        });
     };
 
     if (isCameraActive && isModelLoaded) {
@@ -298,7 +254,7 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
                 {!isModelLoaded ? 'Loading Posture Model...' : 'Initializing Camera...'}
               </h3>
               <p style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-                {!isModelLoaded ? 'Loading client-side MediaPipe WASM binaries...' : 'Please allow browser mic/camera prompts'}
+                {!isModelLoaded ? 'Loading the MediaPipe pose model...' : 'Please allow camera access'}
               </p>
             </div>
           )}
@@ -370,7 +326,7 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
               background: 'white', border: '2px solid var(--line)', padding: '2px 8px',
               borderRadius: 'var(--r-sm)', fontSize: 11, fontWeight: 800, boxShadow: '0 2px 0 var(--line)'
             }}>
-              CV Engine: {fps} FPS
+              CV Engine: {fps} FPS{detectorMode === 'worker' ? ' · worker' : ''}
             </div>
           )}
         </>
