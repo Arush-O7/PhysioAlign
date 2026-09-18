@@ -1,14 +1,15 @@
 import { getSavedUser, setSavedUser } from './auth';
 
-// fetch wrapper that sends the session token and logs out if it's rejected
+// the session lives in an httpOnly cookie that the browser sends by itself.
+// X-Requested-With is required by the server on writes as csrf protection
 export async function apiFetch(url: string, options: RequestInit = {}) {
-  const token = getSavedUser()?.token;
   const headers = new Headers(options.headers);
-  if (token) headers.set('Authorization', `Bearer ${token}`);
+  headers.set('X-Requested-With', 'fetch');
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
-  const res = await fetch(url, { ...options, headers });
-  if (res.status === 401 && token) {
+  const res = await fetch(url, { ...options, headers, credentials: 'same-origin' });
+  // cookie expired or was cleared, drop the local copy of the user and start over
+  if (res.status === 401 && getSavedUser()) {
     setSavedUser(null);
     window.location.reload();
   }

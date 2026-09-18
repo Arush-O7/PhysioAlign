@@ -17,8 +17,8 @@ export const getSavedUser = () => {
   try {
     const saved = localStorage.getItem('physioalign:google_user');
     const user = saved ? JSON.parse(saved) : null;
-    // sessions saved before tokens existed can't talk to the api anymore
-    return user?.token ? user : null;
+    // only display info lives here. the real session is the httpOnly cookie
+    return user?.id ? user : null;
   } catch {
     return null;
   }
@@ -36,25 +36,23 @@ export const setSavedUser = (user: any) => {
 };
 
 type AuthResponse = {
-  user: { clerk_id?: string; id?: string; name: string; email: string; picture?: string };
-  token: string;
+  user: { id: string; name: string; email: string; picture?: string };
 };
 
-const saveAuthResponse = (data: AuthResponse) => {
-  const { user, token } = data;
+const saveAuthResponse = ({ user }: AuthResponse) => {
   setSavedUser({
-    id: user.clerk_id || user.id,
+    id: user.id,
     name: user.name,
     email: user.email,
     picture: user.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.name)}`,
-    token,
   });
 };
 
 const postAuth = async (url: string, body: object, fallbackError: string) => {
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' },
+    credentials: 'same-origin',
     body: JSON.stringify(body)
   });
 
@@ -86,7 +84,13 @@ export function useAuth() {
     });
   }, []);
 
-  const signOut = () => {
+  const signOut = async () => {
+    // the cookie is httpOnly, so only the server can clear it
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'fetch' },
+      credentials: 'same-origin',
+    }).catch(() => {});
     setSavedUser(null);
     sessionStorage.removeItem('physioalign:session_active');
     window.location.reload(); // Hard refresh to clear state

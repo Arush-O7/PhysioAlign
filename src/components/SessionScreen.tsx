@@ -16,18 +16,8 @@ export function SessionScreen() {
   const pose = getPoseById(activePoseId || '');
   const { userId } = useAuth();
 
-  let prescribedTargetHold: number | null = null;
-  if (userData?.care_plan && activePoseId) {
-    try {
-      const plan = JSON.parse(userData.care_plan);
-      const match = plan.find((item: any) => item.poseId === activePoseId);
-      if (match) {
-        prescribedTargetHold = match.targetHold;
-      }
-    } catch (e) {
-      console.error('Failed to parse care plan in session screen', e);
-    }
-  }
+  const prescribedTargetHold =
+    userData?.carePlan?.find((item) => item.poseId === activePoseId)?.targetHold ?? null;
 
   const [sessionActive, setSessionActive] = useState(false);
   const [feedback, setFeedback] = useState<PoseFeedback | null>(null);
@@ -48,25 +38,12 @@ export function SessionScreen() {
       store.startSession(pose.id, pose.name);
       setTargetReached(false);
       
-      // Calculate prescribed hold for the new pose
-      let newPrescribed: number | null = null;
-      if (userData?.care_plan) {
-        try {
-          const plan = JSON.parse(userData.care_plan);
-          const match = plan.find((item: any) => item.poseId === pose.id);
-          if (match) {
-            newPrescribed = match.targetHold;
-          }
-        } catch (e) {
-          console.error('Failed to parse care plan in session screen', e);
-        }
-      }
-      setCustomTargetHold(newPrescribed || 30);
+      setCustomTargetHold(prescribedTargetHold || 30);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [activePoseId, userData?.care_plan]);
+  }, [activePoseId, prescribedTargetHold]);
 
   useEffect(() => {
     if (sessionActive) {

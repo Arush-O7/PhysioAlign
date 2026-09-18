@@ -10,11 +10,13 @@ export function profileFromApi(profile: any): UserData {
     experience: profile.experience,
     goal: profile.goal,
     role: profile.role,
-    doctor_id: profile.doctor_id,
-    care_plan: profile.care_plan,
+    doctorId: profile.doctorId ?? null,
+    carePlan: Array.isArray(profile.carePlan) ? profile.carePlan : [],
     approved: profile.approved !== false,
   };
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function screenForProfile(profile: UserData): Screen {
   if (profile.role === 'admin') return 'admin';
@@ -86,8 +88,8 @@ class PhysioStore {
   // returns an error message if the profile couldn't be saved
   async saveOnboarding(userData: UserData): Promise<string | null> {
     try {
-      const res = await apiFetch('/api/users', {
-        method: 'POST',
+      const res = await apiFetch('/api/users/me', {
+        method: 'PUT',
         body: JSON.stringify({
           name: userData.name,
           age: userData.age,
@@ -116,10 +118,10 @@ class PhysioStore {
     }
   }
 
-  async resetOnboarding(clerkId: string) {
+  async resetOnboarding(userId: string) {
     try {
       // Reset user data and sessions
-      const res = await apiFetch(`/api/sessions/${clerkId}`);
+      const res = await apiFetch(`/api/users/${userId}/sessions`);
       if (res.ok) {
         const sessions = await res.json();
         for (const s of sessions) {
@@ -198,17 +200,24 @@ class PhysioStore {
     this.notify();
   }
 
+  private updateSession(id: string, patch: Partial<SessionData>) {
+    const active = this.state.activeSession;
+    this.state = {
+      ...this.state,
+      activeSession: active && active.id === id ? { ...active, ...patch } : active,
+      sessionHistory: this.state.sessionHistory.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+    };
+    this.notify();
+  }
+
+  // saves the session, then waits for the critique that the server writes in the background
   async completeActiveSession() {
     const session = this.state.activeSession;
     if (!session) return;
 
-    // Show generating state in UI while waiting for POST request
     this.state = {
       ...this.state,
-      activeSession: {
-        ...session,
-        aiCritique: 'Generating...',
-      },
+      activeSession: { ...session, aiCritique: null, critiqueStatus: 'saving' },
       screen: 'debrief',
     };
     this.notify();
@@ -234,41 +243,65 @@ class PhysioStore {
 
       logSaveTiming(performance.now() - saveStart, session.frameLogs.length, payloadString.length);
 
-      if (res.ok) {
-        const savedSession: SessionData = await res.json();
-        const newHistory = [savedSession, ...this.state.sessionHistory];
-        this.state = {
-          ...this.state,
-          sessionHistory: newHistory,
-          activeSession: savedSession,
-        };
-        this.notify();
-      } else {
-        console.error('[PhysioStore] Failed to save session to backend, response status:', res.status);
-        this.markCritiqueFailed();
+      if (!res.ok) {
+        console.error('[PhysioStore] Failed to save session, status:', res.status);
+        this.updateSession(session.id, { critiqueStatus: 'unsaved' });
+        return;
       }
+
+      const saved: SessionData = await res.json();
+      this.state = {
+        ...this.state,
+        sessionHistory: [saved, ...this.state.sessionHistory.filter((s) => s.id !== saved.id)],
+        activeSession: saved,
+      };
+      this.notify();
+      await this.waitForCritique(saved.id);
     } catch (err) {
-      console.error('[PhysioStore] Failed to save session to backend:', err);
-      this.markCritiqueFailed();
+      console.error('[PhysioStore] Failed to save session:', err);
+      this.updateSession(session.id, { critiqueStatus: 'unsaved' });
     }
   }
 
-  // without this the debrief screen stays stuck on the loading state
-  private markCritiqueFailed() {
-    if (!this.state.activeSession) return;
-    this.state = {
-      ...this.state,
-      activeSession: {
-        ...this.state.activeSession,
-        aiCritique: "Couldn't save this session or generate a report. Check that the backend is running and try again.",
-      },
-    };
-    this.notify();
+  // polls with backoff, gives up after about three minutes
+  private async waitForCritique(id: string) {
+    const deadline = Date.now() + 3 * 60 * 1000;
+    let delay = 1000;
+    while (Date.now() < deadline) {
+      await sleep(delay);
+      delay = Math.min(delay * 1.5, 5000);
+      try {
+        const res = await apiFetch(`/api/sessions/${id}`);
+        if (!res.ok) continue;
+        const session: SessionData = await res.json();
+        if (session.critiqueStatus !== 'pending') {
+          this.updateSession(id, { aiCritique: session.aiCritique, critiqueStatus: session.critiqueStatus });
+          return;
+        }
+      } catch {
+        // network blip, keep polling
+      }
+    }
+    this.updateSession(id, { critiqueStatus: 'failed' });
   }
 
-  async syncHistory(clerkId: string) {
+  async retryCritique(id: string) {
+    this.updateSession(id, { critiqueStatus: 'pending' });
     try {
-      const res = await apiFetch(`/api/sessions/${clerkId}`);
+      const res = await apiFetch(`/api/sessions/${id}/critique/retry`, { method: 'POST' });
+      if (!res.ok) {
+        this.updateSession(id, { critiqueStatus: 'failed' });
+        return;
+      }
+      await this.waitForCritique(id);
+    } catch {
+      this.updateSession(id, { critiqueStatus: 'failed' });
+    }
+  }
+
+  async syncHistory(userId: string) {
+    try {
+      const res = await apiFetch(`/api/users/${userId}/sessions`);
       if (res.ok) {
         const history = await res.json();
         this.state = {
@@ -282,11 +315,11 @@ class PhysioStore {
     }
   }
 
-  async deleteSession(sessionId: string, clerkId: string) {
+  async deleteSession(sessionId: string, userId: string) {
     try {
       const res = await apiFetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
       if (res.ok) {
-        await this.syncHistory(clerkId);
+        await this.syncHistory(userId);
       }
     } catch (err) {
       console.error('[PhysioStore] Failed to delete session from backend:', err);

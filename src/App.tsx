@@ -129,7 +129,7 @@ export default function App() {
       setIsSyncing(true);
       setSyncError('');
       try {
-        const res = await apiFetch(`/api/users/${userId}`);
+        const res = await apiFetch('/api/users/me');
         if (res.ok) {
           const profile = profileFromApi(await res.json());
           store.setUserData(profile);

@@ -25,14 +25,14 @@ interface SystemStats {
 }
 
 interface UserRow {
-  clerk_id: string;
+  id: string;
   name: string;
   email: string;
   age: number;
   experience: string;
   goal: string;
   role: 'patient' | 'doctor' | 'admin';
-  doctor_id?: string | null;
+  doctorId?: string | null;
   approved?: boolean;
 }
 
@@ -90,16 +90,16 @@ export function AdminPortal() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleChangeRole = async (clerkId: string, newRole: 'patient' | 'doctor' | 'admin') => {
+  const handleChangeRole = async (targetId: string, newRole: 'patient' | 'doctor' | 'admin') => {
     try {
-      setUpdatingId(clerkId);
-      const res = await apiFetch(`/api/admin/users/${clerkId}/role`, {
-        method: 'POST',
+      setUpdatingId(targetId);
+      const res = await apiFetch(`/api/admin/users/${targetId}/role`, {
+        method: 'PUT',
         body: JSON.stringify({ role: newRole })
       });
       if (res.ok) {
         const currentUser = store.getState().userData;
-        if (clerkId === userId && currentUser) {
+        if (targetId === userId && currentUser) {
           store.setUserData({ ...currentUser, role: newRole });
           store.setScreen(newRole === 'doctor' ? 'doctor' : newRole === 'admin' ? 'admin' : 'dashboard');
         }
@@ -115,10 +115,10 @@ export function AdminPortal() {
     }
   };
 
-  const handleApproveDoctor = async (clerkId: string) => {
+  const handleApproveDoctor = async (targetId: string) => {
     try {
-      setUpdatingId(clerkId);
-      const res = await apiFetch(`/api/admin/users/${clerkId}/approve`, { method: 'POST' });
+      setUpdatingId(targetId);
+      const res = await apiFetch(`/api/admin/users/${targetId}/approve`, { method: 'POST' });
       if (res.ok) {
         await fetchAdminData();
       } else {
@@ -132,11 +132,11 @@ export function AdminPortal() {
     }
   };
 
-  const handleAssignDoctor = async (patientClerkId: string, doctorClerkId: string) => {
+  const handleAssignDoctor = async (patientId: string, doctorClerkId: string) => {
     try {
-      setUpdatingId(patientClerkId);
-      const res = await apiFetch(`/api/admin/users/${patientClerkId}/doctor`, {
-        method: 'POST',
+      setUpdatingId(patientId);
+      const res = await apiFetch(`/api/admin/users/${patientId}/doctor`, {
+        method: 'PUT',
         body: JSON.stringify({ doctorId: doctorClerkId || null })
       });
       if (res.ok) {
@@ -152,8 +152,8 @@ export function AdminPortal() {
     }
   };
 
-  const handleDeleteUser = async (clerkId: string, name: string) => {
-    if (clerkId === userId) {
+  const handleDeleteUser = async (targetId: string, name: string) => {
+    if (targetId === userId) {
       alert('You cannot delete your own active admin account!');
       return;
     }
@@ -162,8 +162,8 @@ export function AdminPortal() {
     }
     
     try {
-      setUpdatingId(clerkId);
-      const res = await apiFetch(`/api/admin/users/${clerkId}`, { method: 'DELETE' });
+      setUpdatingId(targetId);
+      const res = await apiFetch(`/api/admin/users/${targetId}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchAdminData();
       } else {
@@ -317,12 +317,12 @@ export function AdminPortal() {
                 <tbody>
                   {filteredUsers.map(u => (
                     <tr 
-                      key={u.clerk_id}
+                      key={u.id}
                       style={{ 
                         borderBottom: '1.5px dashed var(--line)', 
                         fontWeight: 800, 
-                        opacity: updatingId === u.clerk_id ? 0.5 : 1,
-                        background: u.clerk_id === userId ? '#F6FFF8' : 'transparent'
+                        opacity: updatingId === u.id ? 0.5 : 1,
+                        background: u.id === userId ? '#F6FFF8' : 'transparent'
                       }}
                     >
                       <td style={{ padding: '14px 8px' }}>
@@ -342,7 +342,7 @@ export function AdminPortal() {
                           <div>
                             <div style={{ color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
                               {u.name}
-                              {u.clerk_id === userId && (
+                              {u.id === userId && (
                                 <span style={{ fontSize: 9, background: 'var(--mint)', border: '1.5px solid var(--line)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>You</span>
                               )}
                             </div>
@@ -352,7 +352,7 @@ export function AdminPortal() {
                       </td>
                       
                       <td style={{ padding: '14px 8px', fontSize: 11, fontFamily: 'monospace', color: 'var(--ink-soft)' }}>
-                        {u.clerk_id}
+                        {u.id}
                       </td>
 
                       <td style={{ padding: '14px 8px', fontSize: 12, color: 'var(--ink-soft)' }}>
@@ -366,8 +366,8 @@ export function AdminPortal() {
                       <td style={{ padding: '14px 8px' }}>
                         <select
                           value={u.role}
-                          disabled={updatingId === u.clerk_id}
-                          onChange={(e) => handleChangeRole(u.clerk_id, e.target.value as any)}
+                          disabled={updatingId === u.id}
+                          onChange={(e) => handleChangeRole(u.id, e.target.value as any)}
                           style={{
                             padding: '6px 10px',
                             border: '2px solid var(--line)',
@@ -386,8 +386,8 @@ export function AdminPortal() {
                         </select>
                         {u.role === 'doctor' && u.approved === false && (
                           <button
-                            onClick={() => handleApproveDoctor(u.clerk_id)}
-                            disabled={updatingId === u.clerk_id}
+                            onClick={() => handleApproveDoctor(u.id)}
+                            disabled={updatingId === u.id}
                             className="tap"
                             style={{
                               marginLeft: 8,
@@ -410,9 +410,9 @@ export function AdminPortal() {
                       <td style={{ padding: '14px 8px' }}>
                         {u.role === 'patient' ? (
                           <select
-                            value={u.doctor_id || ''}
-                            disabled={updatingId === u.clerk_id}
-                            onChange={(e) => handleAssignDoctor(u.clerk_id, e.target.value)}
+                            value={u.doctorId || ''}
+                            disabled={updatingId === u.id}
+                            onChange={(e) => handleAssignDoctor(u.id, e.target.value)}
                             style={{
                               padding: '6px 10px',
                               border: '2px solid var(--line)',
@@ -427,7 +427,7 @@ export function AdminPortal() {
                           >
                             <option value="">No Doctor Assigned</option>
                             {users.filter(usr => usr.role === 'doctor' && usr.approved !== false).map(doc => (
-                              <option key={doc.clerk_id} value={doc.clerk_id}>Dr. {doc.name}</option>
+                              <option key={doc.id} value={doc.id}>Dr. {doc.name}</option>
                             ))}
                           </select>
                         ) : (
@@ -437,20 +437,20 @@ export function AdminPortal() {
 
                       <td style={{ padding: '14px 8px', textAlign: 'center' }}>
                         <button
-                          onClick={() => handleDeleteUser(u.clerk_id, u.name)}
-                          disabled={updatingId === u.clerk_id || u.clerk_id === userId}
+                          onClick={() => handleDeleteUser(u.id, u.name)}
+                          disabled={updatingId === u.id || u.id === userId}
                           style={{
                             border: '2px solid var(--line)',
-                            background: u.clerk_id === userId ? '#F1F5F9' : '#FFEAE6',
-                            color: u.clerk_id === userId ? 'var(--ink-soft)' : '#FF6B4A',
+                            background: u.id === userId ? '#F1F5F9' : '#FFEAE6',
+                            color: u.id === userId ? 'var(--ink-soft)' : '#FF6B4A',
                             padding: '8px',
                             borderRadius: 10,
-                            cursor: u.clerk_id === userId ? 'not-allowed' : 'pointer',
+                            cursor: u.id === userId ? 'not-allowed' : 'pointer',
                             display: 'inline-flex',
-                            boxShadow: u.clerk_id === userId ? 'none' : '2px 2px 0 var(--line)',
+                            boxShadow: u.id === userId ? 'none' : '2px 2px 0 var(--line)',
                             transition: 'transform 0.1s'
                           }}
-                          className={u.clerk_id === userId ? '' : 'tap'}
+                          className={u.id === userId ? '' : 'tap'}
                         >
                           <Trash2 size={16} />
                         </button>

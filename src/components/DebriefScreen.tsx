@@ -131,17 +131,38 @@ export function DebriefScreen() {
             <h3 style={{ fontSize: 20, fontWeight: 900 }}>AI Attending Grader Critique</h3>
           </div>
 
-          {activeSession.aiCritique === 'Generating...' ? (
+          {activeSession.critiqueStatus === 'saving' || activeSession.critiqueStatus === 'pending' ? (
             <div style={{ padding: '32px 16px', textAlign: 'center' }}>
               <div className="breathe" style={{ display: 'inline-block', marginBottom: 12 }}>
                 <Clock size={36} className="floaty" style={{ color: 'var(--peach-deep)' }} />
               </div>
               <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)' }}>
-                Attending Coach is analyzing your joint coordinates...
+                {activeSession.critiqueStatus === 'saving'
+                  ? 'Saving your session...'
+                  : 'Session saved. Your coach is writing the report...'}
               </p>
               <p style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700, marginTop: 4 }}>
-                Reviewing skeletal data and generating clinical feedback. This will take a few seconds.
+                You can leave this page, the report will be in your history when it's ready.
               </p>
+            </div>
+          ) : activeSession.critiqueStatus === 'unsaved' || activeSession.critiqueStatus === 'failed' ? (
+            <div style={{ padding: '24px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
+                {activeSession.critiqueStatus === 'unsaved'
+                  ? "This session couldn't be saved."
+                  : "Your session is saved, but the report couldn't be generated."}
+              </p>
+              <button
+                className="btn-plush primary"
+                style={{ padding: '10px 22px', fontSize: 14 }}
+                onClick={() =>
+                  activeSession.critiqueStatus === 'unsaved'
+                    ? store.completeActiveSession()
+                    : store.retryCritique(activeSession.id)
+                }
+              >
+                Try again
+              </button>
             </div>
           ) : (
             <div className="ai-critique-content" dangerouslySetInnerHTML={{
@@ -153,7 +174,7 @@ export function DebriefScreen() {
                     .replace(/\*(.*?)\*/g, '<em style="color: var(--ink-soft); font-style: italic;">$1</em>')
                     .replace(/- (.*)/g, '<li style="margin-left: 20px; margin-bottom: 4px; font-weight: 700; list-style-type: square;">$1</li>')
                     .replace(/\n\n/g, '<p style="margin-bottom: 12px; font-weight: 700;"></p>')
-                : '<p>Grader report failed to compile.</p>'
+                : '<p>No report for this session.</p>'
             }} />
           )}
         </div>

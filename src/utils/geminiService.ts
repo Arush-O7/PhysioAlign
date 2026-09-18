@@ -23,9 +23,9 @@ export const askCoachQuestion = async (
 };
 
 export const generateDoctorInsight = async (
-  patient: UserData & { clerk_id: string }
+  patient: UserData & { id: string }
 ): Promise<string> => {
-  const res = await apiFetch(`/api/doctor/patients/${patient.clerk_id}/insight`, { method: 'POST' });
+  const res = await apiFetch(`/api/doctor/patients/${patient.id}/insight`, { method: 'POST' });
   if (!res.ok) {
     return '<p>Error generating report. Please try again.</p>';
   }

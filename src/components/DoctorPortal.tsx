@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '../utils/auth';
 import { useUserData } from '../game/store';
-import { SessionData, UserData } from '../game/types';
+import { CarePlanItem, SessionData, UserData } from '../game/types';
 import { TopBar, Doodle } from './primitives';
 import { POSES } from '../data/poses';
 import { 
@@ -30,7 +30,7 @@ import { sanitizeHtml } from '../utils/sanitize';
 import { apiFetch } from '../utils/api';
 
 interface PatientRecord extends UserData {
-  clerk_id: string;
+  id: string;
   email: string;
   sessionCount: number;
   avgScore: number;
@@ -86,7 +86,7 @@ export function DoctorPortal() {
     setAiReport('');
     try {
       setHistoryLoading(true);
-      const res = await apiFetch(`/api/doctor/patients/${patient.clerk_id}/history`);
+      const res = await apiFetch(`/api/doctor/patients/${patient.id}/sessions`);
       if (res.ok) {
         const data = await res.json();
         setPatientHistory(data);
@@ -143,20 +143,21 @@ export function DoctorPortal() {
     document.body.removeChild(link);
   };
 
-  const handleSaveCarePlan = async (updatedPlan: any[]) => {
+  const handleSaveCarePlan = async (updatedPlan: CarePlanItem[]) => {
     if (!selectedPatient) return;
     try {
       setIsUpdatingCarePlan(true);
-      const res = await apiFetch(`/api/doctor/patients/${selectedPatient.clerk_id}/care-plan`, {
-        method: 'POST',
+      const res = await apiFetch(`/api/doctor/patients/${selectedPatient.id}/care-plan`, {
+        method: 'PUT',
         body: JSON.stringify({ carePlan: updatedPlan })
       });
       if (res.ok) {
-        const updatedUser = { ...selectedPatient, care_plan: JSON.stringify(updatedPlan) };
+        const updatedUser = { ...selectedPatient, carePlan: updatedPlan };
         setSelectedPatient(updatedUser);
-        setPatients(prev => prev.map(p => p.clerk_id === selectedPatient.clerk_id ? updatedUser : p));
+        setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updatedUser : p));
       } else {
-        alert('Failed to save care plan');
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to save care plan');
       }
     } catch (e) {
       console.error(e);
@@ -169,7 +170,7 @@ export function DoctorPortal() {
   const filteredPatients = patients.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (p.email || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeFilterTab === 'all' || p.doctor_id === user?.id;
+    const matchesTab = activeFilterTab === 'all' || p.doctorId === user?.id;
     return matchesSearch && matchesTab;
   });
 
@@ -338,7 +339,7 @@ export function DoctorPortal() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
               {filteredPatients.map(p => (
                 <div 
-                  key={p.clerk_id}
+                  key={p.id}
                   onClick={() => handleSelectPatient(p)}
                   className="plush-card tap"
                   style={{
@@ -461,14 +462,7 @@ export function DoctorPortal() {
             </div>
 
             {(() => {
-              let currentCarePlan: any[] = [];
-              try {
-                if (selectedPatient.care_plan) {
-                  currentCarePlan = JSON.parse(selectedPatient.care_plan);
-                }
-              } catch (e) {
-                console.error('Failed to parse care plan', e);
-              }
+              const currentCarePlan = selectedPatient.carePlan ?? [];
               return (
                 <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>

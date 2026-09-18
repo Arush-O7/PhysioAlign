@@ -522,14 +522,7 @@ export function HomeScreen() {
 
 
             {(() => {
-              let carePlan: any[] = [];
-              try {
-                if (userData?.care_plan) {
-                  carePlan = JSON.parse(userData.care_plan);
-                }
-              } catch (e) {
-                console.error('Failed to parse care plan on home screen', e);
-              }
+              const carePlan = userData?.carePlan ?? [];
               if (carePlan.length === 0) return null;
               
               return (

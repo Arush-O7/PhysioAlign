@@ -72,3 +72,6 @@ Thumbs.db
 backend/database.sqlite
 *.sqlite
 *.db
+
+# compiled backend
+backend/build/

@@ -9,9 +9,16 @@ export interface UserData {
   experience: 'beginner' | 'intermediate' | 'advanced';
   goal: 'flexibility' | 'strength' | 'balance' | 'rehabilitation';
   role: 'patient' | 'doctor' | 'admin' | 'pending';
-  doctor_id?: string | null;
-  care_plan?: string | null;
+  doctorId?: string | null;
+  carePlan?: CarePlanItem[];
   approved?: boolean;
+}
+
+export interface CarePlanItem {
+  poseId: string;
+  poseName?: string;
+  targetHold: number;
+  frequency?: string;
 }
 
 export type JointName =
@@ -62,7 +69,9 @@ export interface SessionData {
   holdTimeSeconds: number;
   averageScore: number;
   grade: 'A' | 'B' | 'C' | 'F';
-  aiCritique?: string;
+  aiCritique?: string | null;
+  // saving/unsaved only exist on the client, before the server has the session
+  critiqueStatus?: 'saving' | 'unsaved' | 'pending' | 'ready' | 'failed';
   frameLogs: FrameLog[];
 }
 
