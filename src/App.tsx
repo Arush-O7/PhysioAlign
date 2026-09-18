@@ -1,18 +1,38 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuth, signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle } from './utils/auth';
 import { apiFetch } from './utils/api';
 import { store, useScreen, useUserData, profileFromApi, screenForProfile } from './game/store';
-import { SplashScreen } from './components/SplashScreen';
-import { OnboardingScreen } from './components/OnboardingScreen';
-import { HomeScreen } from './components/HomeScreen';
-import { PoseLibraryScreen } from './components/PoseLibraryScreen';
-import { SessionScreen } from './components/SessionScreen';
-import { DebriefScreen } from './components/DebriefScreen';
 import { Wordmark, PhysioLogo } from './components/primitives';
 import { LandingScreen } from './components/LandingScreen';
-import { DoctorPortal } from './components/DoctorPortal';
-import { AdminPortal } from './components/AdminPortal';
-import { PendingApprovalScreen } from './components/PendingApprovalScreen';
+
+// everything behind the login is split into its own chunk, so the landing page
+// doesn't download recharts, the portals or the session screen up front
+const screens = {
+  splash: () => import('./components/SplashScreen').then((m) => ({ default: m.SplashScreen })),
+  onboarding: () => import('./components/OnboardingScreen').then((m) => ({ default: m.OnboardingScreen })),
+  dashboard: () => import('./components/HomeScreen').then((m) => ({ default: m.HomeScreen })),
+  library: () => import('./components/PoseLibraryScreen').then((m) => ({ default: m.PoseLibraryScreen })),
+  session: () => import('./components/SessionScreen').then((m) => ({ default: m.SessionScreen })),
+  debrief: () => import('./components/DebriefScreen').then((m) => ({ default: m.DebriefScreen })),
+  doctor: () => import('./components/DoctorPortal').then((m) => ({ default: m.DoctorPortal })),
+  admin: () => import('./components/AdminPortal').then((m) => ({ default: m.AdminPortal })),
+  pending: () => import('./components/PendingApprovalScreen').then((m) => ({ default: m.PendingApprovalScreen })),
+};
+const SplashScreen = lazy(screens.splash);
+const OnboardingScreen = lazy(screens.onboarding);
+const HomeScreen = lazy(screens.dashboard);
+const PoseLibraryScreen = lazy(screens.library);
+const SessionScreen = lazy(screens.session);
+const DebriefScreen = lazy(screens.debrief);
+const DoctorPortal = lazy(screens.doctor);
+const AdminPortal = lazy(screens.admin);
+const PendingApprovalScreen = lazy(screens.pending);
+
+const ScreenLoading = () => (
+  <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+    <h3 style={{ fontFamily: 'Nunito', fontWeight: 800 }}>Loading...</h3>
+  </div>
+);
 import './styles/global.css';
 import { User, Stethoscope, Shield, ArrowLeft } from 'lucide-react';
 
@@ -117,6 +137,15 @@ export default function App() {
       sessionStorage.setItem('physioalign:session_active', 'true');
     }
   }, [isLoaded, isSignedIn]);
+
+  // warm up the main chunks in the background once someone is signed in
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const prefetch = () => [screens.dashboard, screens.library, screens.session, screens.debrief].forEach((load) => load());
+    const idle = (window as any).requestIdleCallback as ((cb: () => void) => number) | undefined;
+    if (idle) idle(prefetch);
+    else setTimeout(prefetch, 1500);
+  }, [isSignedIn]);
 
   // Sync auth status with database
   useEffect(() => {
@@ -556,10 +585,15 @@ export default function App() {
   // and nothing on those screens can be saved without one
   const needsProfile = !userData && !['splash', 'landing', 'onboarding'].includes(screen);
   if (needsProfile) {
-    return <OnboardingScreen />;
+    return (
+      <Suspense fallback={<ScreenLoading />}>
+        <OnboardingScreen />
+      </Suspense>
+    );
   }
 
   return (
+    <Suspense fallback={<ScreenLoading />}>
     <div className="app">
       {screen === 'landing' && <LandingScreen onStartLogin={() => store.setScreen('dashboard')} />}
       {screen === 'splash' && <SplashScreen />}
@@ -572,5 +606,6 @@ export default function App() {
       {screen === 'admin' && <AdminPortal />}
       {screen === 'pending' && <PendingApprovalScreen />}
     </div>
+    </Suspense>
   );
 }
