@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LogOut, RotateCcw, User, X } from 'lucide-react';
-import { store, useScreen, useActiveTab } from '../game/store';
+import { store, useScreen, useActiveTab, useUserData } from '../game/store';
 import { useAuth, useUser } from '../utils/auth';
 
 // --- DOODLE ICONS ---
@@ -231,20 +231,29 @@ function ProfileMenu() {
 export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
   const currentScreen = useScreen();
   const activeTab = useActiveTab();
+  const userData = useUserData();
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const navItems = [
-    { label: 'Home', isActive: currentScreen === 'landing', action: () => store.setScreen('landing') },
-    { label: 'Dashboard', isActive: currentScreen === 'dashboard' && activeTab === 'dashboard', action: () => store.setActiveTab('dashboard') },
-    { label: 'Pose Library', isActive: currentScreen === 'library', action: () => store.setScreen('library') },
-    { label: 'Coaches', isActive: currentScreen === 'dashboard' && activeTab === 'consult', action: () => store.setActiveTab('consult') },
-  ];
+  // clinicians and admins have their own workspace, so don't show them patient links
+  const navItems =
+    userData?.role === 'admin'
+      ? [{ label: 'Accounts', isActive: currentScreen === 'admin', action: () => store.setScreen('admin') }]
+      : userData?.role === 'doctor'
+        ? [{ label: 'Patients', isActive: currentScreen === 'doctor', action: () => store.setScreen('doctor') }]
+        : [
+            { label: 'Home', isActive: currentScreen === 'landing', action: () => store.setScreen('landing') },
+            { label: 'Dashboard', isActive: currentScreen === 'dashboard' && activeTab === 'dashboard', action: () => store.setActiveTab('dashboard') },
+            { label: 'Pose Library', isActive: currentScreen === 'library', action: () => store.setScreen('library') },
+            { label: 'Coaches', isActive: currentScreen === 'dashboard' && activeTab === 'consult', action: () => store.setActiveTab('consult') },
+          ];
+
+  const home = userData?.role === 'admin' ? 'admin' : userData?.role === 'doctor' ? 'doctor' : 'dashboard';
 
   return (
     <div className="appbar">
       <button
-        onClick={() => store.setScreen('dashboard')}
-        title="Back to dashboard"
+        onClick={() => store.setScreen(home)}
+        title="Back to your dashboard"
         style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: 0, padding: 0, cursor: 'pointer' }}
       >
         <Wordmark size={24} />

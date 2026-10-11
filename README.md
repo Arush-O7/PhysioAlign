@@ -5,8 +5,12 @@
 A webcam posture coach for yoga and physiotherapy exercises. It tracks 33 body landmarks in the browser and scores 3D joint angles against target ranges for each pose. It gives on-screen and spoken corrections as you move, times how long you hold good form, and sends each session to a clinician dashboard with an AI-written report.
 
 <p align="center">
-  <img src="docs/screenshots/session.jpg" width="49%" alt="Live session with skeleton overlay and joint angle feedback" />
-  <img src="docs/screenshots/report.jpg" width="49%" alt="Session report with accuracy chart and AI critique" />
+  <img src="docs/screenshots/session.jpg" width="49%" alt="Live session: camera view with the tracked skeleton and joint angle readouts" />
+  <img src="docs/screenshots/report.jpg" width="49%" alt="Session report with the accuracy chart and AI critique" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/dashboard.jpg" width="49%" alt="Patient dashboard with streak, average score and session history" />
+  <img src="docs/screenshots/doctor-portal.jpg" width="49%" alt="Clinician portal listing assigned patients" />
 </p>
 
 **Roles:**

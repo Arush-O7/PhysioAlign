@@ -36,6 +36,13 @@ interface PatientRecord extends UserData {
   avgScore: number;
 }
 
+// names are often saved with the title already included, so don't add a second one
+function formatClinicianName(name?: string | null) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return 'Doctor';
+  return /^dr\.?\s/i.test(trimmed) ? trimmed : `Dr. ${trimmed}`;
+}
+
 export function DoctorPortal() {
   const doctorData = useUserData();
   const { user } = useUser();
@@ -192,7 +199,7 @@ export function DoctorPortal() {
         <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
           
           <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
-            Welcome, Dr. {doctorData?.name || user?.firstName || 'Practitioner'}!
+            Welcome, {formatClinicianName(doctorData?.name || user?.firstName)}!
           </h1>
           <p style={{ fontSize: 16, color: 'var(--ink-2)', marginTop: 6, fontWeight: 700, maxWidth: 640 }}>
             PhysioAlign Clinician Portal. Monitor patient range-of-motion compliance, track biomechanical hold alignments, and generate AI assessment insights.
