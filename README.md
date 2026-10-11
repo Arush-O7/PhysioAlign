@@ -5,8 +5,12 @@
 A webcam posture coach for yoga and physiotherapy exercises. It tracks 33 body landmarks in the browser and scores 3D joint angles against target ranges for each pose. It gives on-screen and spoken corrections as you move, times how long you hold good form, and sends each session to a clinician dashboard with an AI-written report.
 
 <p align="center">
-  <img src="docs/screenshots/session.jpg" width="49%" alt="Live session with skeleton overlay and joint angle feedback" />
+  <img src="docs/screenshots/session.jpg" width="49%" alt="Live session with skeleton overlay and joint angle meters" />
   <img src="docs/screenshots/report.jpg" width="49%" alt="Session report with accuracy chart and AI critique" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/dashboard.jpg" width="49%" alt="Patient dashboard with streak, average score and recent sessions" />
+  <img src="docs/screenshots/doctor-portal.jpg" width="49%" alt="Clinician portal showing a patient's care plan and session history" />
 </p>
 
 **Roles:**
@@ -24,6 +28,7 @@ A webcam posture coach for yoga and physiotherapy exercises. It tracks 33 body l
 | **Async report generation** | Sessions save straight away (`202 Accepted`). A queue with retries writes the Gemini critique in the background, and the client polls with backoff. Pending jobs resume after a restart. | Saving no longer waits several seconds for the LLM |
 | **Code splitting** | Screens behind the login are lazy-loaded, then prefetched in the background once the user signs in | Initial JS **728.8 KB → 200.3 KB** (gzip 200.4 → 60.1 KB) |
 | **Security** | httpOnly `SameSite=Lax` session cookie, CSRF header check, role-based access with per-doctor patient scoping, Zod validation on every body, server-side Google ID-token verification, rate-limited auth, PBKDF2 (210k iterations) with rehash on login | Covered by the API test suite |
+| **Design system** | One CSS layer of tokens (colour, spacing, radii, elevation) and component classes — buttons, cards, tables, forms, meters, drawers — that every screen is built from, instead of inline styles | Consistent UI, keyboard focus states, reduced-motion support and a responsive layout down to 390px |
 | **Schema migrations** | Versioned, transactional migrations with an advisory lock. Existing databases are upgraded in place: `TEXT` JSON becomes `JSONB`, the `clerk_id` column is renamed to `user_id`, and indexes are added. | Tested against the pre-migration production schema |
 
 The pose numbers were measured on an Apple M4 in Chrome 153 (GPU delegate) over 300 frames of a 640×480 feed. To measure on your own machine, open the app with `?perf` and run `__perf()` in the console. To reproduce the smoothing numbers, run `npm run bench:smoothing`.
