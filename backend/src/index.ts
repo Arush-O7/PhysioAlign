@@ -19,7 +19,8 @@ async function prepareDatabase() {
   }
 }
 
-const server = createApp().listen(config.port, () => {
+const app = createApp();
+const server = app.listen(config.port, () => {
   console.log(`[server] Listening on port ${config.port}`);
   prepareDatabase();
 });
@@ -32,5 +33,10 @@ async function shutdown(signal: string) {
   await pool.end();
   process.exit(0);
 }
+// a stalled client shouldn't hold a socket indefinitely
+server.headersTimeout = 20000;
+server.requestTimeout = 60000;
+server.keepAliveTimeout = 65000;
+
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));

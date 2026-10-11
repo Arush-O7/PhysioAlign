@@ -486,3 +486,6 @@ h3 { font-weight: 700; }
 @media (prefers-reduced-motion: reduce) {
   .breath-ring { transition-duration: 1ms !important; }
 }
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.spin { animation: spin-slow 900ms linear infinite; }

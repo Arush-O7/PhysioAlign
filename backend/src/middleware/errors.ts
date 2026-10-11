@@ -22,9 +22,9 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
     return res.status(413).json({ error: 'Request body is too large' });
   }
   if (isConnectionError(err)) {
-    console.error(`[api] ${req.method} ${req.path}: database unreachable:`, err.message);
-    return res.status(503).json({ error: DB_UNAVAILABLE });
+    console.error(`[api] ${req.method} ${req.path}: database unreachable (id=${req.id}):`, err.message);
+    return res.status(503).json({ error: DB_UNAVAILABLE, requestId: req.id });
   }
-  console.error(`[api] ${req.method} ${req.path} failed:`, err);
-  res.status(500).json({ error: 'Something went wrong' });
+  console.error(`[api] ${req.method} ${req.path} failed (id=${req.id}):`, err);
+  res.status(500).json({ error: 'Something went wrong', requestId: req.id });
 }

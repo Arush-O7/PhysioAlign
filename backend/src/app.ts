@@ -7,7 +7,9 @@ import { config } from './config.js';
 import { one } from './db/pool.js';
 import { requireAuth, requireCsrfHeader } from './middleware/auth.js';
 import { errorHandler } from './middleware/errors.js';
-import { rateLimit } from './middleware/rateLimit.js';
+import { byUser, rateLimit } from './middleware/rateLimit.js';
+import { requestContext } from './middleware/requestContext.js';
+import { securityHeaders } from './middleware/security.js';
 import { adminRouter } from './routes/admin.js';
 import { authRouter } from './routes/auth.js';
 import { coachRouter } from './routes/coach.js';
@@ -29,7 +31,13 @@ export function createApp() {
   // only opened up when an origin is configured explicitly
   if (config.corsOrigins.length) app.use(cors({ origin: config.corsOrigins, credentials: true }));
 
-  app.use(express.json({ limit: '5mb' }));
+  app.use(requestContext);
+  app.use(securityHeaders);
+
+  // session uploads carry a frame log, everything else is small: keep the big
+  // limit to the one route that needs it
+  app.use('/api/sessions', express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '64kb' }));
   app.use(cookieParser());
 
   app.get('/api/health', async (_req, res) => {
@@ -47,12 +55,49 @@ export function createApp() {
   });
 
   app.use('/api', requireCsrfHeader);
-  app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: config.isTest ? 1000 : 20 }), authRouter);
+
+  // broad ceiling so one client can't flood the api, generous enough that
+  // normal use (polling a critique, loading a dashboard) never notices
+  app.use(
+    '/api',
+    rateLimit({
+      windowMs: 60 * 1000,
+      max: config.isTest ? 100000 : 240,
+      message: 'You are sending requests very quickly. Give it a few seconds.',
+    })
+  );
+
+  // sign-in and sign-up: tight, and successful requests are refunded
+  app.use(
+    '/api/auth',
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: config.isTest ? 100000 : 20,
+      skipSuccessful: true,
+      message: 'Too many sign-in attempts. Please wait a few minutes and try again.',
+    }),
+    authRouter
+  );
 
   app.use('/api', requireAuth);
+
+  // the expensive endpoints call a paid model, so they are limited per account
+  const aiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: config.isTest ? 100000 : 12,
+    key: byUser,
+    message: 'That is a lot of coaching at once. Please wait a minute.',
+  });
+  const writeLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: config.isTest ? 100000 : 30,
+    key: byUser,
+    message: 'Too many changes at once. Please wait a moment.',
+  });
+
   app.use('/api/users', usersRouter);
-  app.use('/api/sessions', sessionsRouter);
-  app.use('/api/coach', coachRouter);
+  app.use('/api/sessions', writeLimiter, sessionsRouter);
+  app.use('/api/coach', aiLimiter, coachRouter);
   app.use('/api/doctor', doctorRouter);
   app.use('/api/admin', adminRouter);
 

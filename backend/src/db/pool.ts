@@ -24,6 +24,9 @@ export const pool = new pg.Pool({
   max: 10,
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
+  // a single slow query shouldn't hold a request (or a pool slot) open forever
+  statement_timeout: 10000,
+  query_timeout: 12000,
 });
 
 pool.on('error', (err) => {

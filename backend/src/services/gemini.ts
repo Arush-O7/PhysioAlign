@@ -9,6 +9,18 @@ const LITE_MODEL = 'gemini-2.5-flash-lite';
 const genAI = config.geminiApiKey ? new GoogleGenerativeAI(config.geminiApiKey) : null;
 export const geminiEnabled = !!genAI;
 
+const REQUEST_TIMEOUT_MS = 25000;
+
+/** rejects if the model hasn't answered in time, so callers can fall back */
+function withTimeout<T>(work: Promise<T>, label: string): Promise<T> {
+  return Promise.race([
+    work,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${REQUEST_TIMEOUT_MS}ms`)), REQUEST_TIMEOUT_MS)
+    ),
+  ]);
+}
+
 type Profile = Pick<UserRow, 'name' | 'age' | 'experience' | 'goal'>;
 
 const traineeProfile = (user: Profile) => `
@@ -25,7 +37,7 @@ async function generate(systemInstruction: string, prompt: string): Promise<stri
   for (const modelId of [PRIMARY_MODEL, LITE_MODEL]) {
     try {
       const model = genAI.getGenerativeModel({ model: modelId, systemInstruction });
-      const result = await model.generateContent(prompt);
+      const result = await withTimeout(model.generateContent(prompt), `${modelId} generate`);
       return result.response.text();
     } catch (error) {
       lastError = error;
@@ -141,7 +153,7 @@ Respond with their age and experience in mind. Be concise and friendly, and use 
       const chat = genAI
         .getGenerativeModel({ model: modelId, systemInstruction })
         .startChat({ history: turns, generationConfig: { maxOutputTokens: 1000, temperature: 0.7 } });
-      const result = await chat.sendMessage(message);
+      const result = await withTimeout(chat.sendMessage(message), `${modelId} chat`);
       return result.response.text();
     } catch (error) {
       lastError = error;

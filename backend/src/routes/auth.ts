@@ -7,6 +7,7 @@ import { validateBody } from '../middleware/validate.js';
 import { verifyGoogleCredential } from '../services/google.js';
 import { hashPassword, needsRehash, verifyPassword } from '../services/passwords.js';
 import * as users from '../services/users.js';
+import { clearFailures, lockedFor, recordFailure } from '../services/loginAttempts.js';
 import { googleSchema, loginSchema, signupSchema } from './schemas.js';
 
 export const authRouter = Router();
@@ -32,10 +33,22 @@ authRouter.post(
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+
+    const waitSeconds = lockedFor(email);
+    if (waitSeconds > 0) {
+      res.set('Retry-After', String(waitSeconds));
+      return res.status(429).json({
+        error: `Too many failed attempts for this account. Try again in ${Math.ceil(waitSeconds / 60)} minute(s).`,
+        retryAfterSeconds: waitSeconds,
+      });
+    }
+
     const user = await users.findUserByEmail(email);
     if (!user?.password_hash || !verifyPassword(password, user.password_hash)) {
+      recordFailure(email);
       throw unauthorized('Invalid email or password');
     }
+    clearFailures(email);
     // upgrade old low-iteration hashes now that we have the plain password
     if (needsRehash(user.password_hash)) await users.updatePasswordHash(user.user_id, hashPassword(password));
 

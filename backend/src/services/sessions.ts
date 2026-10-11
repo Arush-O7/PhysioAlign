@@ -30,8 +30,21 @@ export async function createSession(userId: string, s: NewSession) {
 
 export const findSession = (id: string) => one<SessionRow>('SELECT * FROM sessions WHERE id = $1', [id]);
 
-export const listSessionsForUser = (userId: string, limit = 200) =>
-  many<SessionRow>('SELECT * FROM sessions WHERE user_id = $1 ORDER BY date DESC LIMIT $2', [userId, limit]);
+export const listSessionsForUser = (userId: string, limit = 50, offset = 0) =>
+  many<SessionRow>('SELECT * FROM sessions WHERE user_id = $1 ORDER BY date DESC LIMIT $2 OFFSET $3', [
+    userId,
+    limit,
+    offset,
+  ]);
+
+export const countSessionsForUser = async (userId: string) => {
+  const row = await one<{ count: number }>('SELECT COUNT(*)::int AS count FROM sessions WHERE user_id = $1', [userId]);
+  return row?.count ?? 0;
+};
+
+/** everything this user has, for the "download my data" export */
+export const allSessionsForUser = (userId: string) =>
+  many<SessionRow>('SELECT * FROM sessions WHERE user_id = $1 ORDER BY date DESC', [userId]);
 
 export const deleteSession = (id: string, ownerId?: string) =>
   ownerId

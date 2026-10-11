@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { store, useUserData } from '../game/store';
 import { UserData } from '../game/types';
 import { TopBar, PhysioLogo } from './primitives';
+import { AccountData } from './AccountData';
 import { useAuth, useUser } from '../utils/auth';
 
 export function OnboardingScreen() {
@@ -287,6 +288,12 @@ export function OnboardingScreen() {
             </button>
           </div>
         </form>
+
+        {existingUser && (
+          <div style={{ marginTop: 24 }}>
+            <AccountData />
+          </div>
+        )}
       </div>
     </div>
   );

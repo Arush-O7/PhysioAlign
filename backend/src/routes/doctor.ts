@@ -3,6 +3,7 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 import { notFound } from '../lib/errors.js';
 import { toSession, toUser } from '../lib/mappers.js';
 import { requireRole } from '../middleware/auth.js';
+import { byUser, rateLimit } from '../middleware/rateLimit.js';
 import { validateBody } from '../middleware/validate.js';
 import { doctorInsight } from '../services/gemini.js';
 import * as sessions from '../services/sessions.js';
@@ -32,7 +33,7 @@ doctorRouter.get(
 doctorRouter.get(
   '/patients/:id/sessions',
   asyncHandler(async (req, res) => {
-    res.json((await sessions.listSessionsForUser(req.params.id)).map(toSession));
+    res.json((await sessions.listSessionsForUser(req.params.id, 100)).map(toSession));
   })
 );
 
@@ -47,6 +48,7 @@ doctorRouter.put(
 
 doctorRouter.post(
   '/patients/:id/insight',
+  rateLimit({ windowMs: 60 * 1000, max: 6, key: byUser, message: 'Please wait a minute before generating another summary.' }),
   asyncHandler(async (req, res) => {
     const patient = await users.findUserById(req.params.id);
     if (!patient) throw notFound('Patient not found');

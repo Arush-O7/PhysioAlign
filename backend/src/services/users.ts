@@ -92,6 +92,9 @@ export const assignDoctor = (patientId: string, doctorId: string | null) =>
 
 export const deleteUser = (id: string) => run('DELETE FROM users WHERE user_id = $1', [id]);
 
+/** removes the account and, through the cascade, every session it owns */
+export const deleteOwnAccount = (id: string) => run('DELETE FROM users WHERE user_id = $1', [id]);
+
 export async function stats() {
   const row = await one<{ users: number; patients: number; doctors: number; sessions: number; db_size: string }>(`
     SELECT
