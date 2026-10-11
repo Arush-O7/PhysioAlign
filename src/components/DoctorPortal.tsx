@@ -2,29 +2,10 @@ import { useState, useEffect } from 'react';
 import { useUser } from '../utils/auth';
 import { useUserData } from '../game/store';
 import { CarePlanItem, SessionData, UserData } from '../game/types';
-import { TopBar, Doodle } from './primitives';
+import { TopBar } from './primitives';
 import { POSES } from '../data/poses';
-import { 
-  Users, 
-  TrendingUp, 
-  X, 
-  Clock, 
-  Sparkles,
-  HeartPulse,
-  Search,
-  Download,
-  Plus,
-  Trash2
-} from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  Area, 
-  CartesianGrid 
-} from 'recharts';
+import { AlertTriangle, Download, Plus, Search, Sparkles, Trash2, Users, X } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, XAxis, YAxis, Tooltip, Area, CartesianGrid } from 'recharts';
 import { generateDoctorInsight } from '../utils/geminiService';
 import { sanitizeHtml } from '../utils/sanitize';
 import { apiFetch } from '../utils/api';
@@ -36,15 +17,16 @@ interface PatientRecord extends UserData {
   avgScore: number;
 }
 
+const FREQUENCIES = ['Daily', '3× per week', 'Weekly'];
+
 export function DoctorPortal() {
   const doctorData = useUserData();
   const { user } = useUser();
 
   const [patients, setPatients] = useState<PatientRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+
   const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
   const [patientHistory, setPatientHistory] = useState<SessionData[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -111,7 +93,7 @@ export function DoctorPortal() {
       setAiReport(sanitizeHtml(insight.replace(/^\s*```(?:html)?\s*|\s*```\s*$/g, '')));
     } catch (e) {
       console.error(e);
-      setAiReport('<p>Error generating report. Please check API Key and try again.</p>');
+      setAiReport('<p>Could not generate the report. Please try again.</p>');
     } finally {
       setGeneratingAi(false);
     }
@@ -123,20 +105,20 @@ export function DoctorPortal() {
       return;
     }
     const headers = ['Date', 'Pose Name', 'Duration (s)', 'Hold Time (s)', 'Average Score (%)', 'Grade'];
-    const rows = history.map(s => [
+    const rows = history.map((s) => [
       new Date(s.date).toLocaleDateString(),
       s.poseName,
       s.durationSeconds,
       s.holdTimeSeconds,
       s.averageScore,
-      s.grade
+      s.grade,
     ]);
-    const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+    const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Rehab_Report_${patientName.replace(/\s+/g, '_')}.csv`);
+    link.setAttribute('download', `physioalign_${patientName.replace(/\s+/g, '_').toLowerCase()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -149,12 +131,12 @@ export function DoctorPortal() {
       setIsUpdatingCarePlan(true);
       const res = await apiFetch(`/api/doctor/patients/${selectedPatient.id}/care-plan`, {
         method: 'PUT',
-        body: JSON.stringify({ carePlan: updatedPlan })
+        body: JSON.stringify({ carePlan: updatedPlan }),
       });
       if (res.ok) {
         const updatedUser = { ...selectedPatient, carePlan: updatedPlan };
         setSelectedPatient(updatedUser);
-        setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updatedUser : p));
+        setPatients((prev) => prev.map((p) => (p.id === selectedPatient.id ? updatedUser : p)));
       } else {
         const data = await res.json().catch(() => ({}));
         alert(data.error || 'Failed to save care plan');
@@ -167,618 +149,434 @@ export function DoctorPortal() {
     }
   };
 
-  const filteredPatients = patients.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (p.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredPatients = patients.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.email || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab = activeFilterTab === 'all' || p.doctorId === user?.id;
     return matchesSearch && matchesTab;
   });
 
   const totalPatientsCount = patients.length;
-  const avgAdherence = totalPatientsCount > 0 
-    ? Math.round(patients.reduce((sum, p) => sum + p.sessionCount, 0) / totalPatientsCount) 
+  const avgAdherence = totalPatientsCount > 0
+    ? Math.round(patients.reduce((sum, p) => sum + p.sessionCount, 0) / totalPatientsCount)
     : 0;
-  const avgAccuracy = totalPatientsCount > 0 
-    ? Math.round(patients.reduce((sum, p) => sum + p.avgScore, 0) / totalPatientsCount) 
+  const avgAccuracy = totalPatientsCount > 0
+    ? Math.round(patients.reduce((sum, p) => sum + p.avgScore, 0) / totalPatientsCount)
     : 0;
-  const attentionRequired = patients.filter(p => p.sessionCount > 0 && p.avgScore < 70).length;
+  const attentionRequired = patients.filter((p) => p.sessionCount > 0 && p.avgScore < 70).length;
+
+  const currentCarePlan = selectedPatient?.carePlan ?? [];
+  const isAdmin = doctorData?.role === 'admin';
 
   return (
-    <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--cream)' }}>
-      <TopBar here={0} steps={['PT Clinic Dashboard']} userName={doctorData?.name} showProfile={true} />
+    <div className="screen">
+      <TopBar here={0} steps={['Clinician portal']} userName={doctorData?.name} />
 
-      <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
-        
-        <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: 20, top: -10, opacity: 0.15 }} className="wobble">
-            <Doodle kind="flower" size={120} color="var(--mint)" />
-          </div>
-          
-          <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
-            Welcome, Dr. {doctorData?.name || user?.firstName || 'Practitioner'}!
-          </h1>
-          <p style={{ fontSize: 16, color: 'var(--ink-2)', marginTop: 6, fontWeight: 700, maxWidth: 640 }}>
-            PhysioAlign Clinician Portal. Monitor patient range-of-motion compliance, track biomechanical hold alignments, and generate AI assessment insights.
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-          
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--mint)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
-              <Users size={24} />
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Patients</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>{totalPatientsCount}</div>
+      <div className="page">
+        <div className="container container--wide stack stack--lg">
+          <div className="page-header">
+            <div className="page-header__text">
+              <h1>Clinician portal</h1>
+              <p className="page-subtitle">
+                Review your patients' sessions, prescribe poses and keep an eye on who needs attention.
+              </p>
             </div>
           </div>
 
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--butter)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
-              <Clock size={24} />
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg. Sessions</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>{avgAdherence} workouts</div>
-            </div>
-          </div>
-
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--peach)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
-              <TrendingUp size={24} />
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg. ROM Accuracy</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>{avgAccuracy}%</div>
-            </div>
-          </div>
-
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: attentionRequired > 0 ? '#FFEAE6' : '#EAFCEF', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
-              <HeartPulse size={24} style={{ color: attentionRequired > 0 ? '#FF6B4A' : '#10B981' }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attention Alerts</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: attentionRequired > 0 ? '#FF6B4A' : 'var(--ink)', marginTop: 2 }}>{attentionRequired} patient(s)</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="plush" style={{ background: 'white', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Active Recovery Registrants</h3>
-              {doctorData?.role === 'admin' && (
-              <div style={{ display: 'flex', background: 'var(--cream)', border: '2.5px solid var(--line)', borderRadius: 10, padding: 3 }}>
-                <button
-                  onClick={() => setActiveFilterTab('my')}
-                  style={{
-                    background: activeFilterTab === 'my' ? 'var(--mint)' : 'transparent',
-                    border: activeFilterTab === 'my' ? '2px solid var(--line)' : '2px solid transparent',
-                    borderRadius: 6,
-                    padding: '4px 12px',
-                    fontSize: 12,
-                    fontWeight: 900,
-                    color: 'var(--ink)',
-                    cursor: 'pointer',
-                    boxShadow: activeFilterTab === 'my' ? '1.5px 1.5px 0 var(--line)' : 'none',
-                    transition: 'all 0.1s ease'
-                  }}
-                >
-                  My Patients
-                </button>
-                <button
-                  onClick={() => setActiveFilterTab('all')}
-                  style={{
-                    background: activeFilterTab === 'all' ? 'var(--mint)' : 'transparent',
-                    border: activeFilterTab === 'all' ? '2px solid var(--line)' : '2px solid transparent',
-                    borderRadius: 6,
-                    padding: '4px 12px',
-                    fontSize: 12,
-                    fontWeight: 900,
-                    color: 'var(--ink)',
-                    cursor: 'pointer',
-                    boxShadow: activeFilterTab === 'all' ? '1.5px 1.5px 0 var(--line)' : 'none',
-                    transition: 'all 0.1s ease'
-                  }}
-                >
-                  All Patients
-                </button>
+          <div className="grid grid--4">
+            <div className="stat">
+              <div>
+                <div className="stat__label">Patients</div>
+                <div className="stat__value">{totalPatientsCount}</div>
               </div>
-              )}
+              <span className="stat__icon">
+                <Users size={17} />
+              </span>
             </div>
-            <div style={{ position: 'relative', width: '100%', maxWidth: 320 }}>
-              <Search 
-                size={18} 
-                style={{ 
-                  position: 'absolute', 
-                  left: 14, 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  color: 'var(--ink-soft)',
-                  strokeWidth: 3,
-                  pointerEvents: 'none'
-                }} 
-              />
-              <input
-                type="text"
-                placeholder="Search patient database..."
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                style={{
-                  width: '100%',
-                  padding: '10px 14px 10px 42px',
-                  border: '3px solid var(--line)',
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontFamily: 'inherit',
-                  fontWeight: 800,
-                  color: 'var(--ink)',
-                  outline: 'none',
-                  boxShadow: isSearchFocused ? '5px 5px 0 var(--line)' : '3px 3px 0 var(--line)',
-                  background: 'white',
-                  transform: isSearchFocused ? 'translate(-2px, -2px)' : 'none',
-                  transition: 'all 0.1s ease'
-                }}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="stat">
+              <div>
+                <div className="stat__label">Avg sessions each</div>
+                <div className="stat__value">{avgAdherence}</div>
+              </div>
+            </div>
+            <div className="stat">
+              <div>
+                <div className="stat__label">Avg accuracy</div>
+                <div className="stat__value">{avgAccuracy}%</div>
+              </div>
+            </div>
+            <div className="stat">
+              <div>
+                <div className="stat__label">Needs attention</div>
+                <div className="stat__value" style={{ color: attentionRequired ? 'var(--danger-600)' : undefined }}>
+                  {attentionRequired}
+                </div>
+                <div className="stat__meta">scoring under 70%</div>
+              </div>
+              <span className={`stat__icon ${attentionRequired ? 'stat__icon--danger' : 'stat__icon--neutral'}`}>
+                <AlertTriangle size={17} />
+              </span>
             </div>
           </div>
 
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', fontSize: 15, fontWeight: 800, color: 'var(--ink-soft)' }}>
-              Loading registered patient data...
-            </div>
-          ) : filteredPatients.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', border: '3.5px dashed var(--line)', borderRadius: 16, fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)' }}>
-              No registered patients match your search.
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-              {filteredPatients.map(p => (
-                <div 
-                  key={p.id}
-                  onClick={() => handleSelectPatient(p)}
-                  className="plush-card tap"
-                  style={{
-                    padding: '20px 22px',
-                    background: 'white',
-                    border: '3px solid var(--line)',
-                    borderRadius: 'var(--r-md)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    boxShadow: 'var(--plush-sm)',
-                    gap: 12
-                  }}
-                >
-                  <div>
-                    <h4 style={{ fontSize: 18, color: 'var(--ink)', margin: 0, fontWeight: 900 }}>{p.name}</h4>
-                    <p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '4px 0 0', fontWeight: 800, textTransform: 'uppercase' }}>
-                      Goal: {p.goal} • {p.age} y/o
-                    </p>
+          <div className="card">
+            <div className="card__header">
+              <span className="card__title">Patients</span>
+              <div className="row row--sm">
+                {isAdmin && (
+                  <div className="tabs">
+                    <button className={`tab${activeFilterTab === 'my' ? ' is-active' : ''}`} onClick={() => setActiveFilterTab('my')}>
+                      Mine
+                    </button>
+                    <button className={`tab${activeFilterTab === 'all' ? ' is-active' : ''}`} onClick={() => setActiveFilterTab('all')}>
+                      All
+                    </button>
                   </div>
-                  
-                  <div style={{ borderTop: '2px dashed var(--line)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800 }}>
-                    <div>
-                      <span style={{ color: 'var(--ink-soft)' }}>Sessions:</span>{' '}
-                      <span style={{ color: 'var(--ink)' }}>{p.sessionCount}</span>
-                    </div>
-                    <div>
-                      <span style={{ color: 'var(--ink-soft)' }}>ROM Rating:</span>{' '}
-                      <span style={{ color: p.avgScore < 70 && p.sessionCount > 0 ? '#FF6B4A' : '#10B981' }}>
-                        {p.sessionCount > 0 ? `${p.avgScore}%` : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
+                )}
+                <div className="input-group" style={{ width: 240 }}>
+                  <span className="input-group__icon">
+                    <Search size={15} />
+                  </span>
+                  <input
+                    className="input"
+                    placeholder="Search name or email"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-              ))}
+              </div>
             </div>
-          )}
+
+            {loading ? (
+              <div className="card__body stack stack--sm">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="skeleton" style={{ height: 44 }} />
+                ))}
+              </div>
+            ) : filteredPatients.length === 0 ? (
+              <div className="empty">
+                <span className="empty__icon">
+                  <Users size={18} />
+                </span>
+                {patients.length === 0
+                  ? 'No patients assigned to you yet. An administrator assigns patients to clinicians.'
+                  : 'No patients match your search.'}
+              </div>
+            ) : (
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Patient</th>
+                      <th>Goal</th>
+                      <th>Sessions</th>
+                      <th>Avg score</th>
+                      <th>Care plan</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPatients.map((patient) => (
+                      <tr key={patient.id} onClick={() => handleSelectPatient(patient)} style={{ cursor: 'pointer' }}>
+                        <td>
+                          <div className="row row--sm">
+                            <span className="avatar">
+                              <span className="avatar-initials">{patient.name?.[0]?.toUpperCase() || '?'}</span>
+                            </span>
+                            <div>
+                              <div className="semibold">{patient.name}</div>
+                              <div className="text-xs muted">{patient.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="secondary" style={{ textTransform: 'capitalize' }}>
+                          {patient.goal || '—'}
+                        </td>
+                        <td className="numeric">{patient.sessionCount}</td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              patient.sessionCount === 0 ? '' : patient.avgScore >= 80 ? 'badge--success' : patient.avgScore >= 70 ? 'badge--warn' : 'badge--danger'
+                            }`}
+                          >
+                            {patient.sessionCount === 0 ? 'No data' : `${patient.avgScore}%`}
+                          </span>
+                        </td>
+                        <td className="numeric muted">{patient.carePlan?.length || 0} pose(s)</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <span className="btn btn--secondary btn--sm">Open</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </main>
+      </div>
 
       {selectedPatient && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(43, 30, 22, 0.4)',
-          zIndex: 100,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'stretch'
-        }}>
-          <div style={{ flex: 1 }} onClick={() => setSelectedPatient(null)} />
-          
-          <div className="slide-in-right" style={{
-            width: '100%',
-            maxWidth: 680,
-            background: 'var(--cream)',
-            borderLeft: '4px solid var(--line)',
-            padding: '32px 28px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 24,
-            overflowY: 'auto',
-            boxShadow: '-10px 0 0 rgba(43, 30, 22, 0.1)'
-          }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3.5px dashed var(--line)', paddingBottom: 16 }}>
-              <div>
-                <h2 style={{ fontSize: 26, color: 'var(--ink)', margin: 0 }}>{selectedPatient.name}</h2>
-                <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '4px 0 0', fontWeight: 800 }}>
-                  Access Profile: {selectedPatient.email} • {selectedPatient.age} years old
-                </p>
+        <div className="overlay" onClick={() => setSelectedPatient(null)}>
+          <aside className="drawer" onClick={(e) => e.stopPropagation()} aria-label={`${selectedPatient.name} details`}>
+            <div className="drawer__header">
+              <div className="row">
+                <span className="avatar avatar--lg">
+                  <span className="avatar-initials">{selectedPatient.name?.[0]?.toUpperCase() || '?'}</span>
+                </span>
+                <div>
+                  <h2>{selectedPatient.name}</h2>
+                  <p className="text-sm muted">
+                    {selectedPatient.email}
+                    {selectedPatient.age ? ` · ${selectedPatient.age} years` : ''}
+                    {selectedPatient.experience ? ` · ${selectedPatient.experience}` : ''}
+                  </p>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <button
-                  onClick={() => handleExportCSV(selectedPatient.name, patientHistory)}
-                  className="tap btn-plush ghost"
-                  style={{
-                    fontSize: '12px',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--r-sm)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    boxShadow: '2px 2px 0 var(--line)'
-                  }}
-                  title="Export workout logs to CSV"
-                >
-                  <Download size={14} /> Export CSV
+              <div className="row row--sm">
+                <button className="btn btn--secondary btn--sm" onClick={() => handleExportCSV(selectedPatient.name, patientHistory)}>
+                  <Download size={14} />
+                  Export CSV
                 </button>
-                <button 
-                  onClick={() => setSelectedPatient(null)}
-                  style={{
-                    border: '3px solid var(--line)',
-                    background: 'white',
-                    borderRadius: 12,
-                    padding: 8,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    boxShadow: '2px 2px 0 var(--line)'
-                  }}
-                >
-                  <X size={20} />
+                <button className="btn btn--icon" onClick={() => setSelectedPatient(null)} aria-label="Close">
+                  <X size={16} />
                 </button>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="plush" style={{ padding: '12px 16px', background: 'white', fontSize: 13 }}>
-                <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', fontSize: 10 }}>Experience Level</span>
-                <span style={{ fontWeight: 800, color: 'var(--ink)', textTransform: 'capitalize' }}>{selectedPatient.experience}</span>
-              </div>
-              <div className="plush" style={{ padding: '12px 16px', background: 'white', fontSize: 13 }}>
-                <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', fontSize: 10 }}>Wellness Goal</span>
-                <span style={{ fontWeight: 800, color: 'var(--ink)', textTransform: 'capitalize' }}>{selectedPatient.goal}</span>
-              </div>
-            </div>
-
-            {(() => {
-              const currentCarePlan = selectedPatient.carePlan ?? [];
-              return (
-                <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <HeartPulse size={18} style={{ color: 'var(--rose-deep)' }} /> Rehabilitative Care Plan
-                  </h4>
-                  
+            <div className="drawer__body">
+              <div className="card">
+                <div className="card__header">
+                  <span className="card__title">Care plan</span>
+                  {isUpdatingCarePlan && <span className="spinner" />}
+                </div>
+                <div className="card__body stack stack--sm">
                   {currentCarePlan.length === 0 ? (
-                    <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: 0, fontWeight: 700 }}>
-                      No active rehabilitation plan prescribed. Define one below.
-                    </p>
+                    <p className="text-sm muted">No poses prescribed yet.</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {currentCarePlan.map((planItem: any, index: number) => {
-                        const poseConfig = POSES.find(p => p.id === planItem.poseId);
-                        return (
-                          <div 
-                            key={index}
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'space-between', 
-                              padding: '10px 14px', 
-                              border: '2px solid var(--line)', 
-                              borderRadius: 8, 
-                              background: 'var(--cream)' 
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)' }}>
-                                {poseConfig?.name || planItem.poseId}
-                              </div>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-soft)', marginTop: 2 }}>
-                                Target Hold: <span style={{ color: 'var(--peach-deep)' }}>{planItem.targetHold}s</span> • Frequency: {planItem.frequency}
-                              </div>
-                            </div>
-                            <button
-                              disabled={isUpdatingCarePlan}
-                              onClick={() => {
-                                const newPlan = currentCarePlan.filter((_, idx) => idx !== index);
-                                handleSaveCarePlan(newPlan);
-                              }}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--rose-deep)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                padding: 4
-                              }}
-                              title="Remove prescription"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                    currentCarePlan.map((item, index) => (
+                      <div key={index} className="list-row" style={{ cursor: 'default' }}>
+                        <div className="list-row__main">
+                          <div className="list-row__title">{item.poseName || item.poseId}</div>
+                          <div className="list-row__meta">
+                            Hold {item.targetHold}s{item.frequency ? ` · ${item.frequency}` : ''}
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                        <button
+                          className="btn btn--icon is-danger"
+                          disabled={isUpdatingCarePlan}
+                          onClick={() => handleSaveCarePlan(currentCarePlan.filter((_, idx) => idx !== index))}
+                          aria-label="Remove prescription"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    ))
                   )}
 
-                  <div 
-                    style={{ 
-                      marginTop: 8,
-                      padding: '14px 16px',
-                      border: '2.5px dashed var(--line)',
-                      borderRadius: 12,
-                      background: 'var(--paper)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 12
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink)' }}>Prescribe Pose</div>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1.8fr', gap: 10 }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: 'var(--ink-soft)' }}>Select Pose</label>
-                        <select
-                          value={prescribingPose}
-                          onChange={(e) => setPrescribingPose(e.target.value)}
-                          style={{
-                            padding: '6px 8px',
-                            border: '2px solid var(--line)',
-                            borderRadius: 6,
-                            background: 'white',
-                            fontSize: 12,
-                            fontWeight: 800,
-                            fontFamily: 'inherit',
-                            outline: 'none'
-                          }}
-                        >
-                          <option value="">-- Select Pose --</option>
-                          {POSES.map(p => (
-                            <option key={p.id} value={p.id}>{p.name.split(' (')[0]}</option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="divider" style={{ margin: '4px 0' }} />
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: 'var(--ink-soft)' }}>Target Hold</label>
-                        <select
-                          value={prescribingHold}
-                          onChange={(e) => setPrescribingHold(parseInt(e.target.value))}
-                          style={{
-                            padding: '6px 8px',
-                            border: '2px solid var(--line)',
-                            borderRadius: 6,
-                            background: 'white',
-                            fontSize: 12,
-                            fontWeight: 800,
-                            fontFamily: 'inherit',
-                            outline: 'none'
-                          }}
-                        >
-                          {[5, 10, 15, 20, 30, 45, 60].map(s => (
-                            <option key={s} value={s}>{s}s</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: 'var(--ink-soft)' }}>Frequency</label>
-                        <select
-                          value={prescribingFreq}
-                          onChange={(e) => setPrescribingFreq(e.target.value)}
-                          style={{
-                            padding: '6px 8px',
-                            border: '2px solid var(--line)',
-                            borderRadius: 6,
-                            background: 'white',
-                            fontSize: 12,
-                            fontWeight: 800,
-                            fontFamily: 'inherit',
-                            outline: 'none'
-                          }}
-                        >
-                          {['Daily', '3x a week', '2x a week', 'Weekly', 'Every other day'].map(f => (
-                            <option key={f} value={f}>{f}</option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="row row--sm row--wrap" style={{ alignItems: 'flex-end' }}>
+                    <div className="field" style={{ flex: 2, minWidth: 180 }}>
+                      <label className="label text-xs" htmlFor="prescribe-pose">
+                        Pose
+                      </label>
+                      <select
+                        id="prescribe-pose"
+                        className="select"
+                        value={prescribingPose}
+                        onChange={(e) => setPrescribingPose(e.target.value)}
+                      >
+                        <option value="">Select a pose</option>
+                        {POSES.map((pose) => (
+                          <option key={pose.id} value={pose.id}>
+                            {pose.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-
+                    <div className="field" style={{ width: 110 }}>
+                      <label className="label text-xs" htmlFor="prescribe-hold">
+                        Hold
+                      </label>
+                      <select
+                        id="prescribe-hold"
+                        className="select"
+                        value={prescribingHold}
+                        onChange={(e) => setPrescribingHold(Number(e.target.value))}
+                      >
+                        {[15, 30, 45, 60].map((seconds) => (
+                          <option key={seconds} value={seconds}>
+                            {seconds}s
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field" style={{ width: 140 }}>
+                      <label className="label text-xs" htmlFor="prescribe-freq">
+                        Frequency
+                      </label>
+                      <select
+                        id="prescribe-freq"
+                        className="select"
+                        value={prescribingFreq}
+                        onChange={(e) => setPrescribingFreq(e.target.value)}
+                      >
+                        {FREQUENCIES.map((freq) => (
+                          <option key={freq} value={freq}>
+                            {freq}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <button
-                      disabled={isUpdatingCarePlan || !prescribingPose}
+                      className="btn btn--secondary"
+                      disabled={!prescribingPose || isUpdatingCarePlan}
                       onClick={() => {
                         if (!prescribingPose) return;
-                        if (currentCarePlan.some((item: any) => item.poseId === prescribingPose)) {
-                          alert('This pose is already in the care plan!');
+                        if (currentCarePlan.some((item) => item.poseId === prescribingPose)) {
+                          alert('That pose is already in the care plan.');
                           return;
                         }
-                        const newPlan = [
+                        const pose = POSES.find((p) => p.id === prescribingPose);
+                        handleSaveCarePlan([
                           ...currentCarePlan,
-                          { poseId: prescribingPose, targetHold: prescribingHold, frequency: prescribingFreq }
-                        ];
-                        handleSaveCarePlan(newPlan);
+                          {
+                            poseId: prescribingPose,
+                            poseName: pose?.name,
+                            targetHold: prescribingHold,
+                            frequency: prescribingFreq,
+                          },
+                        ]);
                         setPrescribingPose('');
                       }}
-                      className="tap btn-plush primary"
-                      style={{
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        margin: '4px 0 0',
-                        boxShadow: '2px 2px 0 var(--line)'
-                      }}
                     >
-                      <Plus size={14} /> Add Prescription
+                      <Plus size={15} />
+                      Add
                     </button>
                   </div>
                 </div>
-              );
-            })()}
-
-            <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Sparkles size={18} style={{ color: 'var(--peach-deep)' }} /> Clinician Clinical Insight
-                </h4>
-                <button
-                  onClick={handleGenerateAiInsight}
-                  disabled={generatingAi || historyLoading || patientHistory.length === 0}
-                  className="btn-plush primary"
-                  style={{ fontSize: 12, padding: '8px 14px', borderRadius: 8, margin: 0 }}
-                >
-                  {generatingAi ? 'Analyzing Metrics...' : 'Generate AIPT Report'}
-                </button>
               </div>
 
-              {generatingAi ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)' }}>
-                  Attending Grader AI is compiling range-of-motion metrics...
+              <div className="card">
+                <div className="card__header">
+                  <span className="card__title">
+                    <Sparkles size={15} className="muted" />
+                    Clinical summary
+                  </span>
+                  <button className="btn btn--secondary btn--sm" onClick={handleGenerateAiInsight} disabled={generatingAi}>
+                    {generatingAi && <span className="spinner" />}
+                    {aiReport ? 'Regenerate' : 'Generate'}
+                  </button>
                 </div>
-              ) : aiReport ? (
-                <div 
-                  className="ai-critique-rendered"
-                  style={{ 
-                    fontSize: 14, 
-                    lineHeight: 1.6, 
-                    color: 'var(--ink-2)', 
-                    maxHeight: 280, 
-                    overflowY: 'auto', 
-                    border: '2.5px solid var(--line)', 
-                    borderRadius: 12, 
-                    padding: 16, 
-                    background: '#FDFBF7'
-                  }}
-                  dangerouslySetInnerHTML={{ __html: aiReport }}
-                />
-              ) : (
-                <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: 0, fontWeight: 700 }}>
-                  Generate an AI-driven clinical physical therapy assessment summarizing this patient's joint angle holding trends.
-                </p>
-              )}
-            </div>
-
-            {patientHistory.length > 0 && selectedSession && (
-              <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
-                  Rehabilitation Performance Trend ({selectedSession.poseName})
-                </h4>
-                
-                <div style={{ height: 180, width: '100%', fontSize: 11, fontWeight: 700 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={selectedSession.frameLogs.map((log, index) => ({
-                        frame: index + 1,
-                        score: log.score
-                      }))}
-                      margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                      <XAxis dataKey="frame" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Area 
-                        type="monotone" 
-                        dataKey="score" 
-                        stroke="var(--line)" 
-                        fill="var(--mint)" 
-                        strokeWidth={3} 
-                        fillOpacity={0.8}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800 }}>
-                  <span style={{ color: 'var(--ink-soft)' }}>Practice Date: {new Date(selectedSession.date).toLocaleDateString()}</span>
-                  <span style={{ color: 'var(--ink)' }}>Hold Efficiency: {selectedSession.holdTimeSeconds}s / {selectedSession.durationSeconds}s</span>
+                <div className="card__body">
+                  {generatingAi ? (
+                    <div className="stack stack--sm">
+                      <div className="skeleton" style={{ height: 12, width: '90%' }} />
+                      <div className="skeleton" style={{ height: 12, width: '80%' }} />
+                      <div className="skeleton" style={{ height: 12, width: '86%' }} />
+                    </div>
+                  ) : aiReport ? (
+                    <div className="prose" dangerouslySetInnerHTML={{ __html: aiReport }} />
+                  ) : (
+                    <p className="text-sm muted">
+                      Generate a short written summary of this patient's recent sessions and a suggested progression.
+                    </p>
+                  )}
                 </div>
               </div>
-            )}
 
-            <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Workout Practice Records</h4>
-              
-              {historyLoading ? (
-                <div style={{ textAlign: 'center', padding: '20px 0', fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)' }}>
-                  Loading sessions...
+              <div className="card">
+                <div className="card__header">
+                  <span className="card__title">Session history</span>
+                  <span className="text-xs muted">{patientHistory.length} total</span>
                 </div>
-              ) : patientHistory.length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: 0, fontWeight: 700 }}>
-                  This patient has not completed any training sessions yet.
-                </p>
-              ) : (
-                <div style={{ maxHeight: 220, overflowY: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2.5px solid var(--line)', color: 'var(--ink-soft)', fontWeight: 900 }}>
-                        <th style={{ padding: '8px 4px' }}>Date</th>
-                        <th style={{ padding: '8px 4px' }}>Pose</th>
-                        <th style={{ padding: '8px 4px' }}>Duration</th>
-                        <th style={{ padding: '8px 4px' }}>Hold</th>
-                        <th style={{ padding: '8px 4px' }}>Score</th>
-                        <th style={{ padding: '8px 4px' }}>Grade</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {patientHistory.map(s => (
-                        <tr 
-                          key={s.id} 
-                          onClick={() => setSelectedSession(s)}
-                          style={{ 
-                            borderBottom: '1.5px dashed var(--line)', 
-                            fontWeight: 800, 
-                            cursor: 'pointer',
-                            background: selectedSession?.id === s.id ? 'var(--cream)' : 'transparent'
-                          }}
-                        >
-                          <td style={{ padding: '10px 4px' }}>{new Date(s.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</td>
-                          <td style={{ padding: '10px 4px', color: 'var(--ink)' }}>{s.poseName}</td>
-                          <td style={{ padding: '10px 4px' }}>{s.durationSeconds}s</td>
-                          <td style={{ padding: '10px 4px' }}>{s.holdTimeSeconds}s</td>
-                          <td style={{ padding: '10px 4px' }}>{s.averageScore}%</td>
-                          <td style={{ padding: '10px 4px' }}>
-                            <span style={{
-                              background: s.grade === 'A' ? 'var(--mint)' : s.grade === 'B' ? 'var(--butter)' : '#FFEAE6',
-                              padding: '2px 8px',
-                              borderRadius: 6,
-                              border: '1.5px solid var(--line)',
-                              fontSize: 11
-                            }}>
-                              {s.grade}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+
+                {historyLoading ? (
+                  <div className="card__body stack stack--sm">
+                    <div className="skeleton" style={{ height: 40 }} />
+                    <div className="skeleton" style={{ height: 40 }} />
+                  </div>
+                ) : patientHistory.length === 0 ? (
+                  <div className="empty">This patient hasn't completed a session yet.</div>
+                ) : (
+                  <>
+                    {selectedSession && selectedSession.frameLogs.length > 0 && (
+                      <div className="card__body" style={{ paddingBottom: 0 }}>
+                        <div className="row spread" style={{ marginBottom: 8 }}>
+                          <span className="overline">{selectedSession.poseName} · score per second</span>
+                          <span className="text-xs muted numeric">
+                            {new Date(selectedSession.date).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div style={{ height: 180 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={selectedSession.frameLogs.map((log, index) => ({ frame: index + 1, score: log.score }))}
+                              margin={{ top: 12, right: 12, left: -12, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="patientScore" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="var(--brand-500)" stopOpacity={0.25} />
+                                  <stop offset="100%" stopColor="var(--brand-500)" stopOpacity={0.02} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid stroke="var(--border)" vertical={false} />
+                              <XAxis dataKey="frame" tickLine={false} axisLine={{ stroke: 'var(--border)' }} />
+                              <YAxis domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickLine={false} axisLine={false} width={40} />
+                              <Tooltip formatter={(value: number) => [`${value}%`, 'Score']} />
+                              <Area type="monotone" dataKey="score" stroke="var(--brand-600)" strokeWidth={2} fill="url(#patientScore)" />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="table-wrap">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Pose</th>
+                            <th>Hold</th>
+                            <th>Score</th>
+                            <th>Grade</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {patientHistory.map((session) => (
+                            <tr
+                              key={session.id}
+                              onClick={() => setSelectedSession(session)}
+                              className={selectedSession?.id === session.id ? 'is-self' : ''}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <td className="numeric muted">
+                                {new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </td>
+                              <td className="semibold">{session.poseName}</td>
+                              <td className="numeric">{session.holdTimeSeconds}s</td>
+                              <td className="numeric">{session.averageScore}%</td>
+                              <td>
+                                <span
+                                  className={`badge ${
+                                    session.grade === 'A' ? 'badge--success' : session.grade === 'F' ? 'badge--danger' : 'badge--outline'
+                                  }`}
+                                >
+                                  {session.grade}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-            
-          </div>
+          </aside>
         </div>
       )}
     </div>

@@ -1,8 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { store, useUserData } from '../game/store';
 import { UserData } from '../game/types';
-import { TopBar, PhysioLogo } from './primitives';
+import { TopBar } from './primitives';
 import { useAuth, useUser } from '../utils/auth';
+
+const EXPERIENCE: { value: UserData['experience']; label: string; hint: string }[] = [
+  { value: 'beginner', label: 'Beginner', hint: 'New to these poses' },
+  { value: 'intermediate', label: 'Intermediate', hint: 'Practise sometimes' },
+  { value: 'advanced', label: 'Advanced', hint: 'Practise regularly' },
+];
+
+const GOALS: { value: UserData['goal']; label: string; hint: string }[] = [
+  { value: 'flexibility', label: 'Flexibility', hint: 'Open up tight areas' },
+  { value: 'strength', label: 'Strength', hint: 'Build holding power' },
+  { value: 'balance', label: 'Balance', hint: 'Steadier standing poses' },
+  { value: 'rehabilitation', label: 'Rehabilitation', hint: 'Recover after injury' },
+];
 
 export function OnboardingScreen() {
   const existingUser = useUserData();
@@ -15,30 +29,25 @@ export function OnboardingScreen() {
   const [goal, setGoal] = useState<UserData['goal']>(existingUser?.goal || 'flexibility');
   // Read registration role intent from pre-login selection
   const registrationIntent = sessionStorage.getItem('physioalign:registration_intent') || 'patient';
-  const initialRole = existingUser?.role || 
-    (registrationIntent === 'practice_suite' ? 'patient' : registrationIntent as UserData['role']);
+  const initialRole = existingUser?.role ||
+    (registrationIntent === 'practice_suite' ? 'patient' : (registrationIntent as UserData['role']));
 
   const [role] = useState<UserData['role']>(initialRole);
   const [error, setError] = useState('');
-
-  // Input focus states for neobrutalist transitions
-  const [isNameFocused, setIsNameFocused] = useState(false);
-  const [isAgeFocused, setIsAgeFocused] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const prefilledRef = useRef(false);
 
-  // Auto-prefill the name from Clerk (Google Auth profile) once on mount if the user is new and name is empty
+  // prefill the name from the Google profile once, for new accounts
   useEffect(() => {
     if (!existingUser && !prefilledRef.current && user) {
-      const clerkName = user.fullName || user.firstName || '';
-      if (clerkName) {
-        setName(clerkName);
+      const googleName = user.fullName || user.firstName || '';
+      if (googleName) {
+        setName(googleName);
         prefilledRef.current = true;
       }
     }
   }, [user, existingUser]);
-
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +74,7 @@ export function OnboardingScreen() {
       age: ageNum,
       experience,
       goal,
-      role
+      role,
     });
     setIsSaving(false);
     if (saveError) setError(saveError);
@@ -76,217 +85,124 @@ export function OnboardingScreen() {
   };
 
   return (
-    <div className="screen" style={{ background: 'var(--cream)' }}>
-      <TopBar here={0} steps={existingUser ? ['Profile'] : ['Onboarding']} showProfile={!!existingUser} />
+    <div className="screen">
+      <TopBar here={0} steps={existingUser ? ['Profile'] : ['Set up profile']} showProfile={!!existingUser} />
 
-      <div style={{ maxWidth: 560, margin: '40px auto', padding: '0 20px' }} className="popin">
-        <form 
-          onSubmit={handleSubmit} 
-          className="plush" 
-          style={{ 
-            padding: '36px 32px', 
-            background: 'white', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 24 
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: '3.5px dashed var(--line)', paddingBottom: 18 }}>
-            <PhysioLogo size={70} />
-            <div>
-              <h2 style={{ fontSize: 26, color: 'var(--ink)' }}>
-                {existingUser ? 'Update Recovery Profile' : 'Set Up Your Care Profile'}
-              </h2>
-              <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '4px 0 0', fontWeight: 800 }}>
-                {existingUser 
-                  ? 'Revise your therapist details and wellness coordinates.' 
-                  : 'Configure your custom PhysioAlign thresholds and AI recommendations.'}
+      <div className="page">
+        <div className="container container--narrow">
+          <div className="page-header">
+            <div className="page-header__text">
+              <h1>{existingUser ? 'Profile settings' : 'Set up your profile'}</h1>
+              <p className="page-subtitle">
+                {existingUser
+                  ? 'Update your details. Scoring thresholds and coaching advice follow these values.'
+                  : 'A few details so sessions are scored against sensible ranges and the advice fits your goal.'}
               </p>
             </div>
           </div>
 
-          {error && (
-            <div style={{
-              background: '#FFEAE6',
-              border: '2.5px solid var(--line)',
-              borderRadius: 'var(--r-sm)',
-              padding: '10px 14px',
-              color: '#FF6B4A',
-              fontSize: 13,
-              fontWeight: 800,
-              boxShadow: '2px 2px 0 var(--line)'
-            }}>
-              ⚠️ {error}
-            </div>
-          )}
+          <form onSubmit={handleSubmit}>
+            <div className="card card--raised">
+              <div className="card__body stack stack--lg">
+                {error && (
+                  <div className="alert alert--danger" role="alert">
+                    <AlertCircle size={16} className="alert__icon" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
-          {/* Name Field */}
-          <div>
-            <label htmlFor="name-input" style={{ display: 'block', fontWeight: 800, fontSize: 15, color: 'var(--ink)' }}>
-              Full Name
-            </label>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 8 }}>
-              How our AI clinicians and recovery coaches should address you.
-            </span>
-            <input
-              id="name-input"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onFocus={() => setIsNameFocused(true)}
-              onBlur={() => setIsNameFocused(false)}
-              placeholder="Enter your name"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '3px solid var(--line)',
-                borderRadius: 'var(--r-sm)',
-                fontSize: 15,
-                fontFamily: 'inherit',
-                fontWeight: 800,
-                color: 'var(--ink)',
-                outline: 'none',
-                boxShadow: isNameFocused ? '4px 4px 0 var(--line)' : '2px 2px 0 var(--line)',
-                transform: isNameFocused ? 'translate(-2px, -2px)' : 'none',
-                background: 'white',
-                transition: 'all 0.1s ease',
-              }}
-            />
-          </div>
+                <div className="grid grid--2">
+                  <div className="field">
+                    <label className="label" htmlFor="name-input">
+                      Full name
+                    </label>
+                    <input
+                      id="name-input"
+                      className="input"
+                      type="text"
+                      required
+                      maxLength={40}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Jane Doe"
+                    />
+                    <span className="hint">How coaches and reports address you.</span>
+                  </div>
 
-          {/* Age Field */}
-          <div>
-            <label htmlFor="age-input" style={{ display: 'block', fontWeight: 800, fontSize: 15, color: 'var(--ink)' }}>
-              Age
-            </label>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 8 }}>
-              Calculates normal range-of-motion limits for biomechanical grading.
-            </span>
-            <input
-              id="age-input"
-              type="number"
-              min="1"
-              max="120"
-              required
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              onFocus={() => setIsAgeFocused(true)}
-              onBlur={() => setIsAgeFocused(false)}
-              placeholder="Enter your age"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '3px solid var(--line)',
-                borderRadius: 'var(--r-sm)',
-                fontSize: 15,
-                fontFamily: 'inherit',
-                fontWeight: 800,
-                color: 'var(--ink)',
-                outline: 'none',
-                boxShadow: isAgeFocused ? '4px 4px 0 var(--line)' : '2px 2px 0 var(--line)',
-                transform: isAgeFocused ? 'translate(-2px, -2px)' : 'none',
-                background: 'white',
-                transition: 'all 0.1s ease',
-              }}
-            />
-          </div>
+                  <div className="field">
+                    <label className="label" htmlFor="age-input">
+                      Age
+                    </label>
+                    <input
+                      id="age-input"
+                      className="input"
+                      type="number"
+                      min="5"
+                      max="110"
+                      required
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      placeholder="28"
+                    />
+                    <span className="hint">Used for range-of-motion expectations and safety notes.</span>
+                  </div>
+                </div>
 
-          {/* Experience selection */}
-          <div>
-            <span style={{ display: 'block', fontWeight: 800, fontSize: 15, color: 'var(--ink)' }}>
-              Experience Level
-            </span>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 10 }}>
-              Adjusts baseline pose hold difficulty and skeletal assessment strictness.
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => setExperience(level)}
-                  style={{
-                    padding: '12px',
-                    border: '3px solid var(--line)',
-                    borderRadius: 'var(--r-sm)',
-                    fontFamily: 'inherit',
-                    fontSize: 14,
-                    fontWeight: 900,
-                    cursor: 'pointer',
-                    textTransform: 'capitalize',
-                    boxShadow: experience === level ? '1px 1px 0 var(--line)' : '3px 3px 0 var(--line)',
-                    background: experience === level ? 'var(--mint)' : 'white',
-                    color: 'var(--ink)',
-                    transform: experience === level ? 'translate(2px, 2px)' : 'none',
-                    transition: 'all 0.1s ease',
-                  }}
-                >
-                  {level}
+                <div className="field">
+                  <span className="label">Experience level</span>
+                  <span className="hint" style={{ marginBottom: 2 }}>
+                    Sets the starting hold targets for each pose.
+                  </span>
+                  <div className="segmented segmented--3">
+                    {EXPERIENCE.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`segmented__item${experience === option.value ? ' is-selected' : ''}`}
+                        onClick={() => setExperience(option.value)}
+                        aria-pressed={experience === option.value}
+                      >
+                        <span style={{ display: 'block' }}>{option.label}</span>
+                        <span className="text-xs muted">{option.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="field">
+                  <span className="label">Primary goal</span>
+                  <span className="hint" style={{ marginBottom: 2 }}>
+                    Shapes your daily plan and the focus of each report.
+                  </span>
+                  <div className="segmented segmented--2">
+                    {GOALS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`segmented__item${goal === option.value ? ' is-selected' : ''}`}
+                        onClick={() => setGoal(option.value)}
+                        aria-pressed={goal === option.value}
+                      >
+                        <span style={{ display: 'block' }}>{option.label}</span>
+                        <span className="text-xs muted">{option.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="card__footer row spread">
+                <button type="button" className="btn btn--ghost" onClick={handleBack}>
+                  Cancel
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Goal selection */}
-          <div>
-            <span style={{ display: 'block', fontWeight: 800, fontSize: 15, color: 'var(--ink)' }}>
-              Primary Wellness Goal
-            </span>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 10 }}>
-              Customizes daily stretching roadmaps and joint recovery exercises.
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {(['flexibility', 'strength', 'balance', 'rehabilitation'] as const).map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setGoal(g)}
-                  style={{
-                    padding: '12px',
-                    border: '3px solid var(--line)',
-                    borderRadius: 'var(--r-sm)',
-                    fontFamily: 'inherit',
-                    fontSize: 14,
-                    fontWeight: 900,
-                    cursor: 'pointer',
-                    textTransform: 'capitalize',
-                    boxShadow: goal === g ? '1px 1px 0 var(--line)' : '3px 3px 0 var(--line)',
-                    background: goal === g ? 'var(--peach)' : 'white',
-                    color: 'var(--ink)',
-                    transform: goal === g ? 'translate(2px, 2px)' : 'none',
-                    transition: 'all 0.1s ease',
-                  }}
-                >
-                  {g}
+                <button type="submit" className="btn btn--primary" disabled={isSaving}>
+                  {isSaving && <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.4)', borderTopColor: '#fff' }} />}
+                  {existingUser ? 'Save changes' : 'Continue'}
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
-
-
-
-          {/* Submit/Back Buttons */}
-          <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
-            <button
-              type="button"
-              onClick={handleBack}
-              className="btn-plush ghost"
-              style={{ flex: 1, padding: '12px', fontSize: 16 }}
-            >
-              Back
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="btn-plush primary"
-              style={{ flex: 1, padding: '12px', fontSize: 16 }}
-            >
-              {existingUser ? 'Save Profile Details ➔' : 'Register Account ➔'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

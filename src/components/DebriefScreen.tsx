@@ -1,9 +1,24 @@
 import { store, useActiveSession, useUserData } from '../game/store';
-import { TopBar, Doodle } from './primitives';
+import { TopBar } from './primitives';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from 'recharts';
-import { Activity, Clock, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowRight, Clock, Sparkles } from 'lucide-react';
 import { escapeHtml } from '../utils/sanitize';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
+
+const formatDuration = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return mins ? `${mins}m ${secs}s` : `${secs}s`;
+};
+
+const renderCritique = (markdown: string) =>
+  escapeHtml(markdown)
+    .replace(/### (.*)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^- (.*)$/gm, '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>')
+    .replace(/\n{2,}/g, '</p><p>');
 
 export function DebriefScreen() {
   const activeSession = useActiveSession();
@@ -11,186 +26,179 @@ export function DebriefScreen() {
 
   if (!activeSession) {
     return (
-      <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h3>Loading Debrief Report...</h3>
+      <div className="screen screen--centered">
+        <div className="row row--sm muted">
+          <span className="spinner" />
+          Loading session report
+        </div>
       </div>
     );
   }
 
-  // Prep chart data
-  const chartData = activeSession.frameLogs.map((log, idx) => ({
-    second: idx + 1,
-    score: log.score,
-  }));
-
-  const handleReturn = () => {
-    store.cancelActiveSession(); // Resets activeSession and sends user to dashboard
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
-  };
+  const chartData = activeSession.frameLogs.map((log, idx) => ({ second: idx + 1, score: log.score }));
+  const status = activeSession.critiqueStatus;
+  const isWaiting = status === 'saving' || status === 'pending';
+  const hasFailed = status === 'unsaved' || status === 'failed';
+  const holdShare = activeSession.durationSeconds
+    ? Math.round((activeSession.holdTimeSeconds / activeSession.durationSeconds) * 100)
+    : 0;
 
   return (
-    <div className="screen" style={{ background: 'var(--cream)' }}>
-      <TopBar here={3} steps={['Dashboard', 'Pose Select', 'Evaluation', 'Debrief Grader']} userName={userData?.name} />
+    <div className="screen">
+      <TopBar here={3} steps={['Dashboard', 'Pose', 'Session', 'Report']} userName={userData?.name} showProfile={false} />
 
-      <main style={{ maxWidth: 1024, margin: '28px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }} className="popin">
-        
-        {/* Grader Header Card */}
-        <div className="plush" style={{ padding: '28px 24px', background: 'white', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            {/* Cartoon Grade Badge */}
-            <div className={`debrief-grade-badge ${activeSession.grade.toLowerCase()}`}>
-              {activeSession.grade}
-            </div>
+      <div className="page">
+        <div className="container stack stack--lg fade-in">
+          <div className="card card--raised">
+            <div className="card__body row spread row--wrap" style={{ gap: 24 }}>
+              <div className="row" style={{ gap: 16 }}>
+                <div className={`grade grade--${activeSession.grade.toLowerCase()}`}>{activeSession.grade}</div>
+                <div>
+                  <h1 style={{ fontSize: 22 }}>{activeSession.poseName}</h1>
+                  <p className="text-sm muted" style={{ marginTop: 4 }}>
+                    {new Date(activeSession.date).toLocaleString(undefined, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </p>
+                </div>
+              </div>
 
-            <div>
-              <span className="chip butter" style={{ fontSize: 11 }}>OSCE Evaluation Complete</span>
-              <h1 style={{ fontSize: 32, color: 'var(--ink)', marginTop: 6 }}>
-                {activeSession.poseName} Grader Report
-              </h1>
-              <p style={{ fontSize: 14, color: 'var(--ink-soft)', fontWeight: 700, margin: '4px 0 0' }}>
-                Evaluated on {new Date(activeSession.date).toLocaleString()}
-              </p>
+              <div className="row" style={{ gap: 32 }}>
+                <div>
+                  <div className="stat__label">Average score</div>
+                  <div className="stat__value">{activeSession.averageScore}%</div>
+                </div>
+                <div>
+                  <div className="stat__label">Hold time</div>
+                  <div className="stat__value">
+                    {activeSession.holdTimeSeconds}s <span className="text-sm muted numeric">({holdShare}%)</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="stat__label">Session length</div>
+                  <div className="stat__value">{formatDuration(activeSession.durationSeconds)}</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Quick Metrics columns */}
-          <div style={{ display: 'flex', gap: 24 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', color: 'var(--ink-soft)' }}>
-                <Activity size={14} />
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Avg Score</span>
+          <div className="grid grid--main-aside">
+            <div className="card">
+              <div className="card__header">
+                <span className="card__title">Accuracy over time</span>
+                <span className="badge badge--outline">Hold threshold {HOLD_SCORE_THRESHOLD}%</span>
               </div>
-              <h2 style={{ fontSize: 24, fontWeight: 900, marginTop: 4 }}>{activeSession.averageScore}%</h2>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', color: 'var(--ink-soft)' }}>
-                <Clock size={14} />
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Hold Time</span>
+              <div className="card__body">
+                {chartData.length === 0 ? (
+                  <div className="empty">No tracking data was recorded for this session.</div>
+                ) : (
+                  <div style={{ height: 240 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--brand-500)" stopOpacity={0.25} />
+                            <stop offset="100%" stopColor="var(--brand-500)" stopOpacity={0.02} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="var(--border)" vertical={false} />
+                        <XAxis
+                          dataKey="second"
+                          tickLine={false}
+                          axisLine={{ stroke: 'var(--border)' }}
+                          tickFormatter={(s) => `${s}s`}
+                        />
+                        <YAxis domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickLine={false} axisLine={false} width={40} />
+                        <Tooltip
+                          cursor={{ stroke: 'var(--gray-300)' }}
+                          formatter={(value: number) => [`${value}%`, 'Score']}
+                          labelFormatter={(label) => `Second ${label}`}
+                        />
+                        <ReferenceLine
+                          y={HOLD_SCORE_THRESHOLD}
+                          stroke="var(--gray-400)"
+                          strokeDasharray="4 4"
+                          label={{ value: 'Hold threshold', position: 'insideTopRight', fill: 'var(--text-muted)', fontSize: 11 }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="score"
+                          stroke="var(--brand-600)"
+                          strokeWidth={2}
+                          fill="url(#scoreFill)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
-              <h2 style={{ fontSize: 24, fontWeight: 900, marginTop: 4, color: 'var(--mint-deep)' }}>{activeSession.holdTimeSeconds}s</h2>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', color: 'var(--ink-soft)' }}>
-                <Clock size={14} />
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Total Time</span>
-              </div>
-              <h2 style={{ fontSize: 24, fontWeight: 900, marginTop: 4 }}>{formatDuration(activeSession.durationSeconds)}</h2>
-            </div>
-          </div>
-        </div>
 
-        {/* Biomechanical Hold Graph Card (Recharts) */}
-        <div className="plush" style={{ padding: '24px 28px', background: 'white' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: '2.5px solid var(--line)', paddingBottom: 10, marginBottom: 16 }}>
-            Alignment Accuracy Over Time
-          </h3>
-
-          <div style={{ width: '100%', height: 200, fontFamily: 'inherit' }}>
-            {chartData.length === 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ink-soft)' }}>
-                No tracking data logged to generate chart.
+            <div className="card">
+              <div className="card__header">
+                <span className="card__title">
+                  <Sparkles size={15} className="muted" />
+                  Coach report
+                </span>
+                {isWaiting && <span className="badge badge--brand">Generating</span>}
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="scoreColor" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--mint-deep)" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="var(--mint-deep)" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(43,30,22,0.1)" />
-                  <XAxis dataKey="second" stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} tickFormatter={(s) => `${s}s`} />
-                  <YAxis domain={[0, 100]} stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--paper)',
-                      border: '2px solid var(--line)',
-                      borderRadius: 'var(--r-sm)',
-                      fontWeight: 700,
-                      color: 'var(--ink)'
+              <div className="card__body">
+                {isWaiting ? (
+                  <div className="stack stack--sm">
+                    <div className="row row--sm text-sm secondary">
+                      <Clock size={15} />
+                      {status === 'saving' ? 'Saving your session…' : 'Writing your report…'}
+                    </div>
+                    <div className="skeleton" style={{ height: 12, width: '92%' }} />
+                    <div className="skeleton" style={{ height: 12, width: '78%' }} />
+                    <div className="skeleton" style={{ height: 12, width: '85%' }} />
+                    <p className="text-xs muted" style={{ marginTop: 4 }}>
+                      You can leave this page — the report will be waiting in your history.
+                    </p>
+                  </div>
+                ) : hasFailed ? (
+                  <div className="stack stack--sm">
+                    <div className="alert alert--warn">
+                      <AlertCircle size={16} className="alert__icon" />
+                      <span>
+                        {status === 'unsaved'
+                          ? "This session couldn't be saved."
+                          : "The report couldn't be generated, but your session is saved."}
+                      </span>
+                    </div>
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      style={{ alignSelf: 'flex-start' }}
+                      onClick={() =>
+                        status === 'unsaved' ? store.completeActiveSession() : store.retryCritique(activeSession.id)
+                      }
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="prose"
+                    dangerouslySetInnerHTML={{
+                      __html: activeSession.aiCritique
+                        ? `<p>${renderCritique(activeSession.aiCritique)}</p>`
+                        : '<p>No report for this session.</p>',
                     }}
                   />
-                  <ReferenceLine y={HOLD_SCORE_THRESHOLD} stroke="var(--peach-deep)" strokeDasharray="5 5" label={{ value: `Hold Threshold (${HOLD_SCORE_THRESHOLD}%)`, position: 'top', fill: 'var(--ink-soft)', fontSize: 10, fontWeight: 800 }} />
-                  <Area type="monotone" dataKey="score" stroke="var(--line)" strokeWidth={3} fillOpacity={1} fill="url(#scoreColor)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        {/* Attending Coach Critique Markdown card */}
-        <div className="debrief-report paper">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '2.5px solid var(--line)', paddingBottom: 10, marginBottom: 14 }}>
-            <Doodle kind="star" size={24} color="var(--butter)" />
-            <h3 style={{ fontSize: 20, fontWeight: 900 }}>AI Attending Grader Critique</h3>
-          </div>
-
-          {activeSession.critiqueStatus === 'saving' || activeSession.critiqueStatus === 'pending' ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-              <div className="breathe" style={{ display: 'inline-block', marginBottom: 12 }}>
-                <Clock size={36} className="floaty" style={{ color: 'var(--peach-deep)' }} />
+                )}
               </div>
-              <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)' }}>
-                {activeSession.critiqueStatus === 'saving'
-                  ? 'Saving your session...'
-                  : 'Session saved. Your coach is writing the report...'}
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700, marginTop: 4 }}>
-                You can leave this page, the report will be in your history when it's ready.
-              </p>
             </div>
-          ) : activeSession.critiqueStatus === 'unsaved' || activeSession.critiqueStatus === 'failed' ? (
-            <div style={{ padding: '24px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
-                {activeSession.critiqueStatus === 'unsaved'
-                  ? "This session couldn't be saved."
-                  : "Your session is saved, but the report couldn't be generated."}
-              </p>
-              <button
-                className="btn-plush primary"
-                style={{ padding: '10px 22px', fontSize: 14 }}
-                onClick={() =>
-                  activeSession.critiqueStatus === 'unsaved'
-                    ? store.completeActiveSession()
-                    : store.retryCritique(activeSession.id)
-                }
-              >
-                Try again
-              </button>
-            </div>
-          ) : (
-            <div className="ai-critique-content" dangerouslySetInnerHTML={{
-              __html: activeSession.aiCritique 
-                // Convert simple markdown elements returned from Gemini into HTML tags:
-                ? escapeHtml(activeSession.aiCritique)
-                    .replace(/### (.*)/g, '<h3 style="font-size: 18px; font-weight: 800; color: var(--ink); margin: 18px 0 8px; border-bottom: 2px dashed var(--line); padding-bottom: 4px;">$1</h3>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--ink); font-weight: 800;">$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em style="color: var(--ink-soft); font-style: italic;">$1</em>')
-                    .replace(/- (.*)/g, '<li style="margin-left: 20px; margin-bottom: 4px; font-weight: 700; list-style-type: square;">$1</li>')
-                    .replace(/\n\n/g, '<p style="margin-bottom: 12px; font-weight: 700;"></p>')
-                : '<p>No report for this session.</p>'
-            }} />
-          )}
-        </div>
+          </div>
 
-        {/* Action button */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-          <button
-            onClick={handleReturn}
-            className="btn-plush primary popin"
-            style={{ fontSize: 18, padding: '14px 44px', gap: 10 }}
-          >
-            Save Practice & Return <ArrowRight size={18} />
-          </button>
+          <div className="row" style={{ justifyContent: 'flex-end' }}>
+            <button className="btn btn--primary btn--lg" onClick={() => store.cancelActiveSession()}>
+              Back to dashboard
+              <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
-
-      </main>
+      </div>
     </div>
   );
 }

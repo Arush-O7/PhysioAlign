@@ -1,113 +1,45 @@
-import { useState } from 'react';
-import { X, User, LogOut } from 'lucide-react';
-import { store, useScreen, useActiveTab } from '../game/store';
-import { UserButton, useAuth } from '../utils/auth';
+import { useEffect, useRef, useState } from 'react';
+import { HelpCircle, LogOut, Settings, X } from 'lucide-react';
+import { store, useScreen, useActiveTab, useUserData } from '../game/store';
+import { useAuth, useUser } from '../utils/auth';
 
-// --- DOODLE ICONS ---
-export type DoodleKind = 'star' | 'flower' | 'heart' | 'cross' | 'leaf';
-
-interface DoodleProps {
-  kind: DoodleKind;
-  size?: number;
-  color?: string;
-  className?: string;
-}
-
-export function Doodle({ kind, size = 24, color = 'var(--line)', className = '' }: DoodleProps) {
-  if (kind === 'flower') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <circle cx="12" cy="12" r="3" fill={color} stroke="var(--line)" strokeWidth="2.5" />
-        <circle cx="12" cy="6" r="3.5" fill={color} stroke="var(--line)" strokeWidth="2.5" />
-        <circle cx="12" cy="18" r="3.5" fill={color} stroke="var(--line)" strokeWidth="2.5" />
-        <circle cx="6" cy="12" r="3.5" fill={color} stroke="var(--line)" strokeWidth="2.5" />
-        <circle cx="18" cy="12" r="3.5" fill={color} stroke="var(--line)" strokeWidth="2.5" />
-      </svg>
-    );
-  }
-  if (kind === 'leaf') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path d="M12 2C12 2 4 10 4 14C4 18.4 7.6 22 12 22C16.4 22 20 18.4 20 14C20 10 12 2 12 2Z" fill={color} stroke="var(--line)" strokeWidth="2.5" />
-        <path d="M12 22V6" stroke="var(--line)" strokeWidth="2.5" />
-        <path d="M12 14C12 14 15 12 17 13" stroke="var(--line)" strokeWidth="2" strokeLinecap="round" />
-        <path d="M12 17C12 17 9 15 7 16" stroke="var(--line)" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  if (kind === 'star') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path
-          d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-          fill={color}
-          stroke="var(--line)"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
-  if (kind === 'heart') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-        <path
-          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-          fill={color}
-          stroke="var(--line)"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
-  // Cross
+/** Logo mark: a plumb line with joint nodes either side, i.e. alignment. */
+export function PhysioLogo({ size = 32, className = '' }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      className={className}
+      role="img"
+      aria-label="PhysioAlign"
+    >
+      <rect width="32" height="32" rx="8" fill="var(--brand-600)" />
       <path
-        d="M12 2v20M2 12h20"
-        stroke={color}
-        strokeWidth="4"
+        d="M9 23 16 9l7 14"
+        stroke="#fff"
+        strokeWidth="2.3"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
+      <path d="M12.4 18.2a6.4 6.4 0 0 0 7.2 0" stroke="#fff" strokeOpacity="0.55" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="16" cy="9" r="1.9" fill="#fff" />
     </svg>
   );
 }
 
-// --- WORDMARK ---
-export function Wordmark({ size = 32, dark = false }) {
+export function Wordmark({ size = 16 }: { size?: number }) {
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 10,
-        fontFamily: 'Nunito',
-        fontWeight: 900,
-        fontSize: size,
-        color: dark ? 'white' : 'var(--ink)',
-        letterSpacing: '-0.02em',
-      }}
-    >
-      <PhysioLogo size={Math.round(size * 1.15)} />
-      <span style={{ position: 'relative', display: 'inline-block' }}>
-        Physio
-        <span
-          style={{
-            color: 'var(--peach-deep)',
-            textShadow: dark ? 'none' : '0 2px 0 var(--line)',
-            WebkitTextStroke: dark ? '0' : '2px var(--line)',
-            paintOrder: 'stroke fill',
-          }}
-        >
-          Align
-        </span>
+    <span className="row row--sm" style={{ gap: 9 }}>
+      <PhysioLogo size={Math.round(size * 1.65)} />
+      <span className="brand__name" style={{ fontSize: size }}>
+        Physio<span>Align</span>
       </span>
-    </div>
+    </span>
   );
 }
 
-// --- BREADCRUMB ---
 interface BreadcrumbProps {
   steps: string[];
   here: number;
@@ -115,39 +47,85 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ steps, here }: BreadcrumbProps) {
   return (
-    <div className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <nav className="breadcrumb" aria-label="Progress">
       {steps.map((step, idx) => (
-        <span key={step} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          {idx > 0 && <span className="sep" style={{ fontWeight: 800, color: 'var(--ink-soft)' }}>/</span>}
-          {idx === here ? (
-            <span 
-              className="here popin" 
-              style={{ 
-                fontFamily: 'inherit',
-                fontWeight: 900,
-                fontSize: '13px',
-                color: 'var(--ink)',
-                background: 'var(--butter)',
-                border: '2px solid var(--line)',
-                borderRadius: '8px',
-                padding: '4px 12px',
-                boxShadow: '0 2px 0 var(--line)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}
-            >
-              {step}
-            </span>
-          ) : (
-            <span style={{ opacity: 0.6, fontWeight: 700, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{step}</span>
-          )}
+        <span key={step} className="row row--sm">
+          {idx > 0 && <span className="breadcrumb__sep">/</span>}
+          <span
+            className={`breadcrumb__item${idx === here ? ' is-current' : ''}`}
+            aria-current={idx === here ? 'step' : undefined}
+          >
+            {step}
+          </span>
         </span>
       ))}
+    </nav>
+  );
+}
+
+function ProfileMenu() {
+  const { user } = useUser();
+  const { signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  if (!user) return null;
+  const initials = (user.fullName || 'U')
+    .split(' ')
+    .slice(0, 2)
+    .map((part: string) => part[0])
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div style={{ position: 'relative' }} ref={ref}>
+      <button
+        className="avatar"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+        style={{ cursor: 'pointer', padding: 0 }}
+      >
+        <span className="avatar-initials">{initials}</span>
+      </button>
+
+      {open && (
+        <div className="menu" role="menu">
+          <div className="menu__header">
+            <div className="text-sm semibold truncate">{user.fullName}</div>
+            <div className="text-xs muted truncate">{user.primaryEmailAddress.emailAddress}</div>
+          </div>
+          <button
+            className="menu__item"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              store.setScreen('onboarding');
+            }}
+          >
+            <Settings size={15} />
+            Profile settings
+          </button>
+          <button className="menu__item" role="menuitem" onClick={signOut}>
+            <LogOut size={15} />
+            Sign out
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-// --- TOPBAR ---
 interface TopBarProps {
   here: number;
   steps: string[];
@@ -158,347 +136,130 @@ interface TopBarProps {
 export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
   const currentScreen = useScreen();
   const activeTab = useActiveTab();
+  const userData = useUserData();
   const [helpOpen, setHelpOpen] = useState(false);
-  const { isSignedIn, signOut } = useAuth();
 
-  const isLinkActive = (item: 'landing' | 'dashboard' | 'library' | 'consult') => {
-    if (item === 'landing') return currentScreen === 'landing';
-    if (item === 'library') return currentScreen === 'library';
-    if (item === 'dashboard') return currentScreen === 'dashboard' && activeTab === 'dashboard';
-    if (item === 'consult') return currentScreen === 'dashboard' && activeTab === 'consult';
-    return false;
-  };
-
-  const navItems = [
-    { label: 'Home', screen: 'landing', action: () => store.setScreen('landing') },
-    { label: 'Dashboard', screen: 'dashboard', action: () => store.setActiveTab('dashboard') },
-    { label: 'Pose Library', screen: 'library', action: () => store.setScreen('library') },
-    { label: 'Chatbot', screen: 'consult', action: () => store.setActiveTab('consult') },
-  ];
+  const navItems =
+    userData?.role === 'admin'
+      ? [{ label: 'Accounts', isActive: currentScreen === 'admin', action: () => store.setScreen('admin') }]
+      : userData?.role === 'doctor'
+        ? [{ label: 'Patients', isActive: currentScreen === 'doctor', action: () => store.setScreen('doctor') }]
+        : [
+            { label: 'Dashboard', isActive: currentScreen === 'dashboard' && activeTab === 'dashboard', action: () => store.setActiveTab('dashboard') },
+            { label: 'Poses', isActive: currentScreen === 'library', action: () => store.setScreen('library') },
+          ];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 22px',
-        borderBottom: '3px solid var(--line)',
-        background: 'white',
-      }}
-    >
-      <span
-        className="tap"
-        onClick={() => store.setScreen('dashboard')}
-        title="Back to dashboard"
-        style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
-      >
-        <Wordmark size={28} />
-      </span>
+    <header className="appbar">
+      <div className="container container--wide appbar__inner">
+        <button
+          className="brand"
+          onClick={() =>
+            store.setScreen(userData?.role === 'admin' ? 'admin' : userData?.role === 'doctor' ? 'doctor' : 'dashboard')
+          }
+          aria-label="PhysioAlign home"
+        >
+          <PhysioLogo size={28} />
+          <span className="brand__name">
+            Physio<span>Align</span>
+          </span>
+        </button>
 
-      {showProfile ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {navItems.map((item) => {
-            const active = isLinkActive(item.screen as any);
-            return (
+        {showProfile ? (
+          <nav className="nav" aria-label="Main">
+            {navItems.map((item) => (
               <button
                 key={item.label}
+                className={`nav-link${item.isActive ? ' is-active' : ''}`}
                 onClick={item.action}
-                className="tap"
-                style={{
-                  background: active ? 'var(--butter)' : 'white',
-                  border: '2.5px solid var(--line)',
-                  borderRadius: 'var(--r-sm)',
-                  padding: '6px 14px',
-                  fontFamily: 'inherit',
-                  fontSize: 13,
-                  fontWeight: 900,
-                  color: 'var(--ink)',
-                  cursor: 'pointer',
-                  boxShadow: active ? '0 1px 0 var(--line)' : '0 2.5px 0 var(--line)',
-                  transform: active ? 'translateY(1.5px)' : 'none',
-                  transition: 'all 100ms',
-                }}
+                aria-current={item.isActive ? 'page' : undefined}
               >
                 {item.label}
               </button>
-            );
-          })}
-          <button
-            onClick={() => setHelpOpen(true)}
-            className="tap"
-            style={{
-              background: 'white',
-              border: '2.5px solid var(--line)',
-              borderRadius: 'var(--r-sm)',
-              padding: '6px 14px',
-              fontFamily: 'inherit',
-              fontSize: 13,
-              fontWeight: 900,
-              color: 'var(--ink)',
-              cursor: 'pointer',
-              boxShadow: '0 2.5px 0 var(--line)',
-              transition: 'all 100ms',
-            }}
-          >
-            Help & FAQ
-          </button>
-        </div>
-      ) : (
-        <Breadcrumb steps={steps} here={here} />
-      )}
+            ))}
+          </nav>
+        ) : (
+          <Breadcrumb steps={steps} here={here} />
+        )}
 
-      {showProfile ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {isSignedIn && (
-            <button
-              onClick={signOut}
-              className="tap"
-              style={{
-                background: 'var(--rose)',
-                border: '2.5px solid var(--line)',
-                borderRadius: 'var(--r-sm)',
-                padding: '6px 12px',
-                fontFamily: 'inherit',
-                fontSize: 13,
-                fontWeight: 900,
-                color: 'var(--ink)',
-                cursor: 'pointer',
-                boxShadow: '0 2.5px 0 var(--line)',
-                transition: 'all 100ms',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6
-              }}
-            >
-              <LogOut size={14} style={{ strokeWidth: 3 }} />
-              Log Out
+        {showProfile ? (
+          <div className="row row--sm">
+            <button className="btn btn--icon" onClick={() => setHelpOpen(true)} aria-label="Help and FAQ" title="Help">
+              <HelpCircle size={17} />
             </button>
-          )}
+            <ProfileMenu />
+          </div>
+        ) : (
+          <div style={{ width: 92 }} />
+        )}
+      </div>
 
-          <button
-            onClick={() => store.setScreen('onboarding')}
-            className="tap"
-            style={{
-              background: 'white',
-              border: '2.5px solid var(--line)',
-              borderRadius: 'var(--r-sm)',
-              padding: '6px 12px',
-              fontFamily: 'inherit',
-              fontSize: 13,
-              fontWeight: 900,
-              color: 'var(--ink)',
-              cursor: 'pointer',
-              boxShadow: '0 2.5px 0 var(--line)',
-              transition: 'all 100ms',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6
-            }}
-          >
-            <User size={14} style={{ strokeWidth: 3 }} />
-            Edit Profile
+      {helpOpen && <HelpDialog onClose={() => setHelpOpen(false)} />}
+    </header>
+  );
+}
+
+const FAQS = [
+  {
+    q: 'How does pose tracking work?',
+    a: 'MediaPipe runs in your browser and tracks 33 body landmarks per frame. Video never leaves your device — only the per-second scores and joint angles are saved.',
+  },
+  {
+    q: 'How is my score calculated?',
+    a: 'Every pose defines a target range for each joint. A frame starts at 100 and loses points for joints outside their range. Any second at 70 or above counts towards hold time.',
+  },
+  {
+    q: 'What do the AI reports include?',
+    a: 'After each session, Gemini reviews the corrections logged during practice and writes a short report: what held well, what to adjust, and safety notes for your goal.',
+  },
+  {
+    q: 'What do the coaches do?',
+    a: 'Three chat coaches cover different needs: breathing and alignment, strength and holds, and rehab modifications for injuries or stiffness.',
+  },
+];
+
+function HelpDialog({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label="Help" onClick={(e) => e.stopPropagation()}>
+        <div className="modal__header">
+          <h2 style={{ fontSize: 16 }}>Help &amp; FAQ</h2>
+          <button className="btn btn--icon" onClick={onClose} aria-label="Close">
+            <X size={16} />
           </button>
-          
-          <div style={{
-            border: '2.5px solid var(--line)',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            width: 32,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 0 var(--line)'
-          }}>
-            <UserButton afterSignOutUrl="/" />
-          </div>
         </div>
-      ) : (
-        <div style={{ width: 80 }} />
-      )}
+        <div className="modal__body stack">
+          <div className="stack stack--sm">
+            <h3>Getting started</h3>
+            <ol className="stack stack--sm secondary text-sm" style={{ paddingLeft: 18, margin: 0 }}>
+              <li>Log how your joints feel today on the dashboard.</li>
+              <li>Work through the daily plan, or pick any pose from the library.</li>
+              <li>Allow camera access and follow the live alignment cues.</li>
+              <li>Review the session report and track your progress over time.</li>
+            </ol>
+          </div>
 
-      {/* Help Modal */}
-      {helpOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.4)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 20
-        }}>
-          <div className="plush popin" style={{
-            background: 'white',
-            maxWidth: 580,
-            width: '100%',
-            maxHeight: '85vh',
-            display: 'flex',
-            flexDirection: 'column',
-            borderRadius: 'var(--r-md)',
-            overflow: 'hidden',
-            border: '4px solid var(--line)',
-          }}>
-            {/* Modal Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 20px',
-              borderBottom: '3.5px solid var(--line)',
-              background: 'var(--mint)',
-            }}>
-              <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
-                PhysioAlign Guide & FAQs
-              </h3>
-              <button
-                onClick={() => setHelpOpen(false)}
-                className="tap"
-                style={{
-                  padding: '4px',
-                  borderRadius: '50%',
-                  width: 30,
-                  height: 30,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  border: '2.5px solid var(--line)',
-                  background: 'white',
-                  boxShadow: '0 1.5px 0 var(--line)'
-                }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 20,
-              background: 'var(--cream)',
-            }}>
-              {/* Quick Instructions */}
-              <div className="plush" style={{ padding: 18, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
-                <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', marginTop: 0, marginBottom: 8 }}>
-                  How to use PhysioAlign
-                </h4>
-                <ol style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-2)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 6, margin: 0 }}>
-                  <li>Log your daily stiffness using the <strong>Pain Tracker</strong> on the dashboard.</li>
-                  <li>Follow your automatically adapted <strong>Daily Roadmap</strong>.</li>
-                  <li>Head to the <strong>Pose Library</strong> to practice with real-time AI posture feedback via your webcam.</li>
-                  <li>Read your post-session <strong>OSCE Grade report card</strong> powered by Google Gemini AI.</li>
-                  <li>Consult our specialized AI coaches in the <strong>Chatbot</strong> section for customized advice.</li>
-                </ol>
-              </div>
-
-              {/* FAQs */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: '0 0 4px 0' }}>
-                  Frequently Asked Questions
-                </h4>
-                
-                <div className="plush" style={{ padding: 14, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
-                  <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
-                    How does the real-time pose tracking work?
-                  </h5>
-                  <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-soft)', margin: 0, lineHeight: 1.4 }}>
-                    PhysioAlign uses Google MediaPipe in your browser to track 33 skeleton coordinates in real-time. No video is ever sent to servers—it's 100% private and runs local-first.
-                  </p>
-                </div>
-
-                <div className="plush" style={{ padding: 14, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
-                  <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
-                    What does the AI Attending Coach do?
-                  </h5>
-                  <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-soft)', margin: 0, lineHeight: 1.4 }}>
-                    Once you complete a pose session, your metrics (hold times, angles, deviations) are analyzed by Google Gemini AI to generate a clinical grade (A, B, C, F) and alignment cues.
-                  </p>
-                </div>
-
-                <div className="plush" style={{ padding: 14, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
-                  <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
-                    Who are the three specialized AI Yoga Coaches?
-                    {" "}
-                  </h5>
-                  <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-soft)', margin: 0, lineHeight: 1.4 }}>
-                    You can consult Zen Master Anya (for mindful breathing & alignment flows), Coach Rocky (for core strength building), or Dr. Maya (a physical therapy specialist for joint modifications).
+          <div className="stack stack--sm">
+            <h3>Questions</h3>
+            {FAQS.map((faq) => (
+              <div key={faq.q} className="card card--flat">
+                <div className="card__body card__body--tight">
+                  <div className="text-sm semibold">{faq.q}</div>
+                  <p className="text-sm muted" style={{ marginTop: 4 }}>
+                    {faq.a}
                   </p>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
-      )}
-    </div>
-  );
-}
-
-// --- CUTE AVATAR ---
-export function CuteFace({ size = 80, skin = '#FFD8B5', mood = 'happy' }) {
-  const stroke = 'var(--line)';
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200" style={{ transform: 'rotate(-2deg)' }}>
-      {/* Hair back */}
-      <circle cx="100" cy="100" r="72" fill="var(--ink-2)" />
-      {/* Face circle */}
-      <circle cx="100" cy="104" r="62" fill={skin} stroke={stroke} strokeWidth="6" />
-      {/* Hair top cut */}
-      <path d="M 42 78 Q 60 38 100 40 Q 140 38 158 78 Q 130 60 100 64 Q 70 60 42 78 Z" fill="var(--ink-2)" stroke={stroke} strokeWidth="3" />
-      {/* Blush */}
-      <ellipse cx="70" cy="120" rx="10" ry="7" fill="#FF9DAA" opacity="0.8" />
-      <ellipse cx="130" cy="120" rx="10" ry="7" fill="#FF9DAA" opacity="0.8" />
-      {/* Eyes */}
-      <circle cx="78" cy="104" r="6" fill={stroke} />
-      <circle cx="122" cy="104" r="6" fill={stroke} />
-      {/* Mouth */}
-      {mood === 'happy' ? (
-        <path d="M 85 130 Q 100 152 115 130" stroke={stroke} strokeWidth="5" fill="none" strokeLinecap="round" />
-      ) : (
-        <path d="M 85 136 Q 100 125 115 136" stroke={stroke} strokeWidth="5" fill="none" strokeLinecap="round" />
-      )}
-    </svg>
-  );
-}
-
-// --- PHYSIOALIGN JOINT TRACKING SKELETON LOGO ---
-export function PhysioLogo({ size = 80, className = '' }) {
-  return (
-    <div 
-      className={className} 
-      style={{ 
-        width: size, 
-        height: size, 
-        borderRadius: '50%', 
-        overflow: 'hidden', 
-        border: '3.5px solid var(--line)',
-        boxShadow: '4.5px 4.5px 0 var(--line)',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'white',
-        flexShrink: 0,
-        transform: 'rotate(-1deg)'
-      }}
-    >
-      <img 
-        src="/logo.png?v=4" 
-        alt="PhysioAlign Logo" 
-        style={{ 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover' 
-        }} 
-      />
+      </div>
     </div>
   );
 }

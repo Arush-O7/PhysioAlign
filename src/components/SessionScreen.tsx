@@ -8,7 +8,9 @@ import { TopBar } from './primitives';
 import { AngleSmoother, Stabilizer } from '../utils/smoothing';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
 import { useAuth } from '../utils/auth';
-import { Play, Pause, Square, AlertCircle, CheckCircle, HeartPulse } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, Pause, Play, Square, Target, X } from 'lucide-react';
+
+const HOLD_OPTIONS = [15, 30, 45, 60];
 
 export function SessionScreen() {
   const activePoseId = useActivePoseId();
@@ -28,7 +30,7 @@ export function SessionScreen() {
     return prescribedTargetHold || 30;
   });
   const [targetReached, setTargetReached] = useState(false);
-  
+
   const timerRef = useRef<any>(null);
   const lastAudioFeedbackTimeRef = useRef(0);
   const lastStateSeverityRef = useRef<'success' | 'warning' | 'error'>('error');
@@ -43,7 +45,7 @@ export function SessionScreen() {
     if (pose) {
       store.startSession(pose.id, pose.name);
       setTargetReached(false);
-      
+
       setCustomTargetHold(prescribedTargetHold || 30);
     }
     return () => {
@@ -62,7 +64,6 @@ export function SessionScreen() {
             angles: currentData.angles,
             feedbackMessage: currentData.feedbackMessage,
           });
-
 
           const score = currentData.score;
           if (score >= HOLD_SCORE_THRESHOLD && lastStateSeverityRef.current !== 'success') {
@@ -109,78 +110,79 @@ export function SessionScreen() {
     }
   }, [activeSession?.holdTimeSeconds, customTargetHold]);
 
-  const handlePoseDetected = useCallback((data: { keypoints: Keypoint[]; angles: Record<string, number> }) => {
-    if (!pose) return;
+  const handlePoseDetected = useCallback(
+    (data: { keypoints: Keypoint[]; angles: Record<string, number> }) => {
+      if (!pose) return;
 
-    const missingJoints: string[] = [];
-    const indexMap: Record<string, number> = {
-      LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12,
-      LEFT_ELBOW: 13, RIGHT_ELBOW: 14,
-      LEFT_WRIST: 15, RIGHT_WRIST: 16,
-      LEFT_HIP: 23, RIGHT_HIP: 24,
-      LEFT_KNEE: 25, RIGHT_KNEE: 26,
-      LEFT_ANKLE: 27, RIGHT_ANKLE: 28
-    };
-
-    pose.visibilityRequirements.forEach(joint => {
-      const idx = indexMap[joint];
-      if (data.keypoints[idx] && data.keypoints[idx].visibility < 0.55) {
-        missingJoints.push(joint.toLowerCase().replace('_', ' '));
-      }
-    });
-
-    if (missingJoints.length > 2) {
-      setIsCalibrating(true);
-      smootherRef.current.reset();
-      stabilizerRef.current.reset();
-      const calibrateFeedback: PoseFeedback = {
-        score: 0,
-        corrections: ['Step back so your full body is visible in the frame.'],
-        feedback: 'Positioning: Step back.',
-        severity: 'error',
-        jointDeviations: {}
+      const missingJoints: string[] = [];
+      const indexMap: Record<string, number> = {
+        LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12,
+        LEFT_ELBOW: 13, RIGHT_ELBOW: 14,
+        LEFT_WRIST: 15, RIGHT_WRIST: 16,
+        LEFT_HIP: 23, RIGHT_HIP: 24,
+        LEFT_KNEE: 25, RIGHT_KNEE: 26,
+        LEFT_ANKLE: 27, RIGHT_ANKLE: 28,
       };
-      setFeedback(calibrateFeedback);
-      poseDataRef.current = { angles: {}, feedbackMessage: 'Body out of frame', score: 0 };
-      return;
-    }
 
-    setIsCalibrating(false);
-
-
-    // score the smoothed angles, and only change the on-screen/spoken cue once
-    // the new one has held for 250ms so it doesn't flicker at range boundaries
-    const now = performance.now();
-    const angles = smootherRef.current.smooth(data.angles, now);
-    const live = evaluatePose(pose.id, angles);
-    const evaluation = stabilizerRef.current.update(live, now);
-    setFeedback(evaluation);
-
-    poseDataRef.current = {
-      angles,
-      feedbackMessage: live.corrections[0] || 'Perfect Alignment',
-      score: live.score
-    };
-
-    // Voice feedback (throttled to 5s)
-    if (now - lastAudioFeedbackTimeRef.current > 5000) {
-      if (evaluation.severity !== 'success') {
-        const errorCue = evaluation.corrections[0];
-        if (errorCue) {
-          // "Label: Adjust slightly. Current: 95°, ideal: ..." -> "Adjust slightly."
-          const spoken = errorCue.slice(errorCue.indexOf(':') + 1).split(/\s*Current:/)[0].trim();
-          speakFeedback(spoken || errorCue);
-          lastAudioFeedbackTimeRef.current = now;
+      pose.visibilityRequirements.forEach((joint) => {
+        const idx = indexMap[joint];
+        if (data.keypoints[idx] && data.keypoints[idx].visibility < 0.55) {
+          missingJoints.push(joint.toLowerCase().replace('_', ' '));
         }
-      } else {
+      });
 
-        if (Math.random() > 0.8) {
-          speakFeedback('Great form, keep holding.');
-          lastAudioFeedbackTimeRef.current = now;
+      if (missingJoints.length > 2) {
+        setIsCalibrating(true);
+        smootherRef.current.reset();
+        stabilizerRef.current.reset();
+        const calibrateFeedback: PoseFeedback = {
+          score: 0,
+          corrections: ['Step back so your full body is visible in the frame.'],
+          feedback: 'Step back from the camera',
+          severity: 'error',
+          jointDeviations: {},
+        };
+        setFeedback(calibrateFeedback);
+        poseDataRef.current = { angles: {}, feedbackMessage: 'Body out of frame', score: 0 };
+        return;
+      }
+
+      setIsCalibrating(false);
+
+      // score the smoothed angles, and only change the on-screen/spoken cue once
+      // the new one has held for 250ms so it doesn't flicker at range boundaries
+      const now = performance.now();
+      const angles = smootherRef.current.smooth(data.angles, now);
+      const live = evaluatePose(pose.id, angles);
+      const evaluation = stabilizerRef.current.update(live, now);
+      setFeedback(evaluation);
+
+      poseDataRef.current = {
+        angles,
+        feedbackMessage: live.corrections[0] || 'Perfect Alignment',
+        score: live.score,
+      };
+
+      // Voice feedback (throttled to 5s)
+      if (now - lastAudioFeedbackTimeRef.current > 5000) {
+        if (evaluation.severity !== 'success') {
+          const errorCue = evaluation.corrections[0];
+          if (errorCue) {
+            // "Label: Adjust slightly. Current: 95°, ideal: ..." -> "Adjust slightly."
+            const spoken = errorCue.slice(errorCue.indexOf(':') + 1).split(/\s*Current:/)[0].trim();
+            speakFeedback(spoken || errorCue);
+            lastAudioFeedbackTimeRef.current = now;
+          }
+        } else {
+          if (Math.random() > 0.8) {
+            speakFeedback('Great form, keep holding.');
+            lastAudioFeedbackTimeRef.current = now;
+          }
         }
       }
-    }
-  }, [pose]);
+    },
+    [pose]
+  );
 
   const handlePoseLost = useCallback(() => {
     // otherwise the timer keeps logging the last good frame and hold time keeps going up
@@ -217,19 +219,21 @@ export function SessionScreen() {
   };
 
   const handleCancel = () => {
-    if (window.confirm('Are you sure you want to exit? Session progress will be lost.')) {
+    if (window.confirm('Exit this session? Progress will be lost.')) {
       store.cancelActiveSession();
     }
   };
 
   if (!pose || !activeSession) {
     return (
-      <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h3>Initializing Session...</h3>
+      <div className="screen screen--centered">
+        <div className="row row--sm muted">
+          <span className="spinner" />
+          Preparing session
+        </div>
       </div>
     );
   }
-
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -237,308 +241,214 @@ export function SessionScreen() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const severity = isCalibrating ? 'neutral' : feedback?.severity ?? 'neutral';
+  const feedbackIcon =
+    severity === 'success' ? <CheckCircle2 size={17} /> : severity === 'error' ? <AlertTriangle size={17} /> : <Info size={17} />;
+  const holdProgress = Math.min(100, Math.round((activeSession.holdTimeSeconds / customTargetHold) * 100));
+
   return (
-    <div className="screen" style={{ background: 'var(--cream)', minHeight: '100vh' }}>
-      <TopBar here={2} steps={['Dashboard', 'Pose Select', 'Evaluation']} showProfile={false} />
+    <div className="screen">
+      <TopBar here={2} steps={['Dashboard', 'Pose', 'Session']} showProfile={false} />
 
       {targetReached && (
-        <div style={{
-          position: 'fixed',
-          top: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          background: 'var(--mint)',
-          border: '3px solid var(--line)',
-          borderRadius: 'var(--r-md)',
-          boxShadow: 'var(--plush-sm)',
-          padding: '16px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          animation: 'pop-in 400ms cubic-bezier(.5,1.7,.4,1) forwards',
-        }}>
-          <CheckCircle size={24} color="var(--ink)" />
+        <div className="session-toast pop-in" role="status">
+          <span className="icon-tile" style={{ background: 'var(--success-100)', color: 'var(--success-700)' }}>
+            <Target size={17} />
+          </span>
           <div>
-            <h4 style={{ fontWeight: 900, fontSize: 16, color: 'var(--ink)' }}>Target Hold Reached!</h4>
-            <p style={{ fontWeight: 700, fontSize: 13, margin: '2px 0 0', color: 'var(--ink-2)', opacity: 0.9 }}>
-              Excellent alignment. You held the posture for {customTargetHold} seconds.
-            </p>
+            <div className="text-sm semibold">Target hold reached</div>
+            <div className="text-xs muted">
+              {customTargetHold}s in good form. Keep going or finish to see your report.
+            </div>
           </div>
-          <button 
-            onClick={() => setTargetReached(false)} 
-            className="btn-plush ghost tap" 
-            style={{ padding: '6px 12px', fontSize: 12, border: '2px solid var(--line)', boxShadow: 'none' }}
-          >
-            Dismiss
+          <button className="btn btn--icon" onClick={() => setTargetReached(false)} aria-label="Dismiss">
+            <X size={15} />
           </button>
         </div>
       )}
 
-      {isAnalyzing && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(255, 250, 240, 0.95)', zIndex: 100,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          textAlign: 'center', padding: 24
-        }}>
-          <div className="breathe" style={{ marginBottom: 16 }}>
-            <HeartPulse size={64} className="floaty" color="var(--peach-deep)" />
-          </div>
-          <h2 style={{ fontSize: 26, fontWeight: 900 }}>AI Attending Grader analyzing...</h2>
-          <p style={{ fontSize: 15, color: 'var(--ink-2)', fontWeight: 700, marginTop: 6, maxWidth: 360 }}>
-            Analyzing joint deviations, hold consistency, and assembling your anatomical critique report.
-          </p>
-        </div>
-      )}
-
-      <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <AIEngine onPoseDetected={handlePoseDetected} onPoseLost={handlePoseLost} poseImage={pose.image} poseName={pose.name} />
-
-          <div className="plush" style={{ padding: 18, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', gap: 12 }}>
-              {!sessionActive ? (
-                <button onClick={handleStart} className="btn-plush mint" style={{ padding: '8px 16px', fontSize: 15 }}>
-                  <Play size={16} /> Start Hold
-                </button>
-              ) : (
-                <button onClick={handlePause} className="btn-plush ghost" style={{ padding: '8px 16px', fontSize: 15 }}>
-                  <Pause size={16} /> Pause
-                </button>
-              )}
-              
-              <button
-                onClick={handleFinish}
-                disabled={activeSession.frameLogs.length === 0}
-                className="btn-plush primary"
-                style={{ padding: '8px 16px', fontSize: 15 }}
-              >
-                <Square size={14} /> Finish & Grade
-              </button>
+      <div className="page">
+        <div className="container container--wide">
+          <div className="page-header">
+            <div className="page-header__text">
+              <div className="row row--sm" style={{ marginBottom: 4 }}>
+                <h1 style={{ fontSize: 22 }}>{pose.name}</h1>
+                <span className="badge">{pose.difficulty}</span>
+                {prescribedTargetHold && <span className="badge badge--brand">Prescribed</span>}
+              </div>
+              <p className="page-subtitle">{pose.description}</p>
             </div>
-
-            <button onClick={handleCancel} className="btn-plush ghost" style={{ padding: '8px 16px', fontSize: 14, color: 'var(--rose-deep)' }}>
-              Exit Practice
+            <button className="btn btn--ghost btn--sm" onClick={handleCancel}>
+              Exit session
             </button>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          
-          <div className="plush-lg" style={{ padding: 20, background: 'white', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
-            <div style={{ borderRight: '3.5px dashed var(--line)' }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Practice Duration
-              </span>
-              <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--ink)', marginTop: 4 }}>
-                {formatTime(activeSession.durationSeconds)}
-              </h2>
-            </div>
-            <div>
-              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Correct Posture Hold
-              </span>
-              <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--mint-deep)', marginTop: 4, marginBottom: 4 }}>
-                {activeSession.holdTimeSeconds}s
-              </h2>
-              <div style={{ fontSize: 11, fontWeight: 800, color: prescribedTargetHold && prescribedTargetHold === customTargetHold ? 'var(--rose-deep)' : 'var(--peach-deep)' }}>
-                Goal: {customTargetHold}s {prescribedTargetHold && prescribedTargetHold === customTargetHold ? '(Prescribed)' : '(Custom)'}
-              </div>
-            </div>
-          </div>
+          <div className="grid grid--main-aside">
+            <div className="stack">
+              <AIEngine
+                onPoseDetected={handlePoseDetected}
+                onPoseLost={handlePoseLost}
+                poseImage={pose.image}
+                poseName={pose.name}
+              />
 
-          {!sessionActive && activeSession.durationSeconds === 0 && (
-            <div className="plush popin" style={{ padding: 20, background: 'var(--cream-2)' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8, color: 'var(--ink)' }}>
-                🎯 Target Hold Goal
-              </h3>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 14 }}>
-                Adjust how long you want to hold this posture. A voice cue will trigger when you reach this target.
-              </p>
-              
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-                <button 
-                  onClick={() => setCustomTargetHold(prev => Math.max(5, prev - 5))}
-                  className="btn-plush ghost tap"
-                  style={{ padding: 0, width: 40, height: 40, borderRadius: 10, fontSize: 18 }}
-                  type="button"
-                >
-                  -
-                </button>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <span style={{ fontSize: 24, fontWeight: 900, color: 'var(--ink)' }}>{customTargetHold}</span>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)', marginLeft: 4 }}>seconds</span>
-                </div>
-                <button 
-                  onClick={() => setCustomTargetHold(prev => Math.min(300, prev + 5))}
-                  className="btn-plush ghost tap"
-                  style={{ padding: 0, width: 40, height: 40, borderRadius: 10, fontSize: 18 }}
-                  type="button"
-                >
-                  +
-                </button>
-              </div>
+              <div className="card">
+                <div className="card__body row spread row--wrap" style={{ gap: 12 }}>
+                  <div className="row row--sm">
+                    {sessionActive ? (
+                      <button className="btn btn--secondary" onClick={handlePause}>
+                        <Pause size={15} />
+                        Pause
+                      </button>
+                    ) : (
+                      <button className="btn btn--primary" onClick={handleStart} disabled={isAnalyzing}>
+                        <Play size={15} />
+                        {activeSession.durationSeconds > 0 ? 'Resume' : 'Start session'}
+                      </button>
+                    )}
+                    <button
+                      className="btn btn--secondary"
+                      onClick={handleFinish}
+                      disabled={isAnalyzing || activeSession.durationSeconds === 0}
+                    >
+                      {isAnalyzing ? <span className="spinner" /> : <Square size={14} />}
+                      Finish &amp; save
+                    </button>
+                  </div>
 
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[10, 20, 30, 45, 60, 90].map(seconds => (
-                  <button
-                    key={seconds}
-                    onClick={() => setCustomTargetHold(seconds)}
-                    className={`chip tap ${customTargetHold === seconds ? 'peach' : ''}`}
-                    style={{ border: '2px solid var(--line)', padding: '4px 10px', fontSize: 12, fontWeight: 800 }}
-                    type="button"
-                  >
-                    {seconds}s
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-
-          <div className="plush" style={{
-            padding: 20,
-            background: isCalibrating ? 'var(--cream-2)' : feedback?.severity === 'error' ? 'var(--rose)' : feedback?.severity === 'warning' ? 'var(--butter)' : 'var(--mint)',
-            minHeight: 120,
-            transition: 'background 300ms ease'
-          }}>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ marginTop: 2 }}>
-                {feedback?.severity === 'success' ? (
-                  <CheckCircle size={22} color="var(--ink)" />
-                ) : (
-                  <AlertCircle size={22} color="var(--ink)" />
-                )}
-              </div>
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  {isCalibrating ? 'Calibrating Position' : feedback?.severity === 'success' ? 'Perfect Alignment!' : 'Adjustment Cues'}
-                </h3>
-                <p style={{ fontSize: 14, fontWeight: 700, marginTop: 4, lineHeight: 1.4 }}>
-                  {isCalibrating 
-                    ? 'Align your full body in the webcam frame. Move back until your knees, hips, and shoulders are in view.' 
-                    : feedback?.feedback}
-                </p>
-                {feedback && feedback.corrections.length > 0 && (
-                  <ul style={{ margin: '8px 0 0', paddingLeft: 16, fontSize: 13, fontWeight: 700 }}>
-                    {feedback.corrections.map((corr, idx) => (
-                      <li key={idx} style={{ marginBottom: 4 }}>{corr}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-
-
-          <div className="plush" style={{ padding: 20, background: 'white' }}>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center', borderBottom: '2.5px solid var(--line)', paddingBottom: 12, marginBottom: 12 }}>
-              <div style={{
-                width: 70,
-                height: 70,
-                flexShrink: 0,
-                borderRadius: 8,
-                border: '2px solid var(--line)',
-                background: 'var(--cream)',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <img
-                  src={pose.image}
-                  alt={pose.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              </div>
-              <div>
-                <h3 style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>{pose.name} Reference</h3>
-                <p style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>
-                  Difficulty: {pose.difficulty}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                How to Perform
-              </span>
-              <ol style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--ink)', fontWeight: 700, lineHeight: 1.4 }}>
-                {pose.instructions.map((inst, idx) => (
-                  <li key={idx} style={{ marginBottom: 6 }}>{inst}</li>
-                ))}
-              </ol>
-            </div>
-          </div>
-
-
-          <div className="plush" style={{ padding: 20, background: 'white' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, borderBottom: '2.5px solid var(--line)', paddingBottom: 8, marginBottom: 12 }}>
-              Joint Angle Calibrator
-            </h3>
-
-            {isCalibrating ? (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-soft)' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Awaiting pose tracking data...</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {Object.entries(pose.targetAngles).map(([jointKey, target]) => {
-                  const dev = feedback?.jointDeviations[jointKey];
-                  const currentAngle = dev ? dev.current : 0;
-                  const isError = dev ? dev.error : true;
-
-
-                  const progressPct = Math.min(100, Math.max(0, (currentAngle / 180) * 100));
-
-                  return (
-                    <div key={jointKey}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800, marginBottom: 4 }}>
-                        <span style={{ color: 'var(--ink)' }}>{target.label}</span>
-                        <span style={{ color: isError ? 'var(--rose-deep)' : 'var(--mint-deep)' }}>
-                          {currentAngle}° <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>(Ideal: {target.min}°-{target.max}°)</span>
-                        </span>
-                      </div>
-                      
-
-                      <div style={{
-                        height: 12,
-                        background: 'var(--cream)',
-                        border: '2px solid var(--line)',
-                        borderRadius: 'var(--r-pill)',
-                        overflow: 'hidden',
-                        position: 'relative'
-                      }}>
-                        <div style={{
-                          width: `${progressPct}%`,
-                          height: '100%',
-                          background: isError ? 'var(--rose-deep)' : 'var(--mint-deep)',
-                          transition: 'width 200ms ease, background-color 200ms'
-                        }} />
-
-
-                        <div style={{
-                          position: 'absolute',
-                          left: `${(target.min / 180) * 100}%`,
-                          width: `${((target.max - target.min) / 180) * 100}%`,
-                          height: '100%',
-                          top: 0,
-                          borderLeft: '1.5px dashed var(--line)',
-                          borderRight: '1.5px dashed var(--line)',
-                          background: 'rgba(0, 0, 0, 0.05)',
-                          pointerEvents: 'none'
-                        }} />
+                  <div className="row" style={{ gap: 24 }}>
+                    <div>
+                      <div className="stat__label">Elapsed</div>
+                      <div className="timer-value">{formatTime(activeSession.durationSeconds)}</div>
+                    </div>
+                    <div>
+                      <div className="stat__label">Good form</div>
+                      <div className="timer-value" style={{ color: 'var(--brand-700)' }}>
+                        {activeSession.holdTimeSeconds}s
                       </div>
                     </div>
-                  );
-                })}
+                    <div style={{ minWidth: 150 }}>
+                      <div className="row spread" style={{ marginBottom: 6 }}>
+                        <span className="stat__label" style={{ margin: 0 }}>
+                          Target {customTargetHold}s
+                        </span>
+                        <span className="text-xs muted numeric">{holdProgress}%</span>
+                      </div>
+                      <div className="progress">
+                        <div className="progress__bar" style={{ width: `${holdProgress}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
+
+            <div className="stack">
+              <div className={`feedback feedback--${severity}`}>
+                <span className="feedback__icon">{feedbackIcon}</span>
+                <div>
+                  <div className="feedback__title">
+                    {isCalibrating ? 'Finding your position' : feedback?.feedback ?? 'Waiting for tracking'}
+                  </div>
+                  <div className="feedback__body">
+                    {isCalibrating
+                      ? 'Step back until your whole body is inside the frame.'
+                      : feedback?.corrections[0] ??
+                        (feedback?.severity === 'success'
+                          ? 'Every tracked joint is inside its target range.'
+                          : 'Waiting for the camera to pick you up.')}
+                  </div>
+                </div>
+                {!isCalibrating && feedback && (
+                  <span className="badge" style={{ marginLeft: 'auto' }}>
+                    {feedback.score}%
+                  </span>
+                )}
+              </div>
+
+              <div className="card">
+                <div className="card__header">
+                  <span className="card__title">Joint angles</span>
+                  <span className="text-xs muted">live</span>
+                </div>
+                <div className="card__body stack">
+                  {Object.entries(pose.targetAngles).map(([joint, target]) => {
+                    const deviation = feedback?.jointDeviations[joint];
+                    const current = deviation?.current;
+                    const hasError = deviation?.error ?? false;
+                    const toPercent = (angle: number) => Math.max(0, Math.min(100, (angle / 180) * 100));
+                    return (
+                      <div className="meter" key={joint}>
+                        <div className="meter__head">
+                          <span className="secondary">{target!.label}</span>
+                          <span className={`meter__value${hasError ? ' is-error' : ''}`}>
+                            {current === undefined ? '—' : `${current}°`}
+                            <span className="muted text-xs" style={{ fontWeight: 400, marginLeft: 6 }}>
+                              {target!.min}–{target!.max}°
+                            </span>
+                          </span>
+                        </div>
+                        <div className="meter__track">
+                          <div
+                            className="meter__zone"
+                            style={{
+                              left: `${toPercent(target!.min)}%`,
+                              width: `${toPercent(target!.max) - toPercent(target!.min)}%`,
+                            }}
+                          />
+                          {current !== undefined && (
+                            <div
+                              className={`meter__needle${hasError ? ' is-error' : ''}`}
+                              style={{ left: `${toPercent(current)}%` }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="card__header">
+                  <span className="card__title">Hold target</span>
+                </div>
+                <div className="card__body stack stack--sm">
+                  <div className="segmented segmented--4" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+                    {HOLD_OPTIONS.map((seconds) => (
+                      <button
+                        key={seconds}
+                        className={`segmented__item${customTargetHold === seconds ? ' is-selected' : ''}`}
+                        onClick={() => setCustomTargetHold(seconds)}
+                      >
+                        {seconds}s
+                      </button>
+                    ))}
+                  </div>
+                  <p className="hint">
+                    {prescribedTargetHold
+                      ? `Your clinician prescribed ${prescribedTargetHold}s for this pose.`
+                      : 'A voice cue plays when you reach the target in good form.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="card__header">
+                  <span className="card__title">How to perform</span>
+                </div>
+                <div className="card__body">
+                  <ol className="stack stack--sm text-sm secondary" style={{ margin: 0, paddingLeft: 18 }}>
+                    {pose.instructions.map((step, idx) => (
+                      <li key={idx}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

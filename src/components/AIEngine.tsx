@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, memo } from 'react';
 import Webcam from 'react-webcam';
-import { Camera, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { calculateAngles, Keypoint } from '../utils/angleCalculations';
 import { createPoseDetector, PoseDetector, PoseResult } from '../utils/poseDetector';
 import { recordFrame } from '../utils/perf';
@@ -176,8 +176,8 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
     ];
 
     // 1. Draw Bones (Bridges)
-    ctx.strokeStyle = '#5FCFA0'; // Primary mint outline color
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#2dd4bf';
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
 
     connections.forEach(([i1, i2]) => {
@@ -200,16 +200,14 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
       if (!criticalJoints.includes(idx)) return;
 
       if (kp.visibility > 0.5) {
-        // Outer cartoon border
-        ctx.fillStyle = '#2B1E16'; // Ink outline
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
         ctx.beginPath();
-        ctx.arc(kp.x * width, kp.y * height, 8, 0, 2 * Math.PI);
+        ctx.arc(kp.x * width, kp.y * height, 7, 0, 2 * Math.PI);
         ctx.fill();
 
-        // Inner glowing core
-        ctx.fillStyle = '#FFD86B'; // Butter color
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(kp.x * width, kp.y * height, 5, 0, 2 * Math.PI);
+        ctx.arc(kp.x * width, kp.y * height, 3.5, 0, 2 * Math.PI);
         ctx.fill();
       }
     });
@@ -227,106 +225,60 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
   };
 
   return (
-    <div className="camera-container paper" style={{ position: 'relative' }}>
+    <div className="camera">
       {error ? (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: 24, textAlign: 'center', color: 'var(--ink)'
-        }}>
-          <AlertCircle size={48} color="var(--rose-deep)" style={{ marginBottom: 12 }} />
-          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Camera Error</h3>
-          <p style={{ fontSize: 14, color: 'var(--ink-2)' }}>{error}</p>
+        <div className="camera__overlay">
+          <span className="icon-tile" style={{ background: 'var(--danger-50)', color: 'var(--danger-600)' }}>
+            <AlertCircle size={18} />
+          </span>
+          <div className="text-sm semibold" style={{ color: 'var(--text)' }}>
+            Camera unavailable
+          </div>
+          <p className="text-sm muted" style={{ maxWidth: 320 }}>
+            {error}
+          </p>
         </div>
       ) : (
         <>
-          {/* Overlay state spinner */}
           {(!isModelLoaded || !isCameraActive) && (
-            <div style={{
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255, 250, 240, 0.9)', zIndex: 20, textAlign: 'center'
-            }}>
-              <div className="breathe" style={{ marginBottom: 12 }}>
-                <Camera size={44} color="var(--ink-soft)" />
+            <div className="camera__overlay">
+              <span className="spinner spinner--lg" />
+              <div className="text-sm semibold" style={{ color: 'var(--text)' }}>
+                {!isModelLoaded ? 'Loading the pose model' : 'Starting your camera'}
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>
-                {!isModelLoaded ? 'Loading Posture Model...' : 'Initializing Camera...'}
-              </h3>
-              <p style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-                {!isModelLoaded ? 'Loading the MediaPipe pose model...' : 'Please allow camera access'}
+              <p className="text-sm muted">
+                {!isModelLoaded ? 'This happens once, then it is cached.' : 'Allow camera access to continue.'}
               </p>
             </div>
           )}
 
-          {/* Ideal Pose Reference Overlay */}
           {poseImage && (
-            <div style={{
-              position: 'absolute',
-              top: 12,
-              left: 12,
-              zIndex: 15,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 4
-            }}>
-              <span className="chip" style={{
-                fontSize: 10,
-                padding: '2px 8px',
-                boxShadow: '0 1.5px 0 var(--line)',
-                background: 'var(--butter)',
-                fontWeight: 900
-              }}>
-                Target Pose
-              </span>
-              <div style={{
-                width: 110,
-                height: 110,
-                background: 'white',
-                border: '2.5px solid var(--line)',
-                boxShadow: '3px 3px 0 var(--line)',
-                borderRadius: 8,
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <img
-                  src={poseImage}
-                  alt={poseName || 'Target pose'}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              </div>
-            </div>
+            <figure className="camera__reference">
+              <img src={poseImage} alt={poseName || 'Target pose'} />
+              <figcaption>Target</figcaption>
+            </figure>
           )}
 
-          {/* Webcam Stream */}
           <Webcam
             ref={webcamRef}
             audio={false}
-            className="camera-feed"
+            className="camera__feed"
             onUserMedia={handleCameraStart}
             onUserMediaError={handleCameraError}
             screenshotFormat="image/jpeg"
             videoConstraints={{
               facingMode: 'user',
               width: 640,
-              height: 480
+              height: 480,
             }}
           />
 
-          {/* Overlay skeletal canvas */}
-          <canvas ref={canvasRef} className="skeleton-canvas" />
+          <canvas ref={canvasRef} className="camera__canvas" />
 
-          {/* FPS details */}
           {isModelLoaded && isCameraActive && (
-            <div style={{
-              position: 'absolute', bottom: 12, right: 12, zIndex: 15,
-              background: 'white', border: '2px solid var(--line)', padding: '2px 8px',
-              borderRadius: 'var(--r-sm)', fontSize: 11, fontWeight: 800, boxShadow: '0 2px 0 var(--line)'
-            }}>
-              CV Engine: {fps} FPS{detectorMode === 'worker' ? ' · worker' : ''}
+            <div className="camera__chip camera__chip--br">
+              <span className="badge__dot" style={{ background: '#4ade80' }} />
+              {fps} fps{detectorMode === 'worker' ? ' · worker' : ''}
             </div>
           )}
         </>
