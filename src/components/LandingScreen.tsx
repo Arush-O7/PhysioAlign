@@ -10,7 +10,8 @@ import {
   Plus,
   Minus,
   Sparkles,
-  Camera
+  Camera,
+  ArrowRight
 } from 'lucide-react';
 
 interface LandingScreenProps {
@@ -57,7 +58,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '16px 32px',
-          borderBottom: '3.5px solid var(--line)',
+          borderBottom: '2.5px solid var(--line)',
           background: 'white',
           position: 'sticky',
           top: 0,
@@ -113,13 +114,13 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             lineHeight: 1.1,
             marginTop: 8
           }}>
-            AI Rehab & Posture <br/>
+            Real-time posture coaching <br/>
             <span style={{
               color: 'var(--peach-deep)',
               position: 'relative',
               display: 'inline-block'
             }}>
-              Yoga Trainer
+              for yoga &amp; physio
               <span style={{
                 position: 'absolute',
                 bottom: -8,
@@ -134,26 +135,31 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
           </h1>
 
           <p style={{
-            fontSize: '18px',
-            fontWeight: 800,
+            fontSize: '17px',
+            fontWeight: 700,
             color: 'var(--ink-2)',
-            lineHeight: 1.5,
-            maxWidth: 640
+            lineHeight: 1.6,
+            maxWidth: 620
           }}>
-            PhysioAlign is an interactive wellness platform combining local-first computer vision posture tracking, daily pain/fatigue logs, adaptive routines, and multi-agent AI clinical coaching.
+            Pick a pose, turn on your camera, and PhysioAlign checks your joint angles as you hold it. You get live corrections, a timed hold score and a short report at the end. The video never leaves your device.
           </p>
 
           <button
             onClick={isSignedIn ? () => store.setScreen('dashboard') : () => onEnterPractice?.()}
-            className="btn-plush primary tap wobble"
-            style={{
-              fontSize: '22px',
-              padding: '18px 42px',
-              marginTop: 12
-            }}
+            className="btn-plush primary tap"
+            style={{ fontSize: '18px', padding: '14px 30px', marginTop: 4 }}
           >
-            {isSignedIn ? 'Go to Dashboard ➔' : 'Enter Practice Suite ➔'}
+            {isSignedIn ? 'Go to dashboard' : 'Start a session'}
+            <ArrowRight size={18} style={{ strokeWidth: 3 }} />
           </button>
+
+          <figure className="plush" style={{ margin: '20px 0 0', padding: 10, background: 'white', width: '100%', maxWidth: 820 }}>
+            <img
+              src="/preview-session.jpg"
+              alt="A PhysioAlign session: the camera view with the tracked skeleton, live alignment cues and joint angle readouts"
+              style={{ display: 'block', width: '100%', borderRadius: 10, border: '2.5px solid var(--line)' }}
+            />
+          </figure>
         </section>
 
         {/* Dynamic Features Showcase Grid */}
@@ -169,7 +175,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
           }}>
             {/* 1. Computer Vision */}
             <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--mint)', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--mint)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <Camera size={20} color="var(--ink)" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 900 }}>Webcam Joint Calibration</h3>
@@ -180,7 +186,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
 
             {/* 2. Pain Tracker */}
             <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--rose)', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--rose)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <HeartPulse size={20} color="var(--ink)" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 900 }}>Daily Pain & Stiffness Log</h3>
@@ -191,7 +197,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
 
             {/* 3. Daily Habits */}
             <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--butter)', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--butter)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <CheckCircle size={20} color="var(--ink)" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 900 }}>Today's Wellness Roadmap</h3>
@@ -202,7 +208,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
 
             {/* 4. AI Grader */}
             <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--peach)', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--peach)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <Sparkles size={20} color="var(--ink)" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 900 }}>Attending Coach AI Grader</h3>
@@ -213,7 +219,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
 
             {/* 5. Specialized AI Coaches */}
             <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--sky)', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--sky)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <MessageSquare size={20} color="var(--ink)" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 900 }}>Multi-Coach Chat consult</h3>
@@ -224,7 +230,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
 
             {/* 6. Analytics Trends */}
             <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--cream-2)', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--cream-2)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <TrendingUp size={20} color="var(--ink)" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 900 }}>Rehab Analytics & Charts</h3>
@@ -252,9 +258,9 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             <div className="plush" style={{ background: 'white', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
               <div style={{
                 position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
-                border: '3.5px solid var(--line)', background: 'var(--butter)', display: 'flex',
+                border: '2.5px solid var(--line)', background: 'var(--butter)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900,
-                boxShadow: '0 2px 0 var(--line)'
+                boxShadow: 'var(--plush-tiny)'
               }}>1</div>
               <h3 style={{ fontSize: 18, fontWeight: 900, marginTop: 8 }}>Log Daily Index</h3>
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
@@ -266,9 +272,9 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             <div className="plush" style={{ background: 'white', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
               <div style={{
                 position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
-                border: '3.5px solid var(--line)', background: 'var(--mint)', display: 'flex',
+                border: '2.5px solid var(--line)', background: 'var(--mint)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900,
-                boxShadow: '0 2px 0 var(--line)'
+                boxShadow: 'var(--plush-tiny)'
               }}>2</div>
               <h3 style={{ fontSize: 18, fontWeight: 900, marginTop: 8 }}>Calibrate & Hold</h3>
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
@@ -280,9 +286,9 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             <div className="plush" style={{ background: 'white', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
               <div style={{
                 position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
-                border: '3.5px solid var(--line)', background: 'var(--sky)', display: 'flex',
+                border: '2.5px solid var(--line)', background: 'var(--sky)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900,
-                boxShadow: '0 2px 0 var(--line)'
+                boxShadow: 'var(--plush-tiny)'
               }}>3</div>
               <h3 style={{ fontSize: 18, fontWeight: 900, marginTop: 8 }}>Consult & Track</h3>
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
@@ -331,7 +337,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
                   >
                     <span>{faq.q}</span>
                     <div style={{
-                      width: 24, height: 24, borderRadius: 6, border: '2px solid var(--line)',
+                      width: 24, height: 24, borderRadius: 6, border: '2.5px solid var(--line)',
                       background: isOpen ? 'var(--butter)' : 'var(--cream)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       boxShadow: isOpen ? 'none' : '0 1.5px 0 var(--line)',
@@ -365,7 +371,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
       {/* Footer */}
       <footer style={{
         padding: '24px 32px',
-        borderTop: '3.5px solid var(--line)',
+        borderTop: '2.5px solid var(--line)',
         background: 'var(--cream-2)',
         textAlign: 'center',
         fontWeight: 800,
