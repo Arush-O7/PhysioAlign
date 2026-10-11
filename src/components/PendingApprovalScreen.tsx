@@ -1,35 +1,22 @@
-import { Clock } from 'lucide-react';
 import { useAuth } from '../utils/auth';
-import { PhysioLogo } from './primitives';
+import { PhysioLogo, Wordmark } from './primitives';
 
 export function PendingApprovalScreen() {
   const { signOut } = useAuth();
 
   return (
-    <div className="screen screen--centered">
-      <div className="card card--raised fade-in" style={{ maxWidth: 440, width: '100%' }}>
-        <div className="card__body stack">
-          <div className="row spread">
-            <PhysioLogo size={28} />
-            <span className="badge badge--warn">
-              <Clock size={12} />
-              Pending review
-            </span>
-          </div>
-          <div>
-            <h1 style={{ fontSize: 20 }}>Your clinician account is awaiting approval</h1>
-            <p className="text-sm secondary" style={{ marginTop: 6 }}>
-              An administrator needs to approve the account before you can see patient data. You'll be able to sign in to the
-              clinician portal as soon as that's done.
-            </p>
-          </div>
-          <div className="alert alert--neutral">
-            Nothing to do for now — check back after an administrator has reviewed your request.
-          </div>
-          <button className="btn btn--secondary" onClick={signOut} style={{ alignSelf: 'flex-start' }}>
-            Sign out
-          </button>
-        </div>
+    <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24 }}>
+      <div className="plush popin" style={{ background: 'white', padding: '36px 32px', maxWidth: 440, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <PhysioLogo size={70} />
+        <Wordmark size={30} />
+        <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Waiting for approval</h2>
+        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-soft)', margin: 0, lineHeight: 1.5 }}>
+          Your clinician account has been created. An admin needs to approve it before you can see patient data.
+          Check back once you've heard from them.
+        </p>
+        <button onClick={signOut} className="btn-plush ghost" style={{ padding: '10px 24px', fontSize: 15 }}>
+          Sign out
+        </button>
       </div>
     </div>
   );

@@ -2,10 +2,8 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuth, signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle } from './utils/auth';
 import { apiFetch } from './utils/api';
 import { store, useScreen, useUserData, profileFromApi, screenForProfile } from './game/store';
-import { PhysioLogo } from './components/primitives';
+import { Wordmark, PhysioLogo } from './components/primitives';
 import { LandingScreen } from './components/LandingScreen';
-import './styles/global.css';
-import { AlertCircle, ArrowLeft, Check, Shield, Stethoscope, User } from 'lucide-react';
 
 // everything behind the login is split into its own chunk, so the landing page
 // doesn't download recharts, the portals or the session screen up front
@@ -30,35 +28,13 @@ const DoctorPortal = lazy(screens.doctor);
 const AdminPortal = lazy(screens.admin);
 const PendingApprovalScreen = lazy(screens.pending);
 
-const ScreenLoading = ({ label = 'Loading' }: { label?: string }) => (
-  <div className="screen screen--centered">
-    <div className="row row--sm muted">
-      <span className="spinner" />
-      {label}
-    </div>
+const ScreenLoading = () => (
+  <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+    <h3 style={{ fontFamily: 'Nunito', fontWeight: 800 }}>Loading...</h3>
   </div>
 );
-
-const PORTALS = [
-  {
-    id: 'patient',
-    label: 'Patient',
-    icon: User,
-    description: 'Practise poses with live feedback, log how you feel and follow your plan.',
-  },
-  {
-    id: 'doctor',
-    label: 'Clinician',
-    icon: Stethoscope,
-    description: 'Review your patients’ sessions, track progress and prescribe care plans.',
-  },
-  {
-    id: 'admin',
-    label: 'Administrator',
-    icon: Shield,
-    description: 'Manage accounts, approve clinicians and assign patients.',
-  },
-];
+import './styles/global.css';
+import { User, Stethoscope, Shield, ArrowLeft } from 'lucide-react';
 
 export default function App() {
   const screen = useScreen();
@@ -116,17 +92,15 @@ export default function App() {
             } catch (err: any) {
               setFormError(err.message || 'Google sign-in failed');
             }
-          },
+          }
         });
-
-        const buttonDiv = document.getElementById('google-signin-button');
+        
+        const buttonDiv = document.getElementById("google-signin-button");
         if (buttonDiv) {
-          (window as any).google.accounts.id.renderButton(buttonDiv, {
-            theme: 'outline',
-            size: 'large',
-            width: 320,
-            text: 'continue_with',
-          });
+          (window as any).google.accounts.id.renderButton(
+            buttonDiv,
+            { theme: "outline", size: "large", width: 280 }
+          );
         }
       } else {
         setTimeout(initGoogle, 100);
@@ -139,23 +113,23 @@ export default function App() {
   useEffect(() => {
     const titles: Record<string, string> = {
       splash: 'PhysioAlign',
-      onboarding: 'Your profile · PhysioAlign',
-      dashboard: 'Dashboard · PhysioAlign',
-      library: 'Pose library · PhysioAlign',
-      session: 'Live session · PhysioAlign',
-      debrief: 'Session report · PhysioAlign',
-      doctor: 'Clinician portal · PhysioAlign',
-      admin: 'Admin · PhysioAlign',
-      pending: 'Pending approval · PhysioAlign',
+      onboarding: 'Setup Profile | PhysioAlign',
+      dashboard: 'Dashboard | PhysioAlign',
+      library: 'Select Pose | PhysioAlign',
+      session: 'Active Practice | PhysioAlign',
+      debrief: 'Anatomical Report | PhysioAlign',
+      doctor: 'Clinician PT Portal | PhysioAlign',
+      admin: 'Admin Supervisor Terminal | PhysioAlign',
+      pending: 'Awaiting Approval | PhysioAlign',
     };
     document.title = titles[screen] || 'PhysioAlign';
   }, [screen]);
 
   useEffect(() => {
     if (!isLoaded) return;
-
+    
     const hasActiveSession = sessionStorage.getItem('physioalign:session_active');
-
+    
     if (!hasActiveSession) {
       if (isSignedIn) {
         signOut();
@@ -208,56 +182,119 @@ export default function App() {
   }, [isLoaded, isSignedIn, userId, syncAttempt]);
 
   if (!isLoaded) {
-    return <ScreenLoading />;
+    return (
+      <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <h3 style={{ fontFamily: 'Nunito', fontWeight: 800 }}>Loading PhysioAlign Authenticator...</h3>
+      </div>
+    );
   }
 
   if (!isSignedIn) {
     if (authView === 'landing') {
-      return <LandingScreen onStartLogin={() => setAuthView('role_select')} onEnterPractice={() => setAuthView('role_select')} />;
+      return (
+        <LandingScreen 
+          onStartLogin={() => {
+            setAuthView('role_select');
+          }} 
+          onEnterPractice={() => {
+            setAuthView('role_select');
+          }} 
+        />
+      );
     }
 
     if (authView === 'role_select') {
       return (
-        <div className="screen screen--centered">
-          <div className="stack stack--lg fade-in" style={{ width: '100%', maxWidth: 940 }}>
-            <button className="btn btn--ghost btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => setAuthView('landing')}>
-              <ArrowLeft size={15} />
-              Back
-            </button>
+        <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, gap: 28 }}>
+          <button
+            onClick={() => setAuthView('landing')}
+            className="tap btn-plush ghost"
+            style={{
+              fontSize: '14px',
+              padding: '10px 18px',
+              borderRadius: 'var(--r-pill)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 3.5px 0 var(--line)'
+            }}
+          >
+            <ArrowLeft size={16} style={{ strokeWidth: 3 }} /> Back to Home
+          </button>
 
-            <div className="stack stack--sm" style={{ textAlign: 'center', alignItems: 'center' }}>
-              <PhysioLogo size={40} />
-              <h1 style={{ marginTop: 8 }}>Choose how you'll use PhysioAlign</h1>
-              <p className="page-subtitle" style={{ maxWidth: 520 }}>
-                Your workspace and permissions depend on the account type. Clinician accounts are reviewed by an administrator
-                before they can see patient data.
-              </p>
+          <div style={{ textAlign: 'center', maxWidth: 600 }} className="popin">
+            <PhysioLogo size={80} />
+            <div style={{ marginTop: 12 }}>
+              <Wordmark size={36} />
+            </div>
+            <h2 style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', marginTop: 20 }}>Select Your Access Portal</h2>
+            <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)', marginTop: 6 }}>
+              Choose the portal workspace matching your user role registration.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 20,
+            maxWidth: 900,
+            width: '100%'
+          }} className="popin">
+            <div 
+              onClick={() => {
+                sessionStorage.setItem('physioalign:registration_intent', 'patient');
+                setAuthView('login');
+              }}
+              className="plush tap" 
+              style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
+            >
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--mint)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: '0 2.5px 0 var(--line)' }}>
+                <User size={24} style={{ strokeWidth: 3 }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Patient Portal</h3>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
+                  Track your daily pain levels, practice recovery poses with real-time guidance, and view AI coaching feedback.
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid--3">
-              {PORTALS.map((portal) => (
-                <button
-                  key={portal.id}
-                  className="card card--raised"
-                  onClick={() => {
-                    sessionStorage.setItem('physioalign:registration_intent', portal.id);
-                    setAuthView('login');
-                  }}
-                  style={{ cursor: 'pointer', textAlign: 'left', padding: 0 }}
-                >
-                  <div className="card__body stack stack--sm">
-                    <span className="icon-tile">
-                      <portal.icon size={18} />
-                    </span>
-                    <div>
-                      <h3>{portal.label}</h3>
-                      <p className="text-sm muted" style={{ marginTop: 4 }}>
-                        {portal.description}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+            <div 
+              onClick={() => {
+                sessionStorage.setItem('physioalign:registration_intent', 'doctor');
+                setAuthView('login');
+              }}
+              className="plush tap" 
+              style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
+            >
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--butter)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: '0 2.5px 0 var(--line)' }}>
+                <Stethoscope size={24} style={{ strokeWidth: 3 }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Clinician Suite</h3>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
+                  Monitor patient workouts and progress, analyze recovery charts, and assign custom physical therapy plans.
+                </p>
+              </div>
+            </div>
+
+            <div 
+              onClick={() => {
+                sessionStorage.setItem('physioalign:registration_intent', 'admin');
+                setAuthView('login');
+              }}
+              className="plush tap" 
+              style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
+            >
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--peach)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: '0 2.5px 0 var(--line)' }}>
+                <Shield size={24} style={{ strokeWidth: 3 }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Admin Terminal</h3>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
+                  Manage system database records, configure user accounts and roles, and monitor workspace settings.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -265,181 +302,283 @@ export default function App() {
     }
 
     const registrationIntent = sessionStorage.getItem('physioalign:registration_intent') || 'patient';
-    const portal = PORTALS.find((p) => p.id === registrationIntent) ?? PORTALS[0];
+    const portalTitle = registrationIntent === 'admin' 
+      ? 'Admin Supervisor Terminal' 
+      : registrationIntent === 'doctor' 
+        ? 'Clinician PT Portal' 
+        : 'Patient Access Portal';
+    const portalBadgeColor = registrationIntent === 'admin'
+      ? 'var(--peach)'
+      : registrationIntent === 'doctor'
+        ? 'var(--butter)'
+        : 'var(--mint)';
 
     return (
-      <div className="auth">
-        <aside className="auth__aside">
-          <div className="stack stack--lg">
-            <div className="row row--sm">
-              <PhysioLogo size={32} />
-              <span className="brand__name" style={{ fontSize: 17, color: '#fff' }}>
-                PhysioAlign
-              </span>
+      <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, flexDirection: 'column', gap: 16 }}>
+        <button
+          onClick={() => {
+            setAuthView('role_select');
+          }}
+          className="tap btn-plush ghost"
+          style={{
+            fontSize: '14px',
+            padding: '10px 18px',
+            borderRadius: 'var(--r-pill)',
+            marginBottom: 8
+          }}
+        >
+          ← Back to Selection
+        </button>
+        
+        <div className="popin" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, maxWidth: 440, width: '100%' }}>
+          
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <PhysioLogo size={80} />
+            <div style={{ marginTop: 12 }}>
+              <Wordmark size={36} />
             </div>
-            <div className="stack stack--sm">
-              <h2 style={{ color: '#fff', fontSize: 26, letterSpacing: '-0.02em' }}>
-                Posture analysis that runs in the browser.
-              </h2>
-              <p style={{ color: 'rgba(255,255,255,0.76)', fontSize: 14.5 }}>
-                Live joint-angle feedback, hold timing and session reports — with the camera feed never leaving your device.
-              </p>
+            
+            <div style={{
+              background: portalBadgeColor,
+              border: '2.5px solid var(--line)',
+              borderRadius: 'var(--r-sm)',
+              padding: '6px 16px',
+              fontFamily: 'inherit',
+              fontSize: 13,
+              fontWeight: 900,
+              color: 'var(--ink)',
+              marginTop: 16,
+              boxShadow: '0 2.5px 0 var(--line)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              {portalTitle}
             </div>
-            <ul className="auth__points">
-              {[
-                '33 body landmarks tracked locally per frame',
-                'Clinician review with prescribed care plans',
-                'AI session reports and progress trends',
-              ].map((point) => (
-                <li key={point}>
-                  <Check size={15} />
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            A personal project, not a medical device.
-          </p>
-        </aside>
 
-        <main className="auth__main">
-          <div className="auth__form stack">
-            <button className="btn btn--ghost btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => setAuthView('role_select')}>
-              <ArrowLeft size={15} />
-              Change account type
-            </button>
-
-            <div className="stack stack--sm">
-              <span className="badge badge--brand">
-                <portal.icon size={13} />
-                {portal.label} access
-              </span>
-              <h1 style={{ fontSize: 24 }}>{formMode === 'signin' ? 'Sign in' : 'Create your account'}</h1>
-              <p className="page-subtitle">
-                {formMode === 'signin' ? (
-                  <>
-                    New here?{' '}
-                    <button className="link-button" onClick={() => { setFormMode('signup'); setFormError(''); }}>
-                      Create an account
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Already registered?{' '}
-                    <button className="link-button" onClick={() => { setFormMode('signin'); setFormError(''); }}>
-                      Sign in instead
-                    </button>
-                  </>
-                )}
-              </p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)', marginTop: 12, maxWidth: 300 }}>
+              Sign in with your Google account to access your workspace environment.
+            </p>
+          </div>          {/* Custom Authentication Card (Email/Password & Google Sign-In) */}
+          <div style={{
+            width: '100%',
+            maxWidth: '400px',
+            background: 'white',
+            border: '3.5px solid var(--line)',
+            borderRadius: 'var(--r-md)',
+            boxShadow: 'var(--plush-sm)',
+            overflow: 'hidden',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 16
+          }}>
+            {/* Toggle Tabs */}
+            <div style={{ display: 'flex', width: '100%', border: '2.5px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
+              <button
+                type="button"
+                onClick={() => { setFormMode('signin'); setFormError(''); }}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: formMode === 'signin' ? 'var(--butter)' : 'white',
+                  borderRight: '2.5px solid var(--line)',
+                  color: 'var(--ink)',
+                  fontFamily: 'Nunito'
+                }}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFormMode('signup'); setFormError(''); }}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: formMode === 'signup' ? 'var(--butter)' : 'white',
+                  color: 'var(--ink)',
+                  fontFamily: 'Nunito'
+                }}
+              >
+                Sign Up
+              </button>
             </div>
+
+            <h3 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: '8px 0 0 0' }}>
+              {formMode === 'signin' ? 'Sign in with Email' : 'Create an Account'}
+            </h3>
 
             {formError && (
-              <div className="alert alert--danger" role="alert">
-                <AlertCircle size={16} className="alert__icon" />
-                <span>{formError}</span>
+              <div style={{
+                width: '100%',
+                background: 'var(--peach)',
+                border: '2px solid var(--line)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 800,
+                color: 'var(--ink)',
+                textAlign: 'left'
+              }}>
+                ⚠️ {formError}
               </div>
             )}
 
-            <form onSubmit={handleEmailAuth} className="stack">
+            <form onSubmit={handleEmailAuth} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {formMode === 'signup' && (
-                <div className="field">
-                  <label className="label" htmlFor="auth-name">
-                    Full name
-                  </label>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, width: '100%' }}>
+                  <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Full Name</label>
                   <input
-                    id="auth-name"
-                    className="input"
                     type="text"
-                    placeholder="Jane Doe"
-                    autoComplete="name"
+                    placeholder="Enter your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
+                    style={{
+                      width: '100%',
+                      border: '2.5px solid var(--line)',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      fontFamily: 'Nunito',
+                      color: 'var(--ink)',
+                      boxShadow: '0 2px 0 var(--line)'
+                    }}
                   />
                 </div>
               )}
 
-              <div className="field">
-                <label className="label" htmlFor="auth-email">
-                  Email
-                </label>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, width: '100%' }}>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Email Address</label>
                 <input
-                  id="auth-email"
-                  className="input"
                   type="email"
-                  placeholder="you@example.com"
-                  autoComplete="email"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  style={{
+                    width: '100%',
+                    border: '2.5px solid var(--line)',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    fontFamily: 'Nunito',
+                    color: 'var(--ink)',
+                    boxShadow: '0 2px 0 var(--line)'
+                  }}
                 />
               </div>
 
-              <div className="field">
-                <label className="label" htmlFor="auth-password">
-                  Password
-                </label>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, width: '100%' }}>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Password</label>
                 <input
-                  id="auth-password"
-                  className="input"
                   type="password"
-                  placeholder={formMode === 'signup' ? 'At least 6 characters' : '••••••••'}
-                  autoComplete={formMode === 'signup' ? 'new-password' : 'current-password'}
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  style={{
+                    width: '100%',
+                    border: '2.5px solid var(--line)',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    fontFamily: 'Nunito',
+                    color: 'var(--ink)',
+                    boxShadow: '0 2px 0 var(--line)'
+                  }}
                 />
               </div>
 
-              <button type="submit" className="btn btn--primary btn--block btn--lg" disabled={isSubmitting}>
-                {isSubmitting && <span className="spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} />}
-                {isSubmitting ? 'Please wait' : formMode === 'signin' ? 'Sign in' : 'Create account'}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="tap"
+                style={{
+                  width: '100%',
+                  background: 'var(--mint)',
+                  border: '2.5px solid var(--line)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  fontWeight: 900,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  boxShadow: '0 3px 0 var(--line)',
+                  color: 'var(--ink)',
+                  marginTop: 8,
+                  fontFamily: 'Nunito'
+                }}
+              >
+                {isSubmitting ? 'Processing...' : formMode === 'signin' ? 'Sign In' : 'Sign Up'}
               </button>
             </form>
 
-            <div className="auth__divider">
-              <span>or</span>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', margin: '8px 0' }}>
+              <hr style={{ flex: 1, border: 'none', borderTop: '2px solid var(--line)', margin: 0 }} />
+              <span style={{ padding: '0 10px', fontSize: 11, fontWeight: 800, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>or</span>
+              <hr style={{ flex: 1, border: 'none', borderTop: '2px solid var(--line)', margin: 0 }} />
             </div>
 
-            <div id="google-signin-button" style={{ display: 'flex', justifyContent: 'center', minHeight: 44 }} />
+            {/* Google Sign-in Option */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-soft)', margin: 0, textTransform: 'uppercase' }}>
+                Continue with Google
+              </p>
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  width: '100%',
+                  border: '2.5px solid var(--line)',
+                  borderRadius: '12px',
+                  padding: '10px',
+                  background: 'white',
+                  boxShadow: '0 3px 0 var(--line)'
+                }}
+              >
+                <div id="google-signin-button"></div>
+              </div>
+            </div>
           </div>
-        </main>
+
+        </div>
       </div>
     );
   }
 
   if (syncError && !isSyncing) {
     return (
-      <div className="screen screen--centered">
-        <div className="card card--raised" style={{ maxWidth: 420, width: '100%' }}>
-          <div className="card__body stack">
-            <span className="icon-tile" style={{ background: 'var(--danger-50)', color: 'var(--danger-600)' }}>
-              <AlertCircle size={18} />
-            </span>
-            <div>
-              <h2 style={{ fontSize: 17 }}>{syncError}</h2>
-              <p className="text-sm muted" style={{ marginTop: 4 }}>
-                Your session is fine — the server just didn't answer. Try again in a moment.
-              </p>
-            </div>
-            <div className="row row--sm">
-              <button className="btn btn--primary" onClick={() => setSyncAttempt((n) => n + 1)}>
-                Try again
-              </button>
-              <button className="btn btn--secondary" onClick={signOut}>
-                Sign out
-              </button>
-            </div>
-          </div>
+      <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, textAlign: 'center' }}>
+        <h3 style={{ fontFamily: 'Nunito', fontWeight: 800 }}>{syncError}</h3>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn-plush primary" style={{ padding: '10px 24px' }} onClick={() => setSyncAttempt((n) => n + 1)}>
+            Try again
+          </button>
+          <button className="btn-plush ghost" style={{ padding: '10px 24px' }} onClick={signOut}>
+            Sign out
+          </button>
         </div>
       </div>
     );
   }
 
   if (isSyncing) {
-    return <ScreenLoading label="Loading your profile" />;
+    return (
+      <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <h3 style={{ fontFamily: 'Nunito', fontWeight: 800 }}>Syncing profile logs...</h3>
+      </div>
+    );
   }
 
   // the logo and nav buttons can switch screens before the profile has loaded,
@@ -455,18 +594,18 @@ export default function App() {
 
   return (
     <Suspense fallback={<ScreenLoading />}>
-      <div className="app">
-        {screen === 'landing' && <LandingScreen onStartLogin={() => store.setScreen('dashboard')} />}
-        {screen === 'splash' && <SplashScreen />}
-        {screen === 'onboarding' && <OnboardingScreen />}
-        {screen === 'dashboard' && <HomeScreen />}
-        {screen === 'library' && <PoseLibraryScreen />}
-        {screen === 'session' && <SessionScreen />}
-        {screen === 'debrief' && <DebriefScreen />}
-        {screen === 'doctor' && <DoctorPortal />}
-        {screen === 'admin' && <AdminPortal />}
-        {screen === 'pending' && <PendingApprovalScreen />}
-      </div>
+    <div className="app">
+      {screen === 'landing' && <LandingScreen onStartLogin={() => store.setScreen('dashboard')} />}
+      {screen === 'splash' && <SplashScreen />}
+      {screen === 'onboarding' && <OnboardingScreen />}
+      {screen === 'dashboard' && <HomeScreen />}
+      {screen === 'library' && <PoseLibraryScreen />}
+      {screen === 'session' && <SessionScreen />}
+      {screen === 'debrief' && <DebriefScreen />}
+      {screen === 'doctor' && <DoctorPortal />}
+      {screen === 'admin' && <AdminPortal />}
+      {screen === 'pending' && <PendingApprovalScreen />}
+    </div>
     </Suspense>
   );
 }

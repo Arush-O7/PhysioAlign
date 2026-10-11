@@ -131,3 +131,75 @@ export function useUser() {
     user: clerkFormattedUser
   };
 }
+
+export function UserButton(_props?: any) {
+  const { user } = useUser();
+  const { signOut } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!user) return null;
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="tap"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          border: '2.5px solid var(--line)',
+          overflow: 'hidden',
+          cursor: 'pointer',
+          padding: 0,
+          boxShadow: '0 2.5px 0 var(--line)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'white'
+        }}
+      >
+        <img src={user.imageUrl} alt={user.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </button>
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: 48,
+          background: 'white',
+          border: '3px solid var(--line)',
+          borderRadius: '12px',
+          padding: '16px',
+          boxShadow: '4px 4px 0 var(--line)',
+          zIndex: 1000,
+          minWidth: 200,
+          fontFamily: 'Nunito',
+          textAlign: 'left'
+        }}>
+          <div style={{ fontWeight: 900, fontSize: 14, color: 'var(--ink)' }}>{user.fullName}</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginBottom: 8, wordBreak: 'break-all' }}>{user.primaryEmailAddress.emailAddress}</div>
+          <hr style={{ border: 'none', borderTop: '2px solid var(--line)', margin: '8px 0' }} />
+          <button 
+            onClick={signOut}
+            className="tap"
+            style={{
+              width: '100%',
+              background: 'var(--peach)',
+              border: '2px solid var(--line)',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontWeight: 800,
+              fontSize: 12,
+              cursor: 'pointer',
+              boxShadow: '0 2px 0 var(--line)',
+              color: 'var(--ink)',
+              textAlign: 'center'
+            }}
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
