@@ -1,7 +1,5 @@
 /* PhysioAlign — global styles, theme variables, and shared layout classes. */
 
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap');
-
 :root {
   /* SUNSHINE palette — peach, butter, mint, sky, cream */
   --cream: #FFF6E6;
@@ -18,7 +16,7 @@
   --rose-deep: #F47A92;
   --ink: #3B2A1F;
   --ink-2: #6B4F3F;
-  --ink-soft: #8E7261;
+  --ink-soft: #7A6252;
   --line: #2B1E16;       /* cartoon outline */
   --paper: #FFFAF0;
   --shadow: rgba(43,30,22,0.18);
@@ -28,16 +26,24 @@
   --r-lg: 36px;
   --r-pill: 999px;
 
+  --stroke-sm: 2.5px;
   --stroke: 3px;
-  --stroke-thick: 4px;
+  --stroke-thick: 3px;
 
-  /* drop-shadow that mimics a cartoon outline+offset */
-  --plush: 0 6px 0 var(--line), 0 14px 28px rgba(43,30,22,0.18);
-  --plush-sm: 0 4px 0 var(--line), 0 8px 16px rgba(43,30,22,0.15);
+  /* offset "sticker" shadow, one step per elevation */
+  --plush: 0 5px 0 var(--line), 0 12px 24px rgba(43,30,22,0.12);
+  --plush-sm: 0 3px 0 var(--line), 0 6px 14px rgba(43,30,22,0.10);
   --plush-tiny: 0 2px 0 var(--line);
+  --ring: 0 0 0 4px rgba(255,142,92,0.35);
 }
 
 * { box-sizing: border-box; }
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring), var(--plush-tiny);
+  border-radius: var(--r-sm);
+}
 
 html, body, #root {
   height: 100%;
@@ -60,14 +66,14 @@ body {
 
 /* Plush primitives */
 .plush {
-  border: var(--stroke) solid var(--line);
+  border: var(--stroke-sm) solid var(--line);
   border-radius: var(--r-md);
   box-shadow: var(--plush-sm);
   background: white;
 }
 
 .plush-lg {
-  border: var(--stroke-thick) solid var(--line);
+  border: var(--stroke) solid var(--line);
   border-radius: var(--r-lg);
   box-shadow: var(--plush);
   background: white;
@@ -76,31 +82,33 @@ body {
 .btn-plush {
   font-family: inherit;
   font-weight: 800;
-  font-size: 18px;
-  padding: 14px 26px;
-  border: var(--stroke) solid var(--line);
+  font-size: 16px;
+  padding: 11px 22px;
+  border: var(--stroke-sm) solid var(--line);
   border-radius: var(--r-pill);
   background: var(--butter);
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 0 5px 0 var(--line), 0 10px 18px rgba(43,30,22,0.18);
-  transition: transform 120ms cubic-bezier(.5,1.6,.4,1), box-shadow 120ms;
+  box-shadow: var(--plush-sm);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
   letter-spacing: 0.01em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
-.btn-plush:hover { transform: translateY(-2px) rotate(-0.5deg); }
+.btn-plush:hover { transform: translateY(-2px); }
 .btn-plush:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 var(--line), 0 4px 8px rgba(43,30,22,0.2);
+  transform: translateY(2px);
+  box-shadow: var(--plush-tiny);
 }
 .btn-plush.primary { background: var(--peach); color: var(--ink); }
 .btn-plush.mint { background: var(--mint); }
 .btn-plush.sky { background: var(--sky); }
 .btn-plush.rose { background: var(--rose); }
 .btn-plush.ghost { background: white; }
+.btn-plush.danger { background: var(--rose); }
+.btn-plush.sm { font-size: 14px; padding: 8px 16px; }
 .btn-plush:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -114,12 +122,12 @@ body {
   gap: 6px;
   font-weight: 700;
   font-size: 13px;
-  padding: 5px 12px;
-  border: 2.5px solid var(--line);
+  padding: 4px 11px;
+  border: 2px solid var(--line);
   border-radius: var(--r-pill);
   background: white;
   color: var(--ink);
-  box-shadow: 0 2px 0 var(--line);
+  box-shadow: var(--plush-tiny);
   white-space: nowrap;
 }
 .chip.peach { background: var(--peach); }
@@ -129,6 +137,75 @@ body {
 .chip.rose { background: var(--rose); }
 
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); display: inline-block; }
+
+/* App bar */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 22px;
+  background: white;
+  border-bottom: var(--stroke-sm) solid var(--line);
+}
+
+.navpill {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: var(--r-pill);
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.navpill:hover { background: var(--cream); }
+.navpill.is-active {
+  background: var(--butter);
+  border-color: var(--line);
+  box-shadow: var(--plush-tiny);
+}
+
+.menu-sheet {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 210px;
+  background: white;
+  border: var(--stroke-sm) solid var(--line);
+  border-radius: var(--r-sm);
+  box-shadow: var(--plush-sm);
+  padding: 8px;
+  z-index: 100;
+  text-align: left;
+}
+.menu-sheet button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  background: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.menu-sheet button:hover { background: var(--cream); }
+.menu-sheet button.danger:hover { background: #FFEAE6; color: #D1452B; }
+
+@media (max-width: 860px) {
+  .appbar { flex-wrap: wrap; padding: 12px 16px; }
+  .appbar nav { order: 3; width: 100%; overflow-x: auto; }
+}
 
 /* Background patterns */
 .paper {
@@ -159,22 +236,21 @@ body {
   50%     { transform: scale(1.03); }
 }
 @keyframes pop-in {
-  0%   { transform: scale(0.6) rotate(-6deg); opacity: 0; }
-  60%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0); }
+  0%   { transform: translateY(8px); opacity: 0; }
+  100% { transform: none; opacity: 1; }
 }
 
 .wobble  { animation: wobble-soft 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
 .floaty  { animation: float-up 3s ease-in-out infinite; }
 .breathe { animation: breathe 3.5s ease-in-out infinite; }
-.popin   { animation: pop-in 500ms cubic-bezier(.5,1.7,.4,1) backwards; }
+.popin   { animation: pop-in 260ms cubic-bezier(.22,1,.36,1) backwards; }
 
 .tap {
   cursor: pointer;
   transition: transform 140ms cubic-bezier(.5,1.7,.4,1);
 }
-.tap:hover { transform: translateY(-3px) rotate(-0.6deg) scale(1.01); }
-.tap:active { transform: translateY(2px) scale(0.98); }
+.tap:hover { transform: translateY(-2px); }
+.tap:active { transform: translateY(1px); }
 
 /* Typography */
 h1, h2, h3, h4 { font-family: 'Nunito', sans-serif; letter-spacing: -0.01em; margin: 0; }

@@ -249,7 +249,7 @@ export function SessionScreen() {
           transform: 'translateX(-50%)',
           zIndex: 1000,
           background: 'var(--mint)',
-          border: '3px solid var(--line)',
+          border: '2.5px solid var(--line)',
           borderRadius: 'var(--r-md)',
           boxShadow: 'var(--plush-sm)',
           padding: '16px 24px',
@@ -268,7 +268,7 @@ export function SessionScreen() {
           <button 
             onClick={() => setTargetReached(false)} 
             className="btn-plush ghost tap" 
-            style={{ padding: '6px 12px', fontSize: 12, border: '2px solid var(--line)', boxShadow: 'none' }}
+            style={{ padding: '6px 12px', fontSize: 12, border: '2.5px solid var(--line)', boxShadow: 'none' }}
           >
             Dismiss
           </button>
@@ -328,7 +328,7 @@ export function SessionScreen() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           
           <div className="plush-lg" style={{ padding: 20, background: 'white', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
-            <div style={{ borderRight: '3.5px dashed var(--line)' }}>
+            <div style={{ borderRight: '2px dashed var(--line)' }}>
               <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Practice Duration
               </span>
@@ -387,7 +387,7 @@ export function SessionScreen() {
                     key={seconds}
                     onClick={() => setCustomTargetHold(seconds)}
                     className={`chip tap ${customTargetHold === seconds ? 'peach' : ''}`}
-                    style={{ border: '2px solid var(--line)', padding: '4px 10px', fontSize: 12, fontWeight: 800 }}
+                    style={{ border: '2.5px solid var(--line)', padding: '4px 10px', fontSize: 12, fontWeight: 800 }}
                     type="button"
                   >
                     {seconds}s
@@ -440,7 +440,7 @@ export function SessionScreen() {
                 height: 70,
                 flexShrink: 0,
                 borderRadius: 8,
-                border: '2px solid var(--line)',
+                border: '2.5px solid var(--line)',
                 background: 'var(--cream)',
                 overflow: 'hidden',
                 display: 'flex',
@@ -506,7 +506,7 @@ export function SessionScreen() {
                       <div style={{
                         height: 12,
                         background: 'var(--cream)',
-                        border: '2px solid var(--line)',
+                        border: '2.5px solid var(--line)',
                         borderRadius: 'var(--r-pill)',
                         overflow: 'hidden',
                         position: 'relative'
@@ -525,8 +525,8 @@ export function SessionScreen() {
                           width: `${((target.max - target.min) / 180) * 100}%`,
                           height: '100%',
                           top: 0,
-                          borderLeft: '1.5px dashed var(--line)',
-                          borderRight: '1.5px dashed var(--line)',
+                          borderLeft: '2px dashed var(--line)',
+                          borderRight: '2px dashed var(--line)',
                           background: 'rgba(0, 0, 0, 0.05)',
                           pointerEvents: 'none'
                         }} />

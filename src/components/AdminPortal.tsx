@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../utils/auth';
 import { apiFetch } from '../utils/api';
 import { store, useUserData } from '../game/store';
-import { TopBar, Doodle } from './primitives';
+import { TopBar } from './primitives';
 import { 
   Shield, 
   Database, 
@@ -190,9 +190,6 @@ export function AdminPortal() {
       <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
         <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: 20, top: -10, opacity: 0.15 }} className="wobble">
-            <Doodle kind="star" size={120} color="var(--peach)" />
-          </div>
           
           <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
             System Access Control
@@ -275,7 +272,7 @@ export function AdminPortal() {
                 style={{
                   width: '100%',
                   padding: '10px 14px 10px 42px',
-                  border: '3px solid var(--line)',
+                  border: '2.5px solid var(--line)',
                   borderRadius: 12,
                   fontSize: 14,
                   fontFamily: 'inherit',
@@ -305,7 +302,7 @@ export function AdminPortal() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, textAlign: 'left', minWidth: 600 }}>
                 <thead>
-                  <tr style={{ borderBottom: '3px solid var(--line)', color: 'var(--ink-soft)', fontWeight: 900 }}>
+                  <tr style={{ borderBottom: '2.5px solid var(--line)', color: 'var(--ink-soft)', fontWeight: 900 }}>
                     <th style={{ padding: '12px 8px' }}>User Details</th>
                     <th style={{ padding: '12px 8px' }}>Clerk ID</th>
                     <th style={{ padding: '12px 8px' }}>Demographics</th>
@@ -319,7 +316,7 @@ export function AdminPortal() {
                     <tr 
                       key={u.id}
                       style={{ 
-                        borderBottom: '1.5px dashed var(--line)', 
+                        borderBottom: '2px dashed var(--line)', 
                         fontWeight: 800, 
                         opacity: updatingId === u.id ? 0.5 : 1,
                         background: u.id === userId ? '#F6FFF8' : 'transparent'
@@ -331,7 +328,7 @@ export function AdminPortal() {
                             width: 36,
                             height: 36,
                             borderRadius: '50%',
-                            border: '2px solid var(--line)',
+                            border: '2.5px solid var(--line)',
                             background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'white',
                             display: 'flex',
                             alignItems: 'center',
@@ -343,7 +340,7 @@ export function AdminPortal() {
                             <div style={{ color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
                               {u.name}
                               {u.id === userId && (
-                                <span style={{ fontSize: 9, background: 'var(--mint)', border: '1.5px solid var(--line)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>You</span>
+                                <span style={{ fontSize: 9, background: 'var(--mint)', border: '2.5px solid var(--line)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>You</span>
                               )}
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontWeight: 700 }}>{u.email}</div>
@@ -370,7 +367,7 @@ export function AdminPortal() {
                           onChange={(e) => handleChangeRole(u.id, e.target.value as any)}
                           style={{
                             padding: '6px 10px',
-                            border: '2px solid var(--line)',
+                            border: '2.5px solid var(--line)',
                             borderRadius: 'var(--r-sm)',
                             background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'white',
                             fontFamily: 'inherit',
@@ -392,7 +389,7 @@ export function AdminPortal() {
                             style={{
                               marginLeft: 8,
                               padding: '6px 10px',
-                              border: '2px solid var(--line)',
+                              border: '2.5px solid var(--line)',
                               borderRadius: 'var(--r-sm)',
                               background: 'var(--butter)',
                               fontFamily: 'inherit',
@@ -415,7 +412,7 @@ export function AdminPortal() {
                             onChange={(e) => handleAssignDoctor(u.id, e.target.value)}
                             style={{
                               padding: '6px 10px',
-                              border: '2px solid var(--line)',
+                              border: '2.5px solid var(--line)',
                               borderRadius: 'var(--r-sm)',
                               background: 'white',
                               fontFamily: 'inherit',
@@ -440,7 +437,7 @@ export function AdminPortal() {
                           onClick={() => handleDeleteUser(u.id, u.name)}
                           disabled={updatingId === u.id || u.id === userId}
                           style={{
-                            border: '2px solid var(--line)',
+                            border: '2.5px solid var(--line)',
                             background: u.id === userId ? '#F1F5F9' : '#FFEAE6',
                             color: u.id === userId ? 'var(--ink-soft)' : '#FF6B4A',
                             padding: '8px',

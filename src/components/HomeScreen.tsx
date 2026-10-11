@@ -11,7 +11,6 @@ import {
   Trash2,
   Plus,
   ChevronRight,
-  RefreshCw,
   MessageSquare,
   Send,
   TrendingUp,
@@ -78,7 +77,7 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
       <div style={{
         width: 44, height: 44, borderRadius: '50%', border: '2.5px solid var(--line)',
         background: color, display: 'flex', alignItems: 'center', justifyItems: 'center',
-        justifyContent: 'center', boxShadow: '0 2px 0 var(--line)'
+        justifyContent: 'center', boxShadow: 'var(--plush-tiny)'
       }}>
         {icon}
       </div>
@@ -379,7 +378,7 @@ export function HomeScreen() {
     let updatedRoadmap: RoadmapItem[] = [];
 
     if (painLevel >= 7) {
-      rec = "⚠️ High fatigue/stiffness logged. Dr. Maya recommends a restorative day. Focus on alignment modifications, joint warmth, and gentle breathing. Skip heavy holds.";
+      rec = "High stiffness logged. Dr. Maya recommends a restorative day: alignment modifications, joint warmth and gentle breathing. Skip heavy holds.";
       updatedRoadmap = [
         { id: 'pose-tree', label: 'Modify Tree Pose (Gentle chair-supported Vrksasana)', completed: false, type: 'pose', iconName: 'pose' },
         { id: 'water', label: 'Hydrate: Drink 10 glasses of water today', completed: false, type: 'habit', iconName: 'water' },
@@ -387,7 +386,7 @@ export function HomeScreen() {
         { id: 'breath', label: 'Practice 10 counts of slow Pranayama breathing', completed: false, type: 'habit', iconName: 'breath' }
       ];
     } else if (painLevel >= 4) {
-      rec = "🧘‍♂️ Moderate stiffness logged. Zen Master Anya suggests focusing on full joint extensions and slow transitions. Child's pose and basic alignment holds will serve you best.";
+      rec = "Moderate stiffness logged. Zen Master Anya suggests full joint extensions and slow transitions, with basic alignment holds.";
       updatedRoadmap = [
         { id: 'pose-tree', label: 'Calibrate Tree Pose (Vrksasana)', completed: false, type: 'pose', iconName: 'pose' },
         { id: 'pose-warrior', label: 'Calibrate Warrior II (Virabhadrasana)', completed: false, type: 'pose', iconName: 'pose' },
@@ -395,7 +394,7 @@ export function HomeScreen() {
         { id: 'breath', label: 'Take a 5-min mindful breathing break', completed: false, type: 'habit', iconName: 'breath' }
       ];
     } else {
-      rec = "⚡ Low fatigue. Your body feels limber and stable! Coach Rocky recommends pushing your hold durations today on Downward Dog and Warrior II.";
+      rec = "Low fatigue — you are limber and stable today. Coach Rocky recommends pushing your hold durations on Downward Dog and Warrior II.";
       updatedRoadmap = [
         { id: 'pose-dog', label: 'Calibrate Downward Dog (Adho Mukha)', completed: false, type: 'pose', iconName: 'pose' },
         { id: 'pose-warrior', label: 'Challenge hold: Warrior II (Virabhadrasana)', completed: false, type: 'pose', iconName: 'pose' },
@@ -457,9 +456,6 @@ export function HomeScreen() {
         
 
         <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: 20, top: -10, opacity: 0.15 }} className="wobble">
-            <Doodle kind="flower" size={120} color="var(--mint)" />
-          </div>
           
           <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
             Welcome back, {userData?.name || 'Friend'}!
@@ -471,17 +467,16 @@ export function HomeScreen() {
           </p>
           
           <button
-            onClick={() => userId && store.resetOnboarding(userId)}
-            className="btn-plush ghost"
-            style={{ fontSize: 13, padding: '6px 12px', marginTop: 12, borderWidth: '2px', height: 'auto', display: 'inline-flex' }}
-            title="Reset profile data"
+            onClick={handleStartPractice}
+            className="btn-plush primary tap"
+            style={{ marginTop: 16 }}
           >
-            <RefreshCw size={13} style={{ marginRight: 6 }} /> Reset Profile
+            <Plus size={16} /> Start a session
           </button>
         </div>
 
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, borderBottom: '3.5px solid var(--line)', paddingBottom: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, borderBottom: '2.5px solid var(--line)', paddingBottom: 12 }}>
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`btn-plush ${activeTab === 'dashboard' ? 'primary' : 'ghost'}`}
@@ -514,7 +509,7 @@ export function HomeScreen() {
           <div className="popin" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-              <StatCard title="Daily Streak" value={`${streak} days`} icon={<Flame size={20} color="var(--ink)" />} color="var(--peach)" />
+              <StatCard title="Daily Streak" value={`${streak} ${streak === 1 ? 'day' : 'days'}`} icon={<Flame size={20} color="var(--ink)" />} color="var(--peach)" />
               <StatCard title="Sessions Practiced" value={count} icon={<Activity size={20} color="var(--ink)" />} color="var(--sky)" />
               <StatCard title="Average Score" value={`${avgScore}%`} icon={<Award size={20} color="var(--ink)" />} color="var(--butter)" />
               <StatCard title="Attention Area" value={weakestArea} icon={<Doodle kind="star" size={20} color="var(--ink)" />} color="var(--rose)" />
@@ -527,7 +522,7 @@ export function HomeScreen() {
               
               return (
                 <div className="plush" style={{ padding: '24px 28px', background: 'white', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ borderBottom: '3px solid var(--line)', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ borderBottom: '2.5px solid var(--line)', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                     <h2 style={{ fontSize: 22, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <HeartPulse size={24} style={{ color: 'var(--rose-deep)' }} /> Prescribed Rehabilitation Plan
                     </h2>
@@ -580,7 +575,7 @@ export function HomeScreen() {
               
 
               <div className="plush" style={{ padding: '24px 28px', background: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '3px solid var(--line)', paddingBottom: 12, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid var(--line)', paddingBottom: 12, marginBottom: 16 }}>
                   <h2 style={{ fontSize: 22, color: 'var(--ink)', margin: 0 }}>
                     Completed Evaluations
                   </h2>
@@ -613,7 +608,7 @@ export function HomeScreen() {
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           padding: '14px 18px',
-                          border: '3px solid var(--line)',
+                          border: '2.5px solid var(--line)',
                           borderRadius: 'var(--r-sm)',
                           background: 'var(--paper)',
                           boxShadow: 'var(--plush-tiny)',
@@ -630,7 +625,7 @@ export function HomeScreen() {
                               fontSize: 22,
                               borderRadius: 10,
                               border: '2.5px solid var(--line)',
-                              transform: 'rotate(-2deg)'
+                              transform: 'none'
                             }}
                           >
                             {session.grade}
@@ -707,7 +702,7 @@ export function HomeScreen() {
                         <button
                           onClick={handleLogPain}
                           className="btn-plush primary"
-                          style={{ fontSize: 12, padding: '8px 16px', borderRadius: 'var(--r-sm)', boxShadow: '0 2px 0 var(--line)', height: 'auto' }}
+                          style={{ fontSize: 12, padding: '8px 16px', borderRadius: 'var(--r-sm)', boxShadow: 'var(--plush-tiny)', height: 'auto' }}
                         >
                           Log Daily Index
                         </button>
@@ -715,7 +710,7 @@ export function HomeScreen() {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--cream-2)', padding: '12px 14px', borderRadius: 'var(--r-sm)', border: '2px solid var(--line)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--cream-2)', padding: '12px 14px', borderRadius: 'var(--r-sm)', border: '2.5px solid var(--line)' }}>
                         <CheckCircle size={18} color="var(--mint-deep)" />
                         <span style={{ fontSize: 13, fontWeight: 800 }}>Daily index logged successfully!</span>
                       </div>
@@ -742,7 +737,7 @@ export function HomeScreen() {
                   </h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
 
-                    <div style={{ flex: 1, height: 10, background: 'var(--cream)', border: '2px solid var(--line)', borderRadius: 'var(--r-pill)', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: 10, background: 'var(--cream)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-pill)', overflow: 'hidden' }}>
                       <div style={{ width: `${roadmapPercentage}%`, height: '100%', background: 'var(--mint-deep)', transition: 'width 300ms ease' }} />
                     </div>
                     <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-2)' }}>{roadmapPercentage}%</span>
@@ -758,7 +753,7 @@ export function HomeScreen() {
                           alignItems: 'center',
                           gap: 12,
                           padding: '10px 14px',
-                          border: '2px solid var(--line)',
+                          border: '2.5px solid var(--line)',
                           borderRadius: 'var(--r-sm)',
                           background: item.completed ? 'var(--cream-2)' : 'var(--paper)',
                           cursor: 'pointer',
@@ -771,7 +766,7 @@ export function HomeScreen() {
                           width: 20,
                           height: 20,
                           borderRadius: '50%',
-                          border: '2px solid var(--line)',
+                          border: '2.5px solid var(--line)',
                           background: item.completed ? 'var(--mint-deep)' : 'white',
                           display: 'flex',
                           alignItems: 'center',
@@ -837,7 +832,7 @@ export function HomeScreen() {
                       height: 36,
                       padding: 0,
                       borderRadius: 'var(--r-sm)',
-                      boxShadow: '0 2px 0 var(--line)',
+                      boxShadow: 'var(--plush-tiny)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
@@ -1004,7 +999,7 @@ export function HomeScreen() {
                     }}
                   >
                     <div style={{
-                      border: '2px solid var(--line)',
+                      border: '2.5px solid var(--line)',
                       borderRadius: '50%',
                       overflow: 'hidden',
                       width: 32,
@@ -1028,7 +1023,7 @@ export function HomeScreen() {
                 ))}
               </div>
 
-              <div style={{ marginTop: 'auto', background: 'var(--cream-2)', border: '2px solid var(--line)', borderRadius: 'var(--r-sm)', padding: 12 }}>
+              <div style={{ marginTop: 'auto', background: 'var(--cream-2)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)', padding: 12 }}>
                 <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-2)', margin: 0 }}>
                   Active Coach:
                 </p>
@@ -1047,7 +1042,7 @@ export function HomeScreen() {
 
               <div style={{
                 padding: '16px 20px',
-                borderBottom: '3px solid var(--line)',
+                borderBottom: '2.5px solid var(--line)',
                 background: activeCoach.color,
                 display: 'flex',
                 alignItems: 'center',
@@ -1182,7 +1177,7 @@ export function HomeScreen() {
                 onSubmit={handleSendMessage}
                 style={{
                   padding: '12px 16px',
-                  borderTop: '3px solid var(--line)',
+                  borderTop: '2.5px solid var(--line)',
                   background: 'white',
                   display: 'flex',
                   gap: 12,

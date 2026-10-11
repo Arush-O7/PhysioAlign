@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { X, User, LogOut } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { LogOut, RotateCcw, User, X } from 'lucide-react';
 import { store, useScreen, useActiveTab } from '../game/store';
-import { UserButton, useAuth } from '../utils/auth';
+import { useAuth, useUser } from '../utils/auth';
 
 // --- DOODLE ICONS ---
 export type DoodleKind = 'star' | 'flower' | 'heart' | 'cross' | 'leaf';
@@ -92,16 +92,7 @@ export function Wordmark({ size = 32, dark = false }) {
       <PhysioLogo size={Math.round(size * 1.15)} />
       <span style={{ position: 'relative', display: 'inline-block' }}>
         Physio
-        <span
-          style={{
-            color: 'var(--peach-deep)',
-            textShadow: dark ? 'none' : '0 2px 0 var(--line)',
-            WebkitTextStroke: dark ? '0' : '2px var(--line)',
-            paintOrder: 'stroke fill',
-          }}
-        >
-          Align
-        </span>
+        <span style={{ color: 'var(--peach-deep)' }}>Align</span>
       </span>
     </div>
   );
@@ -128,10 +119,10 @@ export function Breadcrumb({ steps, here }: BreadcrumbProps) {
                 fontSize: '13px',
                 color: 'var(--ink)',
                 background: 'var(--butter)',
-                border: '2px solid var(--line)',
+                border: '2.5px solid var(--line)',
                 borderRadius: '8px',
                 padding: '4px 12px',
-                boxShadow: '0 2px 0 var(--line)',
+                boxShadow: 'var(--plush-tiny)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}
@@ -155,168 +146,131 @@ interface TopBarProps {
   showProfile?: boolean;
 }
 
+function ProfileMenu() {
+  const { user } = useUser();
+  const { signOut, userId } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  if (!user) return null;
+
+  return (
+    <div style={{ position: 'relative' }} ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+        style={{
+          width: 38,
+          height: 38,
+          padding: 0,
+          borderRadius: '50%',
+          border: '2.5px solid var(--line)',
+          boxShadow: 'var(--plush-tiny)',
+          background: 'white',
+          overflow: 'hidden',
+          cursor: 'pointer',
+          display: 'flex',
+        }}
+      >
+        <img src={user.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </button>
+
+      {open && (
+        <div className="menu-sheet" role="menu">
+          <div style={{ padding: '6px 10px 10px', borderBottom: '2px dashed var(--line)', marginBottom: 6 }}>
+            <div style={{ fontWeight: 900, fontSize: 13.5 }}>{user.fullName}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-soft)', wordBreak: 'break-all' }}>
+              {user.primaryEmailAddress.emailAddress}
+            </div>
+          </div>
+          <button
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              store.setScreen('onboarding');
+            }}
+          >
+            <User size={15} />
+            Edit profile
+          </button>
+          <button
+            role="menuitem"
+            className="danger"
+            onClick={() => {
+              if (!userId) return;
+              if (window.confirm('Reset your profile? This deletes your profile details and every saved session.')) {
+                setOpen(false);
+                store.resetOnboarding(userId);
+              }
+            }}
+          >
+            <RotateCcw size={15} />
+            Reset profile data
+          </button>
+          <button role="menuitem" className="danger" onClick={signOut}>
+            <LogOut size={15} />
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
   const currentScreen = useScreen();
   const activeTab = useActiveTab();
   const [helpOpen, setHelpOpen] = useState(false);
-  const { isSignedIn, signOut } = useAuth();
-
-  const isLinkActive = (item: 'landing' | 'dashboard' | 'library' | 'consult') => {
-    if (item === 'landing') return currentScreen === 'landing';
-    if (item === 'library') return currentScreen === 'library';
-    if (item === 'dashboard') return currentScreen === 'dashboard' && activeTab === 'dashboard';
-    if (item === 'consult') return currentScreen === 'dashboard' && activeTab === 'consult';
-    return false;
-  };
 
   const navItems = [
-    { label: 'Home', screen: 'landing', action: () => store.setScreen('landing') },
-    { label: 'Dashboard', screen: 'dashboard', action: () => store.setActiveTab('dashboard') },
-    { label: 'Pose Library', screen: 'library', action: () => store.setScreen('library') },
-    { label: 'Chatbot', screen: 'consult', action: () => store.setActiveTab('consult') },
+    { label: 'Home', isActive: currentScreen === 'landing', action: () => store.setScreen('landing') },
+    { label: 'Dashboard', isActive: currentScreen === 'dashboard' && activeTab === 'dashboard', action: () => store.setActiveTab('dashboard') },
+    { label: 'Pose Library', isActive: currentScreen === 'library', action: () => store.setScreen('library') },
+    { label: 'Coaches', isActive: currentScreen === 'dashboard' && activeTab === 'consult', action: () => store.setActiveTab('consult') },
   ];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 22px',
-        borderBottom: '3px solid var(--line)',
-        background: 'white',
-      }}
-    >
-      <span
-        className="tap"
+    <div className="appbar">
+      <button
         onClick={() => store.setScreen('dashboard')}
         title="Back to dashboard"
-        style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
+        style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: 0, padding: 0, cursor: 'pointer' }}
       >
-        <Wordmark size={28} />
-      </span>
+        <Wordmark size={24} />
+      </button>
 
       {showProfile ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {navItems.map((item) => {
-            const active = isLinkActive(item.screen as any);
-            return (
-              <button
-                key={item.label}
-                onClick={item.action}
-                className="tap"
-                style={{
-                  background: active ? 'var(--butter)' : 'white',
-                  border: '2.5px solid var(--line)',
-                  borderRadius: 'var(--r-sm)',
-                  padding: '6px 14px',
-                  fontFamily: 'inherit',
-                  fontSize: 13,
-                  fontWeight: 900,
-                  color: 'var(--ink)',
-                  cursor: 'pointer',
-                  boxShadow: active ? '0 1px 0 var(--line)' : '0 2.5px 0 var(--line)',
-                  transform: active ? 'translateY(1.5px)' : 'none',
-                  transition: 'all 100ms',
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setHelpOpen(true)}
-            className="tap"
-            style={{
-              background: 'white',
-              border: '2.5px solid var(--line)',
-              borderRadius: 'var(--r-sm)',
-              padding: '6px 14px',
-              fontFamily: 'inherit',
-              fontSize: 13,
-              fontWeight: 900,
-              color: 'var(--ink)',
-              cursor: 'pointer',
-              boxShadow: '0 2.5px 0 var(--line)',
-              transition: 'all 100ms',
-            }}
-          >
-            Help & FAQ
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {navItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={item.action}
+              className={`navpill${item.isActive ? ' is-active' : ''}`}
+              aria-current={item.isActive ? 'page' : undefined}
+            >
+              {item.label}
+            </button>
+          ))}
+          <button className="navpill" onClick={() => setHelpOpen(true)}>
+            Help
           </button>
-        </div>
+        </nav>
       ) : (
         <Breadcrumb steps={steps} here={here} />
       )}
 
-      {showProfile ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {isSignedIn && (
-            <button
-              onClick={signOut}
-              className="tap"
-              style={{
-                background: 'var(--rose)',
-                border: '2.5px solid var(--line)',
-                borderRadius: 'var(--r-sm)',
-                padding: '6px 12px',
-                fontFamily: 'inherit',
-                fontSize: 13,
-                fontWeight: 900,
-                color: 'var(--ink)',
-                cursor: 'pointer',
-                boxShadow: '0 2.5px 0 var(--line)',
-                transition: 'all 100ms',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6
-              }}
-            >
-              <LogOut size={14} style={{ strokeWidth: 3 }} />
-              Log Out
-            </button>
-          )}
-
-          <button
-            onClick={() => store.setScreen('onboarding')}
-            className="tap"
-            style={{
-              background: 'white',
-              border: '2.5px solid var(--line)',
-              borderRadius: 'var(--r-sm)',
-              padding: '6px 12px',
-              fontFamily: 'inherit',
-              fontSize: 13,
-              fontWeight: 900,
-              color: 'var(--ink)',
-              cursor: 'pointer',
-              boxShadow: '0 2.5px 0 var(--line)',
-              transition: 'all 100ms',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6
-            }}
-          >
-            <User size={14} style={{ strokeWidth: 3 }} />
-            Edit Profile
-          </button>
-          
-          <div style={{
-            border: '2.5px solid var(--line)',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            width: 32,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 0 var(--line)'
-          }}>
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </div>
-      ) : (
-        <div style={{ width: 80 }} />
-      )}
+      {showProfile ? <ProfileMenu /> : <div style={{ width: 90 }} />}
 
       {/* Help Modal */}
       {helpOpen && (
@@ -342,7 +296,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
             flexDirection: 'column',
             borderRadius: 'var(--r-md)',
             overflow: 'hidden',
-            border: '4px solid var(--line)',
+            border: '2.5px solid var(--line)',
           }}>
             {/* Modal Header */}
             <div style={{
@@ -350,7 +304,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '16px 20px',
-              borderBottom: '3.5px solid var(--line)',
+              borderBottom: '2.5px solid var(--line)',
               background: 'var(--mint)',
             }}>
               <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
@@ -370,7 +324,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   cursor: 'pointer',
                   border: '2.5px solid var(--line)',
                   background: 'white',
-                  boxShadow: '0 1.5px 0 var(--line)'
+                  boxShadow: 'var(--plush-tiny)'
                 }}
               >
                 <X size={16} />
@@ -388,7 +342,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
               background: 'var(--cream)',
             }}>
               {/* Quick Instructions */}
-              <div className="plush" style={{ padding: 18, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+              <div className="plush" style={{ padding: 18, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', marginTop: 0, marginBottom: 8 }}>
                   How to use PhysioAlign
                 </h4>
@@ -407,7 +361,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   Frequently Asked Questions
                 </h4>
                 
-                <div className="plush" style={{ padding: 14, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     How does the real-time pose tracking work?
                   </h5>
@@ -416,7 +370,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   </p>
                 </div>
 
-                <div className="plush" style={{ padding: 14, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     What does the AI Attending Coach do?
                   </h5>
@@ -425,7 +379,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   </p>
                 </div>
 
-                <div className="plush" style={{ padding: 14, background: 'white', border: '3px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     Who are the three specialized AI Yoga Coaches?
                     {" "}
@@ -447,7 +401,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
 export function CuteFace({ size = 80, skin = '#FFD8B5', mood = 'happy' }) {
   const stroke = 'var(--line)';
   return (
-    <svg width={size} height={size} viewBox="0 0 200 200" style={{ transform: 'rotate(-2deg)' }}>
+    <svg width={size} height={size} viewBox="0 0 200 200">
       {/* Hair back */}
       <circle cx="100" cy="100" r="72" fill="var(--ink-2)" />
       {/* Face circle */}
@@ -478,16 +432,15 @@ export function PhysioLogo({ size = 80, className = '' }) {
       style={{ 
         width: size, 
         height: size, 
-        borderRadius: '50%', 
-        overflow: 'hidden', 
-        border: '3.5px solid var(--line)',
-        boxShadow: '4.5px 4.5px 0 var(--line)',
+        borderRadius: '50%',
+        overflow: 'hidden',
+        border: '2.5px solid var(--line)',
+        boxShadow: 'var(--plush-tiny)',
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
         background: 'white',
-        flexShrink: 0,
-        transform: 'rotate(-1deg)'
+        flexShrink: 0
       }}
     >
       <img 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '../utils/auth';
 import { useUserData } from '../game/store';
 import { CarePlanItem, SessionData, UserData } from '../game/types';
-import { TopBar, Doodle } from './primitives';
+import { TopBar } from './primitives';
 import { POSES } from '../data/poses';
 import { 
   Users, 
@@ -190,9 +190,6 @@ export function DoctorPortal() {
       <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
         <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: 20, top: -10, opacity: 0.15 }} className="wobble">
-            <Doodle kind="flower" size={120} color="var(--mint)" />
-          </div>
           
           <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
             Welcome, Dr. {doctorData?.name || user?.firstName || 'Practitioner'}!
@@ -309,7 +306,7 @@ export function DoctorPortal() {
                 style={{
                   width: '100%',
                   padding: '10px 14px 10px 42px',
-                  border: '3px solid var(--line)',
+                  border: '2.5px solid var(--line)',
                   borderRadius: 12,
                   fontSize: 14,
                   fontFamily: 'inherit',
@@ -345,7 +342,7 @@ export function DoctorPortal() {
                   style={{
                     padding: '20px 22px',
                     background: 'white',
-                    border: '3px solid var(--line)',
+                    border: '2.5px solid var(--line)',
                     borderRadius: 'var(--r-md)',
                     cursor: 'pointer',
                     display: 'flex',
@@ -400,7 +397,7 @@ export function DoctorPortal() {
             width: '100%',
             maxWidth: 680,
             background: 'var(--cream)',
-            borderLeft: '4px solid var(--line)',
+            borderLeft: '2.5px solid var(--line)',
             padding: '32px 28px',
             display: 'flex',
             flexDirection: 'column',
@@ -409,7 +406,7 @@ export function DoctorPortal() {
             boxShadow: '-10px 0 0 rgba(43, 30, 22, 0.1)'
           }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3.5px dashed var(--line)', paddingBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px dashed var(--line)', paddingBottom: 16 }}>
               <div>
                 <h2 style={{ fontSize: 26, color: 'var(--ink)', margin: 0 }}>{selectedPatient.name}</h2>
                 <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '4px 0 0', fontWeight: 800 }}>
@@ -436,7 +433,7 @@ export function DoctorPortal() {
                 <button 
                   onClick={() => setSelectedPatient(null)}
                   style={{
-                    border: '3px solid var(--line)',
+                    border: '2.5px solid var(--line)',
                     background: 'white',
                     borderRadius: 12,
                     padding: 8,
@@ -485,7 +482,7 @@ export function DoctorPortal() {
                               alignItems: 'center', 
                               justifyContent: 'space-between', 
                               padding: '10px 14px', 
-                              border: '2px solid var(--line)', 
+                              border: '2.5px solid var(--line)', 
                               borderRadius: 8, 
                               background: 'var(--cream)' 
                             }}
@@ -544,7 +541,7 @@ export function DoctorPortal() {
                           onChange={(e) => setPrescribingPose(e.target.value)}
                           style={{
                             padding: '6px 8px',
-                            border: '2px solid var(--line)',
+                            border: '2.5px solid var(--line)',
                             borderRadius: 6,
                             background: 'white',
                             fontSize: 12,
@@ -567,7 +564,7 @@ export function DoctorPortal() {
                           onChange={(e) => setPrescribingHold(parseInt(e.target.value))}
                           style={{
                             padding: '6px 8px',
-                            border: '2px solid var(--line)',
+                            border: '2.5px solid var(--line)',
                             borderRadius: 6,
                             background: 'white',
                             fontSize: 12,
@@ -589,7 +586,7 @@ export function DoctorPortal() {
                           onChange={(e) => setPrescribingFreq(e.target.value)}
                           style={{
                             padding: '6px 8px',
-                            border: '2px solid var(--line)',
+                            border: '2.5px solid var(--line)',
                             borderRadius: 6,
                             background: 'white',
                             fontSize: 12,
@@ -748,7 +745,7 @@ export function DoctorPortal() {
                           key={s.id} 
                           onClick={() => setSelectedSession(s)}
                           style={{ 
-                            borderBottom: '1.5px dashed var(--line)', 
+                            borderBottom: '2px dashed var(--line)', 
                             fontWeight: 800, 
                             cursor: 'pointer',
                             background: selectedSession?.id === s.id ? 'var(--cream)' : 'transparent'
@@ -764,7 +761,7 @@ export function DoctorPortal() {
                               background: s.grade === 'A' ? 'var(--mint)' : s.grade === 'B' ? 'var(--butter)' : '#FFEAE6',
                               padding: '2px 8px',
                               borderRadius: 6,
-                              border: '1.5px solid var(--line)',
+                              border: '2.5px solid var(--line)',
                               fontSize: 11
                             }}>
                               {s.grade}

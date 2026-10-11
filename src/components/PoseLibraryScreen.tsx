@@ -58,7 +58,7 @@ export function PoseLibraryScreen() {
                   overflow: 'hidden',
                   borderRadius: 12,
                   border: '3.5px solid var(--ink)',
-                  boxShadow: '4px 4px 0px var(--ink)',
+                  boxShadow: 'var(--plush-sm)',
                   background: 'var(--cream)',
                   display: 'flex',
                   justifyContent: 'center',

@@ -216,7 +216,7 @@ export default function App() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              boxShadow: '0 3.5px 0 var(--line)'
+              boxShadow: 'var(--plush-sm)'
             }}
           >
             <ArrowLeft size={16} style={{ strokeWidth: 3 }} /> Back to Home
@@ -248,7 +248,7 @@ export default function App() {
               className="plush tap" 
               style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--mint)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: '0 2.5px 0 var(--line)' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--mint)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--plush-tiny)' }}>
                 <User size={24} style={{ strokeWidth: 3 }} />
               </div>
               <div>
@@ -267,7 +267,7 @@ export default function App() {
               className="plush tap" 
               style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--butter)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: '0 2.5px 0 var(--line)' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--butter)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--plush-tiny)' }}>
                 <Stethoscope size={24} style={{ strokeWidth: 3 }} />
               </div>
               <div>
@@ -286,7 +286,7 @@ export default function App() {
               className="plush tap" 
               style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--peach)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: '0 2.5px 0 var(--line)' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--peach)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--plush-tiny)' }}>
                 <Shield size={24} style={{ strokeWidth: 3 }} />
               </div>
               <div>
@@ -348,7 +348,7 @@ export default function App() {
               fontWeight: 900,
               color: 'var(--ink)',
               marginTop: 16,
-              boxShadow: '0 2.5px 0 var(--line)',
+              boxShadow: 'var(--plush-tiny)',
               textTransform: 'uppercase',
               letterSpacing: '0.05em'
             }}>
@@ -363,7 +363,7 @@ export default function App() {
             width: '100%',
             maxWidth: '400px',
             background: 'white',
-            border: '3.5px solid var(--line)',
+            border: '2.5px solid var(--line)',
             borderRadius: 'var(--r-md)',
             boxShadow: 'var(--plush-sm)',
             overflow: 'hidden',
@@ -420,7 +420,7 @@ export default function App() {
               <div style={{
                 width: '100%',
                 background: 'var(--peach)',
-                border: '2px solid var(--line)',
+                border: '2.5px solid var(--line)',
                 borderRadius: '8px',
                 padding: '8px 12px',
                 fontSize: 12,
@@ -451,7 +451,7 @@ export default function App() {
                       fontWeight: 700,
                       fontFamily: 'Nunito',
                       color: 'var(--ink)',
-                      boxShadow: '0 2px 0 var(--line)'
+                      boxShadow: 'var(--plush-tiny)'
                     }}
                   />
                 </div>
@@ -474,7 +474,7 @@ export default function App() {
                     fontWeight: 700,
                     fontFamily: 'Nunito',
                     color: 'var(--ink)',
-                    boxShadow: '0 2px 0 var(--line)'
+                    boxShadow: 'var(--plush-tiny)'
                   }}
                 />
               </div>
@@ -496,7 +496,7 @@ export default function App() {
                     fontWeight: 700,
                     fontFamily: 'Nunito',
                     color: 'var(--ink)',
-                    boxShadow: '0 2px 0 var(--line)'
+                    boxShadow: 'var(--plush-tiny)'
                   }}
                 />
               </div>
@@ -525,9 +525,9 @@ export default function App() {
             </form>
 
             <div style={{ display: 'flex', alignItems: 'center', width: '100%', margin: '8px 0' }}>
-              <hr style={{ flex: 1, border: 'none', borderTop: '2px solid var(--line)', margin: 0 }} />
+              <hr style={{ flex: 1, border: 'none', borderTop: '2.5px solid var(--line)', margin: 0 }} />
               <span style={{ padding: '0 10px', fontSize: 11, fontWeight: 800, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>or</span>
-              <hr style={{ flex: 1, border: 'none', borderTop: '2px solid var(--line)', margin: 0 }} />
+              <hr style={{ flex: 1, border: 'none', borderTop: '2.5px solid var(--line)', margin: 0 }} />
             </div>
 
             {/* Google Sign-in Option */}

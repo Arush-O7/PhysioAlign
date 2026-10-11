@@ -274,7 +274,7 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
               <span className="chip" style={{
                 fontSize: 10,
                 padding: '2px 8px',
-                boxShadow: '0 1.5px 0 var(--line)',
+                boxShadow: 'var(--plush-tiny)',
                 background: 'var(--butter)',
                 fontWeight: 900
               }}>
@@ -323,8 +323,8 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
           {isModelLoaded && isCameraActive && (
             <div style={{
               position: 'absolute', bottom: 12, right: 12, zIndex: 15,
-              background: 'white', border: '2px solid var(--line)', padding: '2px 8px',
-              borderRadius: 'var(--r-sm)', fontSize: 11, fontWeight: 800, boxShadow: '0 2px 0 var(--line)'
+              background: 'white', border: '2.5px solid var(--line)', padding: '2px 8px',
+              borderRadius: 'var(--r-sm)', fontSize: 11, fontWeight: 800, boxShadow: 'var(--plush-tiny)'
             }}>
               CV Engine: {fps} FPS{detectorMode === 'worker' ? ' · worker' : ''}
             </div>

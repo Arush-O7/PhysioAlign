@@ -110,7 +110,7 @@ export function DebriefScreen() {
                   <Tooltip
                     contentStyle={{
                       background: 'var(--paper)',
-                      border: '2px solid var(--line)',
+                      border: '2.5px solid var(--line)',
                       borderRadius: 'var(--r-sm)',
                       fontWeight: 700,
                       color: 'var(--ink)'

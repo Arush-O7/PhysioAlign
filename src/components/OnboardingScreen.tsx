@@ -92,7 +92,7 @@ export function OnboardingScreen() {
           }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: '3.5px dashed var(--line)', paddingBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: '2px dashed var(--line)', paddingBottom: 18 }}>
             <PhysioLogo size={70} />
             <div>
               <h2 style={{ fontSize: 26, color: 'var(--ink)' }}>
@@ -141,7 +141,7 @@ export function OnboardingScreen() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                border: '3px solid var(--line)',
+                border: '2.5px solid var(--line)',
                 borderRadius: 'var(--r-sm)',
                 fontSize: 15,
                 fontFamily: 'inherit',
@@ -178,7 +178,7 @@ export function OnboardingScreen() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                border: '3px solid var(--line)',
+                border: '2.5px solid var(--line)',
                 borderRadius: 'var(--r-sm)',
                 fontSize: 15,
                 fontFamily: 'inherit',
@@ -209,7 +209,7 @@ export function OnboardingScreen() {
                   onClick={() => setExperience(level)}
                   style={{
                     padding: '12px',
-                    border: '3px solid var(--line)',
+                    border: '2.5px solid var(--line)',
                     borderRadius: 'var(--r-sm)',
                     fontFamily: 'inherit',
                     fontSize: 14,
@@ -245,7 +245,7 @@ export function OnboardingScreen() {
                   onClick={() => setGoal(g)}
                   style={{
                     padding: '12px',
-                    border: '3px solid var(--line)',
+                    border: '2.5px solid var(--line)',
                     borderRadius: 'var(--r-sm)',
                     fontFamily: 'inherit',
                     fontSize: 14,
