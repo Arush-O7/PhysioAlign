@@ -189,7 +189,7 @@ export function AdminPortal() {
 
       <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
-        <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
+        <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', position: 'relative', overflow: 'hidden' }}>
           
           <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
             System Access Control
@@ -201,7 +201,7 @@ export function AdminPortal() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: 'var(--mint)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <Database size={24} />
             </div>
@@ -211,7 +211,7 @@ export function AdminPortal() {
             </div>
           </div>
 
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: 'var(--butter)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <Shield size={24} />
             </div>
@@ -221,7 +221,7 @@ export function AdminPortal() {
             </div>
           </div>
 
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: 'var(--peach)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <Activity size={24} />
             </div>
@@ -231,7 +231,7 @@ export function AdminPortal() {
             </div>
           </div>
 
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: '#EAFCEF', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <Cpu size={24} style={{ color: '#10B981' }} />
             </div>
@@ -242,7 +242,7 @@ export function AdminPortal() {
           </div>
         </div>
 
-        <div className="plush" style={{ background: 'white', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="plush" style={{ background: 'var(--surface)', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div>
               <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Registered User Accounts</h3>
@@ -280,7 +280,7 @@ export function AdminPortal() {
                   color: 'var(--ink)',
                   outline: 'none',
                   boxShadow: isSearchFocused ? '5px 5px 0 var(--line)' : '3px 3px 0 var(--line)',
-                  background: 'white',
+                  background: 'var(--surface)',
                   transform: isSearchFocused ? 'translate(-2px, -2px)' : 'none',
                   transition: 'all 0.1s ease'
                 }}
@@ -329,7 +329,7 @@ export function AdminPortal() {
                             height: 36,
                             borderRadius: '50%',
                             border: '2.5px solid var(--line)',
-                            background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'white',
+                            background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'var(--surface)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
@@ -369,7 +369,7 @@ export function AdminPortal() {
                             padding: '6px 10px',
                             border: '2.5px solid var(--line)',
                             borderRadius: 'var(--r-sm)',
-                            background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'white',
+                            background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'var(--surface)',
                             fontFamily: 'inherit',
                             fontWeight: 800,
                             fontSize: 12,
@@ -414,7 +414,7 @@ export function AdminPortal() {
                               padding: '6px 10px',
                               border: '2.5px solid var(--line)',
                               borderRadius: 'var(--r-sm)',
-                              background: 'white',
+                              background: 'var(--surface)',
                               fontFamily: 'inherit',
                               fontWeight: 800,
                               fontSize: 12,

@@ -1,13 +1,17 @@
+import { useEffect, useState } from 'react';
 import { store, useActiveSession, useUserData } from '../game/store';
 import { TopBar, Doodle } from './primitives';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from 'recharts';
-import { Activity, Clock, ArrowRight } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot, CartesianGrid } from 'recharts';
+import { Activity, Clock, ArrowRight, Play, Pause } from 'lucide-react';
 import { escapeHtml } from '../utils/sanitize';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
 
 export function DebriefScreen() {
   const activeSession = useActiveSession();
   const userData = useUserData();
+  // replay: step through the per-second log the session already recorded
+  const [replaySecond, setReplaySecond] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   if (!activeSession) {
     return (
@@ -22,6 +26,22 @@ export function DebriefScreen() {
     second: idx + 1,
     score: log.score,
   }));
+
+  const frameCount = activeSession?.frameLogs.length ?? 0;
+
+  useEffect(() => {
+    if (!isPlaying || frameCount === 0) return;
+    const timer = setInterval(() => {
+      setReplaySecond((current) => {
+        if (current + 1 >= frameCount) {
+          setIsPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, 600);
+    return () => clearInterval(timer);
+  }, [isPlaying, frameCount]);
 
   const handleReturn = () => {
     store.cancelActiveSession(); // Resets activeSession and sends user to dashboard
@@ -40,7 +60,7 @@ export function DebriefScreen() {
       <main style={{ maxWidth: 1024, margin: '28px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }} className="popin">
         
         {/* Grader Header Card */}
-        <div className="plush" style={{ padding: '28px 24px', background: 'white', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="plush" style={{ padding: '28px 24px', background: 'var(--surface)', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
             {/* Cartoon Grade Badge */}
             <div className={`debrief-grade-badge ${activeSession.grade.toLowerCase()}`}>
@@ -85,7 +105,7 @@ export function DebriefScreen() {
         </div>
 
         {/* Biomechanical Hold Graph Card (Recharts) */}
-        <div className="plush" style={{ padding: '24px 28px', background: 'white' }}>
+        <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)' }}>
           <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: '2.5px solid var(--line)', paddingBottom: 10, marginBottom: 16 }}>
             Alignment Accuracy Over Time
           </h3>
@@ -118,10 +138,95 @@ export function DebriefScreen() {
                   />
                   <ReferenceLine y={HOLD_SCORE_THRESHOLD} stroke="var(--peach-deep)" strokeDasharray="5 5" label={{ value: `Hold Threshold (${HOLD_SCORE_THRESHOLD}%)`, position: 'top', fill: 'var(--ink-soft)', fontSize: 10, fontWeight: 800 }} />
                   <Area type="monotone" dataKey="score" stroke="var(--line)" strokeWidth={3} fillOpacity={1} fill="url(#scoreColor)" />
+                  {chartData[replaySecond] && (
+                    <ReferenceDot
+                      x={chartData[replaySecond].second}
+                      y={chartData[replaySecond].score}
+                      r={7}
+                      fill="var(--peach-deep)"
+                      stroke="var(--line)"
+                      strokeWidth={2.5}
+                      isFront
+                    />
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
+
+          {frameCount > 0 && (
+            <div style={{ marginTop: 18, borderTop: '2px dashed var(--line)', paddingTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => {
+                    if (replaySecond >= frameCount - 1) setReplaySecond(0);
+                    setIsPlaying((playing) => !playing);
+                  }}
+                  className="btn-plush mint sm tap"
+                  aria-label={isPlaying ? 'Pause replay' : 'Play replay'}
+                >
+                  {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+                  {isPlaying ? 'Pause' : 'Replay'}
+                </button>
+
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(0, frameCount - 1)}
+                  value={replaySecond}
+                  onChange={(e) => {
+                    setIsPlaying(false);
+                    setReplaySecond(Number(e.target.value));
+                  }}
+                  aria-label="Replay position"
+                  style={{ flex: 1, minWidth: 180, accentColor: 'var(--peach-deep)' }}
+                />
+
+                <span className="chip butter" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {replaySecond + 1}s / {frameCount}s
+                </span>
+              </div>
+
+              {activeSession.frameLogs[replaySecond] && (
+                <div
+                  style={{
+                    marginTop: 14,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    flexWrap: 'wrap',
+                    background: 'var(--cream)',
+                    border: '2.5px solid var(--line)',
+                    borderRadius: 'var(--r-sm)',
+                    padding: '12px 16px',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 26,
+                      fontWeight: 900,
+                      color:
+                        activeSession.frameLogs[replaySecond].score >= HOLD_SCORE_THRESHOLD
+                          ? 'var(--mint-deep)'
+                          : 'var(--peach-deep)',
+                    }}
+                  >
+                    {activeSession.frameLogs[replaySecond].score}%
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)', flex: 1, minWidth: 220 }}>
+                    {activeSession.frameLogs[replaySecond].feedbackMessage || 'Holding steady.'}
+                  </span>
+                  {Object.entries(activeSession.frameLogs[replaySecond].angles || {})
+                    .slice(0, 3)
+                    .map(([joint, angle]) => (
+                      <span key={joint} className="chip" style={{ fontSize: 11.5 }}>
+                        {joint.replace(/([A-Z])/g, ' $1').toLowerCase()}: {angle}°
+                      </span>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Attending Coach Critique Markdown card */}

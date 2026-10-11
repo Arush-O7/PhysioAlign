@@ -6,6 +6,7 @@ import { playAudioCue, speakFeedback } from '../utils/audioFeedback';
 import { Keypoint } from '../utils/angleCalculations';
 import { TopBar } from './primitives';
 import { AngleSmoother, Stabilizer } from '../utils/smoothing';
+import { celebrate } from '../utils/celebrate';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
 import { useAuth } from '../utils/auth';
 import { Play, Pause, Square, AlertCircle, CheckCircle, HeartPulse } from 'lucide-react';
@@ -98,6 +99,7 @@ export function SessionScreen() {
   useEffect(() => {
     if (activeSession && activeSession.holdTimeSeconds >= customTargetHold && !targetReached && sessionActive) {
       setTargetReached(true);
+      celebrate();
       playAudioCue('success');
       speakFeedback('Target reached! Great job! You can now exit or keep holding.');
     }
@@ -231,6 +233,11 @@ export function SessionScreen() {
   }
 
 
+  // joint name -> is it outside its range right now (drives the skeleton colours)
+  const jointStatus = Object.fromEntries(
+    Object.entries(feedback?.jointDeviations || {}).map(([joint, deviation]) => [joint, deviation.error])
+  );
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -295,9 +302,15 @@ export function SessionScreen() {
       <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <AIEngine onPoseDetected={handlePoseDetected} onPoseLost={handlePoseLost} poseImage={pose.image} poseName={pose.name} />
+          <AIEngine
+            onPoseDetected={handlePoseDetected}
+            onPoseLost={handlePoseLost}
+            poseImage={pose.image}
+            poseName={pose.name}
+            jointStatus={jointStatus}
+          />
 
-          <div className="plush" style={{ padding: 18, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div className="plush" style={{ padding: 18, background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', gap: 12 }}>
               {!sessionActive ? (
                 <button onClick={handleStart} className="btn-plush mint" style={{ padding: '8px 16px', fontSize: 15 }}>
@@ -327,7 +340,7 @@ export function SessionScreen() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           
-          <div className="plush-lg" style={{ padding: 20, background: 'white', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
+          <div className="plush-lg" style={{ padding: 20, background: 'var(--surface)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
             <div style={{ borderRight: '2px dashed var(--line)' }}>
               <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Practice Duration
@@ -433,7 +446,7 @@ export function SessionScreen() {
           </div>
 
 
-          <div className="plush" style={{ padding: 20, background: 'white' }}>
+          <div className="plush" style={{ padding: 20, background: 'var(--surface)' }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center', borderBottom: '2.5px solid var(--line)', paddingBottom: 12, marginBottom: 12 }}>
               <div style={{
                 width: 70,
@@ -474,7 +487,7 @@ export function SessionScreen() {
           </div>
 
 
-          <div className="plush" style={{ padding: 20, background: 'white' }}>
+          <div className="plush" style={{ padding: 20, background: 'var(--surface)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, borderBottom: '2.5px solid var(--line)', paddingBottom: 8, marginBottom: 12 }}>
               Joint Angle Calibrator
             </h3>

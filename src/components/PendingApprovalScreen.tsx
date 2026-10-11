@@ -6,7 +6,7 @@ export function PendingApprovalScreen() {
 
   return (
     <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24 }}>
-      <div className="plush popin" style={{ background: 'white', padding: '36px 32px', maxWidth: 440, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+      <div className="plush popin" style={{ background: 'var(--surface)', padding: '36px 32px', maxWidth: 440, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <PhysioLogo size={70} />
         <Wordmark size={30} />
         <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Waiting for approval</h2>

@@ -30,7 +30,7 @@ export function PoseLibraryScreen() {
               className="plush tap"
               onClick={() => handleSelectPose(pose.id)}
               style={{
-                background: 'white',
+                background: 'var(--surface)',
                 padding: 24,
                 display: 'flex',
                 flexDirection: 'column',

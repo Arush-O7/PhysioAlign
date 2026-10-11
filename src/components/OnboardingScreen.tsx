@@ -85,7 +85,7 @@ export function OnboardingScreen() {
           className="plush" 
           style={{ 
             padding: '36px 32px', 
-            background: 'white', 
+            background: 'var(--surface)', 
             display: 'flex', 
             flexDirection: 'column', 
             gap: 24 
@@ -150,7 +150,7 @@ export function OnboardingScreen() {
                 outline: 'none',
                 boxShadow: isNameFocused ? '4px 4px 0 var(--line)' : '2px 2px 0 var(--line)',
                 transform: isNameFocused ? 'translate(-2px, -2px)' : 'none',
-                background: 'white',
+                background: 'var(--surface)',
                 transition: 'all 0.1s ease',
               }}
             />
@@ -187,7 +187,7 @@ export function OnboardingScreen() {
                 outline: 'none',
                 boxShadow: isAgeFocused ? '4px 4px 0 var(--line)' : '2px 2px 0 var(--line)',
                 transform: isAgeFocused ? 'translate(-2px, -2px)' : 'none',
-                background: 'white',
+                background: 'var(--surface)',
                 transition: 'all 0.1s ease',
               }}
             />
@@ -217,7 +217,7 @@ export function OnboardingScreen() {
                     cursor: 'pointer',
                     textTransform: 'capitalize',
                     boxShadow: experience === level ? '1px 1px 0 var(--line)' : '3px 3px 0 var(--line)',
-                    background: experience === level ? 'var(--mint)' : 'white',
+                    background: experience === level ? 'var(--mint)' : 'var(--surface)',
                     color: 'var(--ink)',
                     transform: experience === level ? 'translate(2px, 2px)' : 'none',
                     transition: 'all 0.1s ease',
@@ -253,7 +253,7 @@ export function OnboardingScreen() {
                     cursor: 'pointer',
                     textTransform: 'capitalize',
                     boxShadow: goal === g ? '1px 1px 0 var(--line)' : '3px 3px 0 var(--line)',
-                    background: goal === g ? 'var(--peach)' : 'white',
+                    background: goal === g ? 'var(--peach)' : 'var(--surface)',
                     color: 'var(--ink)',
                     transform: goal === g ? 'translate(2px, 2px)' : 'none',
                     transition: 'all 0.1s ease',

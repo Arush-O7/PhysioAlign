@@ -5,15 +5,19 @@ import { calculateAngles, Keypoint } from '../utils/angleCalculations';
 import { createPoseDetector, PoseDetector, PoseResult } from '../utils/poseDetector';
 import { recordFrame } from '../utils/perf';
 
+export type JointStatus = Record<string, boolean>; // joint name -> true when outside its target range
+
 interface AIEngineProps {
   onPoseDetected: (data: { keypoints: Keypoint[]; angles: Record<string, number> }) => void;
+  /** which scored joints are currently out of range, keyed like 'leftKnee' */
+  jointStatus?: JointStatus;
   onPoseLost?: () => void;
   onStatusChange?: (status: { isLoaded: boolean; error: string | null }) => void;
   poseImage?: string;
   poseName?: string;
 }
 
-export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, poseImage, poseName }: AIEngineProps) => {
+export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, poseImage, poseName, jointStatus }: AIEngineProps) => {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -31,6 +35,8 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
   const lastTimestampRef = useRef(0);
   const personVisibleRef = useRef(false);
   const busyRef = useRef(false);
+  const jointStatusRef = useRef<JointStatus>({});
+  jointStatusRef.current = jointStatus || {};
 
   // Load the pose model, in a web worker when the browser supports it
   useEffect(() => {
@@ -155,6 +161,14 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
     };
   }, [isCameraActive, isModelLoaded, onPoseDetected, onPoseLost]);
 
+  const LANDMARK_TO_JOINT: Record<number, string> = {
+    11: 'leftShoulder', 12: 'rightShoulder',
+    13: 'leftElbow', 14: 'rightElbow',
+    23: 'leftHip', 24: 'rightHip',
+    25: 'leftKnee', 26: 'rightKnee',
+    27: 'leftAnkle', 28: 'rightAnkle',
+  };
+
   // Draw pose skeleton connections
   const drawSkeleton = (keypoints: Keypoint[], canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext('2d');
@@ -163,29 +177,39 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
     const { width, height } = canvas;
     ctx.clearRect(0, 0, width, height);
 
-    // List of key point pairings representing bones
-    const connections = [
-      [11, 13], [13, 15], // Left arm
-      [12, 14], [14, 16], // Right arm
-      [11, 12],           // Shoulders
-      [11, 23], [12, 24], // Torso
-      [23, 24],           // Hips
-      [23, 25], [25, 27], // Left leg
-      [24, 26], [26, 28], // Right leg
-      [27, 31], [28, 32], // Feet
+    // each bone is attributed to the joint it bends around, so a bone turns
+    // red when that joint is outside the range the pose asks for
+    const connections: [number, number, string | null][] = [
+      [11, 13, 'leftShoulder'], [13, 15, 'leftElbow'],
+      [12, 14, 'rightShoulder'], [14, 16, 'rightElbow'],
+      [11, 12, null],
+      [11, 23, null], [12, 24, null],
+      [23, 24, null],
+      [23, 25, 'leftHip'], [25, 27, 'leftKnee'],
+      [24, 26, 'rightHip'], [26, 28, 'rightKnee'],
+      [27, 31, 'leftAnkle'], [28, 32, 'rightAnkle'],
     ];
 
-    // 1. Draw Bones (Bridges)
-    ctx.strokeStyle = '#5FCFA0'; // Primary mint outline color
+    const styles = getComputedStyle(document.documentElement);
+    const colourOk = styles.getPropertyValue('--skeleton-ok').trim() || '#3FBF8F';
+    const colourOff = styles.getPropertyValue('--skeleton-off').trim() || '#F2663F';
+    const colourIdle = styles.getPropertyValue('--skeleton-idle').trim() || '#8C7B6B';
+    const status = jointStatusRef.current;
+    const colourFor = (joint: string | null) => {
+      if (!joint || !(joint in status)) return colourIdle;
+      return status[joint] ? colourOff : colourOk;
+    };
+
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
 
-    connections.forEach(([i1, i2]) => {
+    connections.forEach(([i1, i2, joint]) => {
       const p1 = keypoints[i1];
       const p2 = keypoints[i2];
 
       // Only draw if both points are highly visible
       if (p1 && p2 && p1.visibility > 0.5 && p2.visibility > 0.5) {
+        ctx.strokeStyle = colourFor(joint);
         ctx.beginPath();
         ctx.moveTo(p1.x * width, p1.y * height);
         ctx.lineTo(p2.x * width, p2.y * height);
@@ -200,14 +224,25 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
       if (!criticalJoints.includes(idx)) return;
 
       if (kp.visibility > 0.5) {
-        // Outer cartoon border
-        ctx.fillStyle = '#2B1E16'; // Ink outline
+        const jointName = LANDMARK_TO_JOINT[idx];
+        const isOff = jointName ? status[jointName] === true : false;
+        const tracked = jointName ? jointName in status : false;
+
+        if (isOff) {
+          // halo so the eye goes straight to the joint that needs fixing
+          ctx.fillStyle = 'rgba(242, 102, 63, 0.28)';
+          ctx.beginPath();
+          ctx.arc(kp.x * width, kp.y * height, 15, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+
+        // outline keeps the sticker look of the rest of the ui
+        ctx.fillStyle = '#2B1E16';
         ctx.beginPath();
         ctx.arc(kp.x * width, kp.y * height, 8, 0, 2 * Math.PI);
         ctx.fill();
 
-        // Inner glowing core
-        ctx.fillStyle = '#FFD86B'; // Butter color
+        ctx.fillStyle = isOff ? colourOff : tracked ? colourOk : '#FFD86B';
         ctx.beginPath();
         ctx.arc(kp.x * width, kp.y * height, 5, 0, 2 * Math.PI);
         ctx.fill();
@@ -283,7 +318,7 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
               <div style={{
                 width: 110,
                 height: 110,
-                background: 'white',
+                background: 'var(--surface)',
                 border: '2.5px solid var(--line)',
                 boxShadow: '3px 3px 0 var(--line)',
                 borderRadius: 8,
@@ -323,7 +358,7 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
           {isModelLoaded && isCameraActive && (
             <div style={{
               position: 'absolute', bottom: 12, right: 12, zIndex: 15,
-              background: 'white', border: '2.5px solid var(--line)', padding: '2px 8px',
+              background: 'var(--surface)', border: '2.5px solid var(--line)', padding: '2px 8px',
               borderRadius: 'var(--r-sm)', fontSize: 11, fontWeight: 800, boxShadow: 'var(--plush-tiny)'
             }}>
               CV Engine: {fps} FPS{detectorMode === 'worker' ? ' · worker' : ''}

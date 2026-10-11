@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LogOut, RotateCcw, User, X } from 'lucide-react';
+import { applyTheme, getTheme, THEMES, Theme } from '../utils/theme';
 import { store, useScreen, useActiveTab, useUserData } from '../game/store';
 import { useAuth, useUser } from '../utils/auth';
 
@@ -146,6 +147,34 @@ interface TopBarProps {
   showProfile?: boolean;
 }
 
+const THEME_SWATCH: Record<Theme, { label: string; background: string }> = {
+  sunshine: { label: 'Sunshine', background: 'linear-gradient(135deg, #FFD86B 50%, #FFB68A 50%)' },
+  orchid: { label: 'Orchid', background: 'linear-gradient(135deg, #C9B8FF 50%, #FFD9F2 50%)' },
+  midnight: { label: 'Midnight', background: 'linear-gradient(135deg, #221F2E 50%, #6EE7B7 50%)' },
+};
+
+export function ThemeSwitch() {
+  const [theme, setTheme] = useState<Theme>(() => getTheme());
+
+  return (
+    <div className="theme-switch" role="group" aria-label="Colour theme">
+      {THEMES.map((name) => (
+        <button
+          key={name}
+          onClick={() => {
+            setTheme(name);
+            applyTheme(name);
+          }}
+          aria-pressed={theme === name}
+          aria-label={`${THEME_SWATCH[name].label} theme`}
+          title={`${THEME_SWATCH[name].label} theme`}
+          style={{ background: THEME_SWATCH[name].background }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function ProfileMenu() {
   const { user } = useUser();
   const { signOut, userId } = useAuth();
@@ -177,7 +206,7 @@ function ProfileMenu() {
           borderRadius: '50%',
           border: '2.5px solid var(--line)',
           boxShadow: 'var(--plush-tiny)',
-          background: 'white',
+          background: 'var(--surface)',
           overflow: 'hidden',
           cursor: 'pointer',
           display: 'flex',
@@ -279,7 +308,14 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
         <Breadcrumb steps={steps} here={here} />
       )}
 
-      {showProfile ? <ProfileMenu /> : <div style={{ width: 90 }} />}
+      {showProfile ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <ThemeSwitch />
+          <ProfileMenu />
+        </div>
+      ) : (
+        <ThemeSwitch />
+      )}
 
       {/* Help Modal */}
       {helpOpen && (
@@ -297,7 +333,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
           padding: 20
         }}>
           <div className="plush popin" style={{
-            background: 'white',
+            background: 'var(--surface)',
             maxWidth: 580,
             width: '100%',
             maxHeight: '85vh',
@@ -332,7 +368,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   justifyContent: 'center',
                   cursor: 'pointer',
                   border: '2.5px solid var(--line)',
-                  background: 'white',
+                  background: 'var(--surface)',
                   boxShadow: 'var(--plush-tiny)'
                 }}
               >
@@ -351,7 +387,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
               background: 'var(--cream)',
             }}>
               {/* Quick Instructions */}
-              <div className="plush" style={{ padding: 18, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+              <div className="plush" style={{ padding: 18, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', marginTop: 0, marginBottom: 8 }}>
                   How to use PhysioAlign
                 </h4>
@@ -370,7 +406,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   Frequently Asked Questions
                 </h4>
                 
-                <div className="plush" style={{ padding: 14, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     How does the real-time pose tracking work?
                   </h5>
@@ -379,7 +415,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   </p>
                 </div>
 
-                <div className="plush" style={{ padding: 14, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     What does the AI Attending Coach do?
                   </h5>
@@ -388,7 +424,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   </p>
                 </div>
 
-                <div className="plush" style={{ padding: 14, background: 'white', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     Who are the three specialized AI Yoga Coaches?
                     {" "}
@@ -448,7 +484,7 @@ export function PhysioLogo({ size = 80, className = '' }) {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'white',
+        background: 'var(--surface)',
         flexShrink: 0
       }}
     >

@@ -196,7 +196,7 @@ export function DoctorPortal() {
 
       <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
-        <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
+        <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', position: 'relative', overflow: 'hidden' }}>
           
           <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
             Welcome, {formatClinicianName(doctorData?.name || user?.firstName)}!
@@ -208,7 +208,7 @@ export function DoctorPortal() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: 'var(--mint)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <Users size={24} />
             </div>
@@ -218,7 +218,7 @@ export function DoctorPortal() {
             </div>
           </div>
 
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: 'var(--butter)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <Clock size={24} />
             </div>
@@ -228,7 +228,7 @@ export function DoctorPortal() {
             </div>
           </div>
 
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: 'var(--peach)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <TrendingUp size={24} />
             </div>
@@ -238,7 +238,7 @@ export function DoctorPortal() {
             </div>
           </div>
 
-          <div className="plush" style={{ padding: '20px 22px', background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: attentionRequired > 0 ? '#FFEAE6' : '#EAFCEF', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
               <HeartPulse size={24} style={{ color: attentionRequired > 0 ? '#FF6B4A' : '#10B981' }} />
             </div>
@@ -249,7 +249,7 @@ export function DoctorPortal() {
           </div>
         </div>
 
-        <div className="plush" style={{ background: 'white', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="plush" style={{ background: 'var(--surface)', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Active Recovery Registrants</h3>
@@ -321,7 +321,7 @@ export function DoctorPortal() {
                   color: 'var(--ink)',
                   outline: 'none',
                   boxShadow: isSearchFocused ? '5px 5px 0 var(--line)' : '3px 3px 0 var(--line)',
-                  background: 'white',
+                  background: 'var(--surface)',
                   transform: isSearchFocused ? 'translate(-2px, -2px)' : 'none',
                   transition: 'all 0.1s ease'
                 }}
@@ -348,7 +348,7 @@ export function DoctorPortal() {
                   className="plush-card tap"
                   style={{
                     padding: '20px 22px',
-                    background: 'white',
+                    background: 'var(--surface)',
                     border: '2.5px solid var(--line)',
                     borderRadius: 'var(--r-md)',
                     cursor: 'pointer',
@@ -441,7 +441,7 @@ export function DoctorPortal() {
                   onClick={() => setSelectedPatient(null)}
                   style={{
                     border: '2.5px solid var(--line)',
-                    background: 'white',
+                    background: 'var(--surface)',
                     borderRadius: 12,
                     padding: 8,
                     cursor: 'pointer',
@@ -455,11 +455,11 @@ export function DoctorPortal() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="plush" style={{ padding: '12px 16px', background: 'white', fontSize: 13 }}>
+              <div className="plush" style={{ padding: '12px 16px', background: 'var(--surface)', fontSize: 13 }}>
                 <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', fontSize: 10 }}>Experience Level</span>
                 <span style={{ fontWeight: 800, color: 'var(--ink)', textTransform: 'capitalize' }}>{selectedPatient.experience}</span>
               </div>
-              <div className="plush" style={{ padding: '12px 16px', background: 'white', fontSize: 13 }}>
+              <div className="plush" style={{ padding: '12px 16px', background: 'var(--surface)', fontSize: 13 }}>
                 <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', fontSize: 10 }}>Wellness Goal</span>
                 <span style={{ fontWeight: 800, color: 'var(--ink)', textTransform: 'capitalize' }}>{selectedPatient.goal}</span>
               </div>
@@ -468,7 +468,7 @@ export function DoctorPortal() {
             {(() => {
               const currentCarePlan = selectedPatient.carePlan ?? [];
               return (
-                <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div className="plush" style={{ background: 'var(--surface)', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <HeartPulse size={18} style={{ color: 'var(--rose-deep)' }} /> Rehabilitative Care Plan
                   </h4>
@@ -550,7 +550,7 @@ export function DoctorPortal() {
                             padding: '6px 8px',
                             border: '2.5px solid var(--line)',
                             borderRadius: 6,
-                            background: 'white',
+                            background: 'var(--surface)',
                             fontSize: 12,
                             fontWeight: 800,
                             fontFamily: 'inherit',
@@ -573,7 +573,7 @@ export function DoctorPortal() {
                             padding: '6px 8px',
                             border: '2.5px solid var(--line)',
                             borderRadius: 6,
-                            background: 'white',
+                            background: 'var(--surface)',
                             fontSize: 12,
                             fontWeight: 800,
                             fontFamily: 'inherit',
@@ -595,7 +595,7 @@ export function DoctorPortal() {
                             padding: '6px 8px',
                             border: '2.5px solid var(--line)',
                             borderRadius: 6,
-                            background: 'white',
+                            background: 'var(--surface)',
                             fontSize: 12,
                             fontWeight: 800,
                             fontFamily: 'inherit',
@@ -643,7 +643,7 @@ export function DoctorPortal() {
               );
             })()}
 
-            <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="plush" style={{ background: 'var(--surface)', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Sparkles size={18} style={{ color: 'var(--peach-deep)' }} /> Clinician Clinical Insight
@@ -686,7 +686,7 @@ export function DoctorPortal() {
             </div>
 
             {patientHistory.length > 0 && selectedSession && (
-              <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="plush" style={{ background: 'var(--surface)', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
                   Rehabilitation Performance Trend ({selectedSession.poseName})
                 </h4>
@@ -722,7 +722,7 @@ export function DoctorPortal() {
               </div>
             )}
 
-            <div className="plush" style={{ background: 'white', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="plush" style={{ background: 'var(--surface)', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Workout Practice Records</h4>
               
               {historyLoading ? (

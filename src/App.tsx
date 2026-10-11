@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuth, signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle } from './utils/auth';
 import { apiFetch } from './utils/api';
 import { store, useScreen, useUserData, profileFromApi, screenForProfile } from './game/store';
-import { Wordmark, PhysioLogo } from './components/primitives';
+import { Wordmark, PhysioLogo, ThemeSwitch } from './components/primitives';
 import { LandingScreen } from './components/LandingScreen';
 
 // everything behind the login is split into its own chunk, so the landing page
@@ -205,7 +205,10 @@ export default function App() {
 
     if (authView === 'role_select') {
       return (
-        <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, gap: 28 }}>
+        <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, gap: 28, position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 20, right: 24 }}>
+            <ThemeSwitch />
+          </div>
           <button
             onClick={() => setAuthView('landing')}
             className="tap btn-plush ghost"
@@ -246,7 +249,7 @@ export default function App() {
                 setAuthView('login');
               }}
               className="plush tap" 
-              style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
+              style={{ padding: '28px 24px', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
             >
               <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--mint)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--plush-tiny)' }}>
                 <User size={24} style={{ strokeWidth: 3 }} />
@@ -265,7 +268,7 @@ export default function App() {
                 setAuthView('login');
               }}
               className="plush tap" 
-              style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
+              style={{ padding: '28px 24px', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
             >
               <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--butter)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--plush-tiny)' }}>
                 <Stethoscope size={24} style={{ strokeWidth: 3 }} />
@@ -284,7 +287,7 @@ export default function App() {
                 setAuthView('login');
               }}
               className="plush tap" 
-              style={{ padding: '28px 24px', background: 'white', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
+              style={{ padding: '28px 24px', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 18, cursor: 'pointer' }}
             >
               <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--peach)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', boxShadow: 'var(--plush-tiny)' }}>
                 <Shield size={24} style={{ strokeWidth: 3 }} />
@@ -314,7 +317,10 @@ export default function App() {
         : 'var(--mint)';
 
     return (
-      <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, flexDirection: 'column', gap: 16 }}>
+      <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, flexDirection: 'column', gap: 16, position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 20, right: 24 }}>
+          <ThemeSwitch />
+        </div>
         <button
           onClick={() => {
             setAuthView('role_select');
@@ -362,7 +368,7 @@ export default function App() {
           <div style={{
             width: '100%',
             maxWidth: '400px',
-            background: 'white',
+            background: 'var(--surface)',
             border: '2.5px solid var(--line)',
             borderRadius: 'var(--r-md)',
             boxShadow: 'var(--plush-sm)',
@@ -385,7 +391,7 @@ export default function App() {
                   fontSize: 13,
                   cursor: 'pointer',
                   border: 'none',
-                  background: formMode === 'signin' ? 'var(--butter)' : 'white',
+                  background: formMode === 'signin' ? 'var(--butter)' : 'var(--surface)',
                   borderRight: '2.5px solid var(--line)',
                   color: 'var(--ink)',
                   fontFamily: 'Nunito'
@@ -403,7 +409,7 @@ export default function App() {
                   fontSize: 13,
                   cursor: 'pointer',
                   border: 'none',
-                  background: formMode === 'signup' ? 'var(--butter)' : 'white',
+                  background: formMode === 'signup' ? 'var(--butter)' : 'var(--surface)',
                   color: 'var(--ink)',
                   fontFamily: 'Nunito'
                 }}
@@ -543,7 +549,7 @@ export default function App() {
                   border: '2.5px solid var(--line)',
                   borderRadius: '12px',
                   padding: '10px',
-                  background: 'white',
+                  background: 'var(--surface)',
                   boxShadow: '0 3px 0 var(--line)'
                 }}
               >

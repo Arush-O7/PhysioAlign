@@ -19,7 +19,11 @@
   --ink-soft: #7A6252;
   --line: #2B1E16;       /* cartoon outline */
   --paper: #FFFAF0;
+  --surface: #FFFFFF;
   --shadow: rgba(43,30,22,0.18);
+  --skeleton-ok: #3FBF8F;
+  --skeleton-off: #F2663F;
+  --skeleton-idle: #8C7B6B;
 
   --r-sm: 14px;
   --r-md: 22px;
@@ -37,6 +41,76 @@
   --ring: 0 0 0 4px rgba(255,142,92,0.35);
 }
 
+/* ---- themes ---------------------------------------------------------
+   Sunshine is the default. Orchid keeps the same shapes with a cooler
+   palette, Midnight is the dark one for practising in a dim room.      */
+
+:root[data-theme='orchid'] {
+  --cream: #F7F2FF;
+  --cream-2: #EDE3FF;
+  --peach: #C9B8FF;
+  --peach-deep: #7C5CFF;
+  --butter: #FFD9F2;
+  --butter-deep: #F49BD8;
+  --mint: #BFF0DC;
+  --mint-deep: #3FC99B;
+  --sky: #C3DBFF;
+  --sky-deep: #5B9BF8;
+  --rose: #FFC3D8;
+  --rose-deep: #F2679B;
+  --ink: #2A2142;
+  --ink-2: #4A3D6B;
+  --ink-soft: #6B5E88;
+  --line: #2A2142;
+  --paper: #FCF9FF;
+  --surface: #FFFFFF;
+}
+
+:root[data-theme='midnight'] {
+  --cream: #15141C;
+  --cream-2: #221F2E;
+  --peach: #FF9F6B;
+  --peach-deep: #FFB183;
+  --butter: #FFD36B;
+  --butter-deep: #FFC247;
+  --mint: #6EE7B7;
+  --mint-deep: #34D399;
+  --sky: #7DD3FC;
+  --sky-deep: #38BDF8;
+  --rose: #FDA4C7;
+  --rose-deep: #FB7185;
+  --ink: #F7F2EC;
+  --ink-2: #E2D8CE;
+  --ink-soft: #B4A697;
+  --line: #EFE7DC;
+  --paper: #1C1A25;
+  --surface: #221F2E;
+  --shadow: rgba(0,0,0,0.5);
+  --skeleton-ok: #4ADE80;
+  --skeleton-off: #FB7185;
+  --skeleton-idle: #CBB9A6;
+}
+
+/* accent-coloured chips keep dark text in the dark theme, since the
+   accents stay bright */
+:root[data-theme='midnight'] .chip.peach,
+:root[data-theme='midnight'] .chip.butter,
+:root[data-theme='midnight'] .chip.mint,
+:root[data-theme='midnight'] .chip.sky,
+:root[data-theme='midnight'] .chip.rose,
+:root[data-theme='midnight'] .btn-plush.primary,
+:root[data-theme='midnight'] .btn-plush.mint,
+:root[data-theme='midnight'] .btn-plush.sky,
+:root[data-theme='midnight'] .btn-plush.rose,
+:root[data-theme='midnight'] .btn-plush.danger,
+:root[data-theme='midnight'] .navpill.is-active {
+  color: #15141C;
+}
+
+:root[data-theme='midnight'] .btn-plush.ghost {
+  color: var(--ink);
+}
+
 * { box-sizing: border-box; }
 
 :focus-visible {
@@ -51,6 +125,7 @@ html, body, #root {
 
 body {
   margin: 0;
+  transition: background-color 220ms ease, color 220ms ease;
   font-family: 'Nunito', system-ui, sans-serif;
   color: var(--ink);
   background: var(--cream);
@@ -69,14 +144,14 @@ body {
   border: var(--stroke-sm) solid var(--line);
   border-radius: var(--r-md);
   box-shadow: var(--plush-sm);
-  background: white;
+  background: var(--surface);
 }
 
 .plush-lg {
   border: var(--stroke) solid var(--line);
   border-radius: var(--r-lg);
   box-shadow: var(--plush);
-  background: white;
+  background: var(--surface);
 }
 
 .btn-plush {
@@ -106,7 +181,7 @@ body {
 .btn-plush.mint { background: var(--mint); }
 .btn-plush.sky { background: var(--sky); }
 .btn-plush.rose { background: var(--rose); }
-.btn-plush.ghost { background: white; }
+.btn-plush.ghost { background: var(--surface); }
 .btn-plush.danger { background: var(--rose); }
 .btn-plush.sm { font-size: 14px; padding: 8px 16px; }
 .btn-plush:disabled {
@@ -125,7 +200,7 @@ body {
   padding: 4px 11px;
   border: 2px solid var(--line);
   border-radius: var(--r-pill);
-  background: white;
+  background: var(--surface);
   color: var(--ink);
   box-shadow: var(--plush-tiny);
   white-space: nowrap;
@@ -148,7 +223,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 22px;
-  background: white;
+  background: var(--surface);
   border-bottom: var(--stroke-sm) solid var(--line);
 }
 
@@ -176,7 +251,7 @@ body {
   right: 0;
   top: calc(100% + 10px);
   min-width: 210px;
-  background: white;
+  background: var(--surface);
   border: var(--stroke-sm) solid var(--line);
   border-radius: var(--r-sm);
   box-shadow: var(--plush-sm);
@@ -205,6 +280,33 @@ body {
 @media (max-width: 860px) {
   .appbar { flex-wrap: wrap; padding: 12px 16px; }
   .appbar nav { order: 3; width: 100%; overflow-x: auto; }
+}
+
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--plush-tiny);
+}
+.theme-switch button {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.theme-switch button:hover { transform: translateY(-1px); }
+.theme-switch button[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--line);
 }
 
 /* Background patterns */

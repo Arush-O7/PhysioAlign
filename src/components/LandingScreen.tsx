@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../utils/auth';
-import { Wordmark, TopBar, PhysioLogo } from './primitives';
+import { Wordmark, TopBar, PhysioLogo, ThemeSwitch } from './primitives';
 import { store } from '../game/store';
 import { 
   HeartPulse, 
@@ -59,12 +59,14 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
           justifyContent: 'space-between',
           padding: '16px 32px',
           borderBottom: '2.5px solid var(--line)',
-          background: 'white',
+          background: 'var(--surface)',
           position: 'sticky',
           top: 0,
           zIndex: 100
         }}>
           <Wordmark size={32} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <ThemeSwitch />
           <button
             onClick={() => onStartLogin?.()}
             className="btn-plush primary"
@@ -77,6 +79,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
           >
             Get Started
           </button>
+          </div>
         </header>
       )}
 
@@ -153,7 +156,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             <ArrowRight size={18} style={{ strokeWidth: 3 }} />
           </button>
 
-          <figure className="plush" style={{ margin: '20px 0 0', padding: 10, background: 'white', width: '100%', maxWidth: 820 }}>
+          <figure className="plush" style={{ margin: '20px 0 0', padding: 10, background: 'var(--surface)', width: '100%', maxWidth: 820 }}>
             <img
               src="/preview-session.jpg"
               alt="A PhysioAlign session: the camera view with the tracked skeleton, live alignment cues and joint angle readouts"
@@ -174,7 +177,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             gap: 24
           }}>
             {/* 1. Computer Vision */}
-            <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--mint)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <Camera size={20} color="var(--ink)" />
               </div>
@@ -185,7 +188,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             </div>
 
             {/* 2. Pain Tracker */}
-            <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--rose)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <HeartPulse size={20} color="var(--ink)" />
               </div>
@@ -196,7 +199,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             </div>
 
             {/* 3. Daily Habits */}
-            <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--butter)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <CheckCircle size={20} color="var(--ink)" />
               </div>
@@ -207,7 +210,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             </div>
 
             {/* 4. AI Grader */}
-            <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--peach)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <Sparkles size={20} color="var(--ink)" />
               </div>
@@ -218,7 +221,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             </div>
 
             {/* 5. Specialized AI Coaches */}
-            <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--sky)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <MessageSquare size={20} color="var(--ink)" />
               </div>
@@ -229,7 +232,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             </div>
 
             {/* 6. Analytics Trends */}
-            <div className="plush tap" style={{ background: 'white', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--cream-2)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
                 <TrendingUp size={20} color="var(--ink)" />
               </div>
@@ -255,7 +258,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             justifyContent: 'center'
           }}>
             {/* Step 1 */}
-            <div className="plush" style={{ background: 'white', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
+            <div className="plush" style={{ background: 'var(--surface)', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
               <div style={{
                 position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
                 border: '2.5px solid var(--line)', background: 'var(--butter)', display: 'flex',
@@ -269,7 +272,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             </div>
 
             {/* Step 2 */}
-            <div className="plush" style={{ background: 'white', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
+            <div className="plush" style={{ background: 'var(--surface)', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
               <div style={{
                 position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
                 border: '2.5px solid var(--line)', background: 'var(--mint)', display: 'flex',
@@ -283,7 +286,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
             </div>
 
             {/* Step 3 */}
-            <div className="plush" style={{ background: 'white', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
+            <div className="plush" style={{ background: 'var(--surface)', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
               <div style={{
                 position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
                 border: '2.5px solid var(--line)', background: 'var(--sky)', display: 'flex',
@@ -312,7 +315,7 @@ export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenPr
                   key={idx}
                   className="plush"
                   style={{
-                    background: 'white',
+                    background: 'var(--surface)',
                     overflow: 'hidden',
                     transition: 'all 200ms ease'
                   }}

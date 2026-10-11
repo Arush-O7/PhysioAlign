@@ -58,7 +58,7 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
     <div
       className="plush"
       style={{
-        background: 'white',
+        background: 'var(--surface)',
         padding: '16px 20px',
         display: 'flex',
         alignItems: 'center',
@@ -455,7 +455,7 @@ export function HomeScreen() {
       <main style={{ maxWidth: 1024, margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
         
 
-        <div className="plush" style={{ padding: '24px 28px', background: 'white', position: 'relative', overflow: 'hidden' }}>
+        <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', position: 'relative', overflow: 'hidden' }}>
           
           <h1 style={{ fontSize: 36, color: 'var(--ink)' }}>
             Welcome back, {userData?.name || 'Friend'}!
@@ -521,7 +521,7 @@ export function HomeScreen() {
               if (carePlan.length === 0) return null;
               
               return (
-                <div className="plush" style={{ padding: '24px 28px', background: 'white', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ borderBottom: '2.5px solid var(--line)', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                     <h2 style={{ fontSize: 22, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <HeartPulse size={24} style={{ color: 'var(--rose-deep)' }} /> Prescribed Rehabilitation Plan
@@ -574,7 +574,7 @@ export function HomeScreen() {
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'start' }}>
               
 
-              <div className="plush" style={{ padding: '24px 28px', background: 'white' }}>
+              <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid var(--line)', paddingBottom: 12, marginBottom: 16 }}>
                   <h2 style={{ fontSize: 22, color: 'var(--ink)', margin: 0 }}>
                     Completed Evaluations
@@ -666,7 +666,7 @@ export function HomeScreen() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                 
 
-                <div className="plush" style={{ padding: 20, background: 'white' }}>
+                <div className="plush" style={{ padding: 20, background: 'var(--surface)' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <HeartPulse size={20} color="var(--rose-deep)" /> Daily Pain & Stiffness Log
                   </h3>
@@ -731,7 +731,7 @@ export function HomeScreen() {
                 </div>
 
 
-                <div className="plush" style={{ padding: 20, background: 'white' }}>
+                <div className="plush" style={{ padding: 20, background: 'var(--surface)' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <TrendingUp size={20} color="var(--mint-deep)" /> Today's Wellness Roadmap
                   </h3>
@@ -767,13 +767,13 @@ export function HomeScreen() {
                           height: 20,
                           borderRadius: '50%',
                           border: '2.5px solid var(--line)',
-                          background: item.completed ? 'var(--mint-deep)' : 'white',
+                          background: item.completed ? 'var(--mint-deep)' : 'var(--surface)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           boxShadow: '0 1px 0 var(--line)'
                         }}>
-                          {item.completed && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'white' }} />}
+                          {item.completed && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--surface)' }} />}
                         </div>
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
                           {item.label}
@@ -802,14 +802,14 @@ export function HomeScreen() {
                 </div>
 
 
-                <div className="plush" style={{ padding: 20, background: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div className="plush" style={{ padding: 20, background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{
                     border: '2.5px solid var(--line)',
                     borderRadius: '50%',
                     overflow: 'hidden',
                     width: 44,
                     height: 44,
-                    background: 'white',
+                    background: 'var(--surface)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -852,7 +852,7 @@ export function HomeScreen() {
         {activeTab === 'trends' && (
           <div className="popin" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {count === 0 ? (
-              <div className="plush" style={{ padding: '40px 28px', background: 'white', textAlign: 'center' }}>
+              <div className="plush" style={{ padding: '40px 28px', background: 'var(--surface)', textAlign: 'center' }}>
                 <div style={{ marginBottom: 12 }}>
                   <Doodle kind="flower" size={48} color="var(--cream-2)" />
                 </div>
@@ -865,7 +865,7 @@ export function HomeScreen() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
                 
 
-                <div className="plush" style={{ background: 'white', padding: 24 }}>
+                <div className="plush" style={{ background: 'var(--surface)', padding: 24 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <TrendingUp size={18} color="var(--peach-deep)" /> Accuracy Progress (%)
                   </h3>
@@ -877,7 +877,7 @@ export function HomeScreen() {
                         <YAxis domain={[0, 100]} stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <Tooltip
                           contentStyle={{
-                            background: 'white',
+                            background: 'var(--surface)',
                             border: '2.5px solid var(--line)',
                             borderRadius: '10px',
                             boxShadow: 'var(--plush-tiny)',
@@ -899,7 +899,7 @@ export function HomeScreen() {
                 </div>
 
 
-                <div className="plush" style={{ background: 'white', padding: 24 }}>
+                <div className="plush" style={{ background: 'var(--surface)', padding: 24 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Clock size={18} color="var(--sky-deep)" /> Hold Duration (seconds)
                   </h3>
@@ -911,7 +911,7 @@ export function HomeScreen() {
                         <YAxis stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <Tooltip
                           contentStyle={{
-                            background: 'white',
+                            background: 'var(--surface)',
                             border: '2.5px solid var(--line)',
                             borderRadius: '10px',
                             boxShadow: 'var(--plush-tiny)',
@@ -933,7 +933,7 @@ export function HomeScreen() {
                 </div>
 
 
-                <div className="plush" style={{ background: 'white', padding: 24, gridColumn: '1 / -1' }}>
+                <div className="plush" style={{ background: 'var(--surface)', padding: 24, gridColumn: '1 / -1' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Award size={18} color="var(--butter-deep)" /> Average Accuracy by Yoga Pose
                   </h3>
@@ -945,7 +945,7 @@ export function HomeScreen() {
                         <YAxis domain={[0, 100]} stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <Tooltip
                           contentStyle={{
-                            background: 'white',
+                            background: 'var(--surface)',
                             border: '2.5px solid var(--line)',
                             borderRadius: '10px',
                             boxShadow: 'var(--plush-tiny)',
@@ -975,7 +975,7 @@ export function HomeScreen() {
           <div className="popin" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, minHeight: 520 }}>
             
 
-            <div className="plush" style={{ background: 'white', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="plush" style={{ background: 'var(--surface)', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
               <h3 style={{ fontSize: 18, fontWeight: 900, borderBottom: '2.5px solid var(--line)', paddingBottom: 8, color: 'var(--ink)' }}>
                 Yoga Instructors
               </h3>
@@ -1004,7 +1004,7 @@ export function HomeScreen() {
                       overflow: 'hidden',
                       width: 32,
                       height: 32,
-                      background: 'white',
+                      background: 'var(--surface)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
@@ -1037,7 +1037,7 @@ export function HomeScreen() {
             </div>
 
 
-            <div className="plush" style={{ background: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 520 }}>
+            <div className="plush" style={{ background: 'var(--surface)', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 520 }}>
               
 
               <div style={{
@@ -1054,7 +1054,7 @@ export function HomeScreen() {
                   overflow: 'hidden',
                   width: 40,
                   height: 40,
-                  background: 'white',
+                  background: 'var(--surface)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -1129,7 +1129,7 @@ export function HomeScreen() {
                     >
                       <div
                         style={{
-                          background: isUser ? 'var(--butter)' : 'white',
+                          background: isUser ? 'var(--butter)' : 'var(--surface)',
                           border: '2.5px solid var(--line)',
                           borderRadius: isUser ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
                           padding: '12px 16px',
@@ -1153,7 +1153,7 @@ export function HomeScreen() {
                 {isTyping && (
                   <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{
-                      background: 'white',
+                      background: 'var(--surface)',
                       border: '2.5px solid var(--line)',
                       borderRadius: '12px 12px 12px 2px',
                       padding: '10px 16px',
@@ -1178,7 +1178,7 @@ export function HomeScreen() {
                 style={{
                   padding: '12px 16px',
                   borderTop: '2.5px solid var(--line)',
-                  background: 'white',
+                  background: 'var(--surface)',
                   display: 'flex',
                   gap: 12,
                   alignItems: 'center'
