@@ -30,6 +30,8 @@ A webcam posture coach for yoga and physiotherapy exercises. It tracks 33 body l
 | **Security** | httpOnly `SameSite=Lax` session cookie, CSRF header check, role-based access with per-doctor patient scoping, Zod validation on every body, server-side Google ID-token verification, rate-limited auth, PBKDF2 (210k iterations) with rehash on login | Covered by the API test suite |
 | **Live joint colouring** | The skeleton overlay colours each limb by whether that joint is inside its target range, with a halo on the joint that needs fixing | You can see *where* the pose is wrong without reading the cue list |
 | **Session replay** | The per-second log every session records is replayed on the report: scrub or play back the score, the cue and the joint angles for any second | Reviewing a session doesn't need the video, which never leaves the device |
+| **Breathing pacer** | A ring that expands and contracts on a 4s-in / 6s-out cycle while a hold is running, with the phase and a countdown | Gives the hold a rhythm; can be switched off and the choice sticks |
+| **Shareable session card** | The report renders a 1200×630 PNG on a canvas — grade, stats and the score curve with the hold threshold marked — in the colours of the active theme | One click to save a session summary worth posting |
 | **Themes** | Three palettes (Sunshine, Orchid and a dark Midnight) built on CSS custom properties, remembered per browser | Usable in a dim room; no hardcoded colours left in components |
 | **Schema migrations** | Versioned, transactional migrations with an advisory lock. Existing databases are upgraded in place: `TEXT` JSON becomes `JSONB`, the `clerk_id` column is renamed to `user_id`, and indexes are added. | Tested against the pre-migration production schema |
 

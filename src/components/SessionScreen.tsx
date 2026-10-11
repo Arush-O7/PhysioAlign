@@ -7,6 +7,7 @@ import { Keypoint } from '../utils/angleCalculations';
 import { TopBar } from './primitives';
 import { AngleSmoother, Stabilizer } from '../utils/smoothing';
 import { celebrate } from '../utils/celebrate';
+import { BreathingPacer } from './BreathingPacer';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
 import { useAuth } from '../utils/auth';
 import { Play, Pause, Square, AlertCircle, CheckCircle, HeartPulse } from 'lucide-react';
@@ -361,6 +362,8 @@ export function SessionScreen() {
               </div>
             </div>
           </div>
+
+          <BreathingPacer active={sessionActive} />
 
           {!sessionActive && activeSession.durationSeconds === 0 && (
             <div className="plush popin" style={{ padding: 20, background: 'var(--cream-2)' }}>

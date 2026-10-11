@@ -471,3 +471,18 @@ h3 { font-weight: 700; }
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   font-style: italic;
 }
+
+/* Breathing pacer ring: scales with the inhale/exhale phase */
+.breath-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2.5px solid var(--line);
+  box-shadow: var(--plush-tiny);
+  transition-property: transform, background-color;
+  transition-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breath-ring { transition-duration: 1ms !important; }
+}

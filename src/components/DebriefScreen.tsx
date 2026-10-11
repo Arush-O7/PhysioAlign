@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { store, useActiveSession, useUserData } from '../game/store';
 import { TopBar, Doodle } from './primitives';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot, CartesianGrid } from 'recharts';
-import { Activity, Clock, ArrowRight, Play, Pause } from 'lucide-react';
+import { Activity, Clock, ArrowRight, Play, Pause, Download } from 'lucide-react';
 import { escapeHtml } from '../utils/sanitize';
+import { downloadSessionCard } from '../utils/sessionCard';
 import { HOLD_SCORE_THRESHOLD } from '../game/types';
 
 export function DebriefScreen() {
@@ -284,8 +285,16 @@ export function DebriefScreen() {
           )}
         </div>
 
-        {/* Action button */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+        {/* Action buttons */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 20 }}>
+          <button
+            onClick={() => downloadSessionCard(activeSession)}
+            className="btn-plush ghost popin tap"
+            style={{ fontSize: 16, padding: '14px 26px', gap: 10 }}
+            title="Save a shareable image of this session"
+          >
+            <Download size={18} /> Save summary card
+          </button>
           <button
             onClick={handleReturn}
             className="btn-plush primary popin"
