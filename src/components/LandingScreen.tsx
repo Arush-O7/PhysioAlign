@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '../utils/auth';
-import { Wordmark, TopBar, PhysioLogo, ThemeSwitch } from './primitives';
+import { Wordmark, TopBar } from './primitives';
 import { store } from '../game/store';
-import { 
-  HeartPulse, 
-  TrendingUp, 
-  MessageSquare, 
-  CheckCircle, 
+import { WordHighlight } from './WordHighlight';
+import {
+  HeartPulse,
+  TrendingUp,
+  MessageSquare,
+  CheckCircle,
   Plus,
   Minus,
   Sparkles,
   Camera,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 
 interface LandingScreenProps {
@@ -19,376 +20,198 @@ interface LandingScreenProps {
   onEnterPractice?: () => void;
 }
 
+const FAQS = [
+  {
+    q: 'How does the real-time pose tracking work?',
+    a: "PhysioAlign uses Google MediaPipe directly in your browser. It accesses your webcam to track 33 key skeleton joint coordinates in real time, calculating joint angles to check your form. No video is ever sent to any server; it's private and runs local-first.",
+  },
+  {
+    q: 'What does the AI Attending Coach do?',
+    a: 'Once you complete a pose evaluation, your metrics (hold times, joint angles, deviations) are analyzed by Google Gemini AI. It acts as a clinical physical therapist, generating a structured report card, awarding a grade (A, B, C, or F), and providing safe anatomical alignment cues.',
+  },
+  {
+    q: 'Who are the three specialized AI Yoga Coaches?',
+    a: 'You can consult Zen Master Anya (for mindful breathing & slow alignment flows), Coach Rocky (for active core holding & muscle strength building), or Dr. Maya (a physical therapy specialist for joint modifications, stiffness recovery, and post-injury rehabilitation advice).',
+  },
+  {
+    q: 'How does the Pain & Stiffness Tracker work?',
+    a: "Before practicing, you can log how your body feels today on a scale of 1 to 10. PhysioAlign's AI decision engine automatically adapts your daily roadmap, recommending restorative holds and wellness habits if you feel stiff, or active pose challenges if you feel limber.",
+  },
+];
+
+const FEATURES = [
+  { icon: Camera, fill: 'var(--mint)', title: 'Joint tracking through your webcam', body: 'MediaPipe tracks 33 points on your body and checks joint angles and symmetry while you hold a pose. It runs in your browser, so the video stays on your device.' },
+  { icon: HeartPulse, fill: 'var(--rose)', title: 'A daily pain and stiffness log', body: 'Log how your joints feel today on a 1 to 10 scale and the day’s stretches, cues and pose variations adapt to it.' },
+  { icon: CheckCircle, fill: 'var(--butter)', title: 'A checklist for the day', body: 'Pose targets, water and breathing habits in one list, with a progress bar as you tick them off.' },
+  { icon: Sparkles, fill: 'var(--peach)', title: 'A graded report after every hold', body: 'Gemini reads your hold time, scores and deviations, gives the session a grade and writes the cues to fix next time.' },
+  { icon: MessageSquare, fill: 'var(--sky)', title: 'Three coaches to ask', body: 'Anya for breathing and alignment, Rocky for core strength, Dr. Maya for injury rehab and modifications.' },
+  { icon: TrendingUp, fill: 'var(--cream-2)', title: 'Progress charts', body: 'See how your accuracy, hold times and individual poses change over time, session by session.' },
+];
+
+
+const PROBLEMS = [
+  'A knee that drifts inward in Warrior II.',
+  'Hips that sag halfway through a plank.',
+  'A ten-second hold when you were asked for thirty.',
+];
+
 export function LandingScreen({ onStartLogin, onEnterPractice }: LandingScreenProps) {
   const { isSignedIn } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const faqs = [
-    {
-      q: "How does the real-time pose tracking work?",
-      a: "PhysioAlign uses Google MediaPipe directly in your browser. It accesses your webcam to track 33 key skeleton joint coordinates in real-time, calculating joint angles to check your form. No video is ever sent to any server—it's 100% private and runs local-first."
-    },
-    {
-      q: "What does the AI Attending Coach do?",
-      a: "Once you complete a pose evaluation, your metrics (hold times, joint angles, deviations) are analyzed by Google Gemini AI. It acts as a clinical physical therapist, generating a structured report card, awarding a grade (A, B, C, or F), and providing safe anatomical alignment cues."
-    },
-    {
-      q: "Who are the three specialized AI Yoga Coaches?",
-      a: "You can consult Zen Master Anya (for mindful breathing & slow alignment flows), Coach Rocky (for active core holding & muscle strength building), or Dr. Maya (a physical therapy specialist for joint modifications, stiffness recovery, and post-injury rehabilitation advice)."
-    },
-    {
-      q: "How does the Pain & Stiffness Tracker work?",
-      a: "Before practicing, you can log how your body feels today on a scale of 1 to 10. PhysioAlign's AI decision engine automatically adapts your daily roadmap—recommending restorative holds and wellness habits if you feel stiff, or active pose challenges if you feel limber."
-    }
-  ];
-
-  const toggleFaq = (idx: number) => {
-    setOpenFaq(openFaq === idx ? null : idx);
-  };
+  const start = isSignedIn ? () => store.setScreen('dashboard') : () => onEnterPractice?.();
+  const startLabel = isSignedIn ? 'Go to your dashboard' : 'Start a session';
 
   return (
-    <div className="screen dots-bg" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* Top Header Row */}
+    <div className="screen dots-bg landing">
       {isSignedIn ? (
         <TopBar here={0} steps={['Home']} />
       ) : (
-        <header style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px 32px',
-          borderBottom: '2.5px solid var(--line)',
-          background: 'var(--surface)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100
-        }}>
-          <Wordmark size={32} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <ThemeSwitch />
-          <button
-            onClick={() => onStartLogin?.()}
-            className="btn-plush primary"
-            style={{
-              fontSize: '15px',
-              padding: '10px 20px',
-              borderRadius: 'var(--r-pill)',
-              boxShadow: '0 3px 0 var(--line)'
-            }}
-          >
-            Get Started
+        <header className="landing-header">
+          <a href="#main" className="skip-link">Skip to content</a>
+          <Wordmark size={28} />
+          <button onClick={() => onStartLogin?.()} className="btn-plush primary sm">
+            Sign in
           </button>
-          </div>
         </header>
       )}
 
-      {/* Main Content */}
-      <main style={{
-        flex: 1,
-        maxWidth: 1100,
-        width: '100%',
-        margin: '0 auto',
-        padding: '48px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 64
-      }}>
-        
-        {/* Hero Section */}
-        <section style={{
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 24,
-          maxWidth: 760
-        }} className="popin">
-          
-          <div className="floaty" style={{ display: 'inline-block' }}>
-            <PhysioLogo size={120} />
+      <main id="main" tabIndex={-1}>
+        {/* hero: the first screen on its own */}
+        <section className="l-hero" aria-labelledby="hero-title">
+          <div className="l-wrap l-hero-grid">
+            <div className="l-hero-copy enter">
+              <h1 id="hero-title">Live posture coaching for home physio and yoga</h1>
+              <p className="l-lead">
+                Turn on your webcam and hold a pose. PhysioAlign tracks 33 points on your body and checks each joint
+                angle while you hold it, then grades the session. The video never leaves your device.
+              </p>
+              <div className="l-actions">
+                <button onClick={start} className="btn-plush primary tap l-cta">
+                  {startLabel}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </button>
+                <a href="#features" className="btn-plush ghost tap">See what it does</a>
+              </div>
+            </div>
+            <figure className="l-hero-shot plush enter">
+              <img
+                src="/preview-session.jpg"
+                width={1600}
+                height={920}
+                // React 18 only passes the lowercase attribute through
+                {...{ fetchpriority: 'high' }}
+                alt="A PhysioAlign session: the camera view with the tracked skeleton, live alignment cues and joint angle readouts"
+              />
+            </figure>
           </div>
-
-          <h1 style={{
-            fontSize: 'clamp(2.5rem, 5vw, 4.2rem)',
-            fontWeight: 900,
-            color: 'var(--ink)',
-            lineHeight: 1.1,
-            marginTop: 8
-          }}>
-            Real-time posture coaching <br/>
-            <span style={{
-              color: 'var(--peach-deep)',
-              position: 'relative',
-              display: 'inline-block'
-            }}>
-              for yoga &amp; physio
-              <span style={{
-                position: 'absolute',
-                bottom: -8,
-                left: 0,
-                width: '100%',
-                height: 6,
-                background: 'var(--butter)',
-                borderRadius: 4,
-                zIndex: -1
-              }} />
-            </span>
-          </h1>
-
-          <p style={{
-            fontSize: '17px',
-            fontWeight: 700,
-            color: 'var(--ink-2)',
-            lineHeight: 1.6,
-            maxWidth: 620
-          }}>
-            Pick a pose, turn on your camera, and PhysioAlign checks your joint angles as you hold it. You get live corrections, a timed hold score and a short report at the end. The video never leaves your device.
-          </p>
-
-          <button
-            onClick={isSignedIn ? () => store.setScreen('dashboard') : () => onEnterPractice?.()}
-            className="btn-plush primary tap"
-            style={{ fontSize: '18px', padding: '14px 30px', marginTop: 4 }}
-          >
-            {isSignedIn ? 'Go to dashboard' : 'Start a session'}
-            <ArrowRight size={18} style={{ strokeWidth: 3 }} />
-          </button>
-
-          <figure className="plush" style={{ margin: '20px 0 0', padding: 10, background: 'var(--surface)', width: '100%', maxWidth: 820 }}>
-            <img
-              src="/preview-session.jpg"
-              alt="A PhysioAlign session: the camera view with the tracked skeleton, live alignment cues and joint angle readouts"
-              style={{ display: 'block', width: '100%', borderRadius: 10, border: '2.5px solid var(--line)' }}
-            />
-          </figure>
         </section>
 
-        {/* Dynamic Features Showcase Grid */}
-        <section style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 28 }}>
-          <h2 style={{ fontSize: 28, fontWeight: 900, textAlign: 'center', color: 'var(--ink)' }}>
-            Recovery & Training Features
-          </h2>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: 24
-          }}>
-            {/* 1. Computer Vision */}
-            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--mint)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
-                <Camera size={20} color="var(--ink)" />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 900 }}>Webcam Joint Calibration</h3>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
-                Client-side MediaPipe tracks 33 anatomical keypoints to check joint extensions, angles, and symmetry in real time. Private, local, and secure.
+        {/* problem statement */}
+        <section className="l-section" aria-labelledby="problem-title">
+          <div className="l-wrap l-split">
+            <h2 id="problem-title">Home exercises drift when nobody is watching</h2>
+            <div>
+              <p className="l-body">
+                Your physio shows you a pose once. At home, on your own, small errors creep in and nobody is there to
+                catch them:
               </p>
-            </div>
-
-            {/* 2. Pain Tracker */}
-            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--rose)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
-                <HeartPulse size={20} color="var(--ink)" />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 900 }}>Daily Pain & Stiffness Log</h3>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
-                Adapt your workout to how your joints feel today. Log your daily stiffness index (1-10) to generate custom stretches, wellness cues, and joint variations.
-              </p>
-            </div>
-
-            {/* 3. Daily Habits */}
-            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--butter)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
-                <CheckCircle size={20} color="var(--ink)" />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 900 }}>Today's Wellness Roadmap</h3>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
-                A dynamic daily checklist linking pose practice targets, water hydration goals, and mindful breathing habits, keeping you motivated with progress bars.
-              </p>
-            </div>
-
-            {/* 4. AI Grader */}
-            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--peach)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
-                <Sparkles size={20} color="var(--ink)" />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 900 }}>Attending Coach AI Grader</h3>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
-                Gemini AI reviews your hold statistics, average scores, and deviations to award an OSCE-grade and output clinical cue corrections.
-              </p>
-            </div>
-
-            {/* 5. Specialized AI Coaches */}
-            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--sky)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
-                <MessageSquare size={20} color="var(--ink)" />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 900 }}>Multi-Coach Chat consult</h3>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
-                Chat directly with specialized AI yoga instructors: Anya (Zen Alignment), Rocky (Core & Strength), or Dr. Maya (Injury Rehab & Modifications).
-              </p>
-            </div>
-
-            {/* 6. Analytics Trends */}
-            <div className="plush tap" style={{ background: 'var(--surface)', padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--cream-2)', border: '2.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--plush-tiny)' }}>
-                <TrendingUp size={20} color="var(--ink)" />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 900 }}>Rehab Analytics & Charts</h3>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
-                Visualize your performance over time using responsive neobrutalist line and bar charts tracking average accuracy, hold times, and pose-by-pose statistics.
-              </p>
+              <ul className="l-problems">
+                {PROBLEMS.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 28 }}>
-          <h2 style={{ fontSize: 28, fontWeight: 900, textAlign: 'center', color: 'var(--ink)' }}>
-            How PhysioAlign Works
-          </h2>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 24,
-            justifyContent: 'center'
-          }}>
-            {/* Step 1 */}
-            <div className="plush" style={{ background: 'var(--surface)', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
-              <div style={{
-                position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
-                border: '2.5px solid var(--line)', background: 'var(--butter)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900,
-                boxShadow: 'var(--plush-tiny)'
-              }}>1</div>
-              <h3 style={{ fontSize: 18, fontWeight: 900, marginTop: 8 }}>Log Daily Index</h3>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
-                Select how your muscles and joints feel today. Receive an updated wellness checklist customized to your flexibility and stiffness.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="plush" style={{ background: 'var(--surface)', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
-              <div style={{
-                position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
-                border: '2.5px solid var(--line)', background: 'var(--mint)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900,
-                boxShadow: 'var(--plush-tiny)'
-              }}>2</div>
-              <h3 style={{ fontSize: 18, fontWeight: 900, marginTop: 8 }}>Calibrate & Hold</h3>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
-                Select a pose and start holding. PhysioAlign tracks joint angles, playing dynamic audio/speech alerts to adjust your shoulders, hips, or legs.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="plush" style={{ background: 'var(--surface)', padding: 24, flex: '1 1 280px', maxWidth: 320, position: 'relative' }}>
-              <div style={{
-                position: 'absolute', top: -16, left: -16, width: 40, height: 40, borderRadius: '50%',
-                border: '2.5px solid var(--line)', background: 'var(--sky)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900,
-                boxShadow: 'var(--plush-tiny)'
-              }}>3</div>
-              <h3 style={{ fontSize: 18, fontWeight: 900, marginTop: 8 }}>Consult & Track</h3>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 8, margin: 0 }}>
-                Receive your Gemini-powered clinical report. Chat with AI instructors to adjust poses, and review your progress over time in interactive charts.
-              </p>
-            </div>
+        {/* the one scroll moment, as a slim band between the problem and the answer */}
+        <section className="l-moment" aria-label="Privacy">
+          <div className="l-wrap">
+            <WordHighlight text="Your camera feed stays in this browser tab. PhysioAlign keeps the angles and scores from each session, never the video." />
           </div>
         </section>
 
-        {/* Interactive FAQ Section */}
-        <section style={{ width: '100%', maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <h2 style={{ fontSize: 28, fontWeight: 900, textAlign: 'center', color: 'var(--ink)', marginBottom: 8 }}>
-            Frequently Asked Questions
-          </h2>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div
-                  key={idx}
-                  className="plush"
-                  style={{
-                    background: 'var(--surface)',
-                    overflow: 'hidden',
-                    transition: 'all 200ms ease'
-                  }}
-                >
-                  <button
-                    onClick={() => toggleFaq(idx)}
-                    style={{
-                      width: '100%',
-                      padding: '18px 24px',
-                      background: 'none',
-                      border: 0,
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      color: 'var(--ink)',
-                      fontFamily: 'inherit',
-                      fontSize: '16px',
-                      fontWeight: 800
-                    }}
-                  >
-                    <span>{faq.q}</span>
-                    <div style={{
-                      width: 24, height: 24, borderRadius: 6, border: '2.5px solid var(--line)',
-                      background: isOpen ? 'var(--butter)' : 'var(--cream)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: isOpen ? 'none' : '0 1.5px 0 var(--line)',
-                      transform: isOpen ? 'translateY(1px)' : 'none'
-                    }}>
-                      {isOpen ? <Minus size={14} /> : <Plus size={14} />}
-                    </div>
-                  </button>
-                  
-                  {isOpen && (
-                    <div style={{
-                      padding: '0 24px 20px',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: 'var(--ink-2)',
-                      lineHeight: 1.6,
-                      borderTop: '2px dashed var(--line)',
-                      paddingTop: 16
-                    }}>
-                      {faq.a}
-                    </div>
-                  )}
+        {/* solution overview */}
+        <section className="l-section" id="features" aria-labelledby="features-title">
+          <div className="l-wrap">
+            <div className="l-head">
+              <h2 id="features-title">What PhysioAlign does for you</h2>
+              <p>Everything runs from one dashboard: practise, log how you feel, read your reports and ask a coach.</p>
+            </div>
+            <div className="l-features">
+              {FEATURES.map(({ icon: Icon, fill, title, body }) => (
+                <div key={title} className="plush l-feature">
+                  <div className="l-feature-head">
+                    {/* cream-2 is a ground colour, not an accent, so its icon takes the ink colour */}
+                    <span className="l-icon" style={{ background: fill, color: fill === 'var(--cream-2)' ? 'var(--ink)' : undefined }} aria-hidden="true">
+                      <Icon size={20} />
+                    </span>
+                    <h3>{title}</h3>
+                  </div>
+                  <p>{body}</p>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </section>
 
+
+        {/* call to action */}
+        <section className="l-section l-final" aria-labelledby="cta-title">
+          <div className="l-wrap">
+            <div className="l-final-card">
+              <div>
+                <h2 id="cta-title">Pick a pose and turn on your camera</h2>
+                <p>You need a webcam and enough room to step back until your knees, hips and shoulders are in frame.</p>
+              </div>
+              <button onClick={start} className="btn-plush primary tap l-cta">
+                {startLabel}
+                <ArrowRight size={18} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="l-faq" aria-labelledby="faq-title">
+          <div className="l-wrap l-faq-inner">
+            <div className="l-head">
+              <h2 id="faq-title">Questions</h2>
+              <p>About tracking, privacy, the reports and the coaches.</p>
+            </div>
+            <div className="l-faq-list">
+              {FAQS.map((faq, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div key={faq.q} className="plush l-faq-item">
+                    <button
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-${idx}`}
+                      id={`faq-q-${idx}`}
+                      className="l-faq-q"
+                    >
+                      <span>{faq.q}</span>
+                      <span className={`l-faq-toggle${isOpen ? ' is-open' : ''}`} aria-hidden="true">
+                        {isOpen ? <Minus size={14} /> : <Plus size={14} />}
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div id={`faq-${idx}`} role="region" aria-labelledby={`faq-q-${idx}`} className="l-faq-a">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer style={{
-        padding: '24px 32px',
-        borderTop: '2.5px solid var(--line)',
-        background: 'var(--cream-2)',
-        textAlign: 'center',
-        fontWeight: 800,
-        color: 'var(--ink-2)',
-        fontSize: '14px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        flexWrap: 'wrap'
-      }}>
-        <span>© 2026 PhysioAlign. All rights reserved.</span>
+      <footer className="landing-footer">
+        <span>© {new Date().getFullYear()} PhysioAlign</span>
       </footer>
-
     </div>
   );
 }

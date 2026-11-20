@@ -36,12 +36,13 @@ export class ErrorBoundary extends Component<Props, State> {
               height: 48,
               margin: '0 auto 14px',
               borderRadius: '50%',
-              border: '2.5px solid var(--line)',
+              border: 'var(--bw) solid var(--line)',
               background: 'var(--rose)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: 'var(--plush-tiny)',
+              color: 'var(--on-accent)'
             }}
           >
             <AlertTriangle size={22} />
@@ -72,7 +73,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 marginTop: 8,
                 padding: 10,
                 background: 'var(--cream)',
-                border: '2px solid var(--line)',
+                border: 'var(--bw-thin) solid var(--line)',
                 borderRadius: 10,
                 fontSize: 11,
                 whiteSpace: 'pre-wrap',

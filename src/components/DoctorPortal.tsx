@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useUser } from '../utils/auth';
 import { useUserData } from '../game/store';
 import { CarePlanItem, SessionData, UserData } from '../game/types';
-import { TopBar } from './primitives';
+import { TopBar, useDialog } from './primitives';
+import { useQueryParam } from '../game/router';
 import { POSES } from '../data/poses';
 import { 
   Users, 
@@ -48,11 +49,19 @@ export function DoctorPortal() {
   const { user } = useUser();
 
   const [patients, setPatients] = useState<PatientRecord[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  // search, filter and the open patient live in the address (?q=, ?view=all, ?patient=)
+  const [searchTerm, setSearchTerm] = useQueryParam('q');
+  const [viewParam, setViewParam] = useQueryParam('view');
+  const [patientParam, setPatientParam] = useQueryParam('patient');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loading, setLoading] = useState(true);
   
   const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
+  const closePatient = () => {
+    setSelectedPatient(null);
+    setPatientParam('');
+  };
+  const drawerRef = useDialog(!!selectedPatient, closePatient);
   const [patientHistory, setPatientHistory] = useState<SessionData[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionData | null>(null);
@@ -60,7 +69,8 @@ export function DoctorPortal() {
   const [aiReport, setAiReport] = useState('');
   const [generatingAi, setGeneratingAi] = useState(false);
 
-  const [activeFilterTab, setActiveFilterTab] = useState<'my' | 'all'>('my');
+  const activeFilterTab: 'my' | 'all' = viewParam === 'all' ? 'all' : 'my';
+  const setActiveFilterTab = (tab: 'my' | 'all') => setViewParam(tab === 'all' ? 'all' : '');
 
   const [prescribingPose, setPrescribingPose] = useState<string>('');
   const [prescribingHold, setPrescribingHold] = useState<number>(15);
@@ -86,8 +96,20 @@ export function DoctorPortal() {
     fetchPatients();
   }, []);
 
-  const handleSelectPatient = async (patient: PatientRecord) => {
+  // follow the address: open the patient it names (a link, a reload, forward), close on back
+  useEffect(() => {
+    if (!patientParam) {
+      if (selectedPatient) setSelectedPatient(null);
+      return;
+    }
+    if (selectedPatient?.id === patientParam) return;
+    const match = patients.find((p) => p.id === patientParam);
+    if (match) handleSelectPatient(match, { fromUrl: true });
+  }, [patientParam, patients]);
+
+  const handleSelectPatient = async (patient: PatientRecord, opts?: { fromUrl?: boolean }) => {
     setSelectedPatient(patient);
+    if (!opts?.fromUrl) setPatientParam(patient.id, { push: true });
     setPatientHistory([]);
     setSelectedSession(null);
     setAiReport('');
@@ -194,7 +216,7 @@ export function DoctorPortal() {
     <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--cream)' }}>
       <TopBar here={0} steps={['PT Clinic Dashboard']} userName={doctorData?.name} showProfile={true} />
 
-      <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
+      <main id="main" tabIndex={-1} style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
         <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', position: 'relative', overflow: 'hidden' }}>
           
@@ -209,42 +231,42 @@ export function DoctorPortal() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--mint)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
+            <div style={{ background: 'var(--mint)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
               <Users size={24} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Patients</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Total patients</div>
               <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>{totalPatientsCount}</div>
             </div>
           </div>
 
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--butter)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
+            <div style={{ background: 'var(--butter)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
               <Clock size={24} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg. Sessions</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Average sessions</div>
               <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>{avgAdherence} workouts</div>
             </div>
           </div>
 
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--peach)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
+            <div style={{ background: 'var(--peach)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
               <TrendingUp size={24} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg. ROM Accuracy</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Average ROM accuracy</div>
               <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>{avgAccuracy}%</div>
             </div>
           </div>
 
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: attentionRequired > 0 ? '#FFEAE6' : '#EAFCEF', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
-              <HeartPulse size={24} style={{ color: attentionRequired > 0 ? '#FF6B4A' : '#10B981' }} />
+            <div style={{ background: attentionRequired > 0 ? 'var(--rose)' : 'var(--mint)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
+              <HeartPulse size={24} aria-hidden="true" />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attention Alerts</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: attentionRequired > 0 ? '#FF6B4A' : 'var(--ink)', marginTop: 2 }}>{attentionRequired} patient(s)</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Needs attention</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: attentionRequired > 0 ? 'var(--rose-text)' : 'var(--ink)', marginTop: 2 }}>{attentionRequired} patient(s)</div>
             </div>
           </div>
         </div>
@@ -254,20 +276,20 @@ export function DoctorPortal() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>Active Recovery Registrants</h3>
               {doctorData?.role === 'admin' && (
-              <div style={{ display: 'flex', background: 'var(--cream)', border: '2.5px solid var(--line)', borderRadius: 10, padding: 3 }}>
+              <div style={{ display: 'flex', background: 'var(--cream)', border: 'var(--bw) solid var(--line)', borderRadius: 10, padding: 3 }}>
                 <button
                   onClick={() => setActiveFilterTab('my')}
                   style={{
                     background: activeFilterTab === 'my' ? 'var(--mint)' : 'transparent',
-                    border: activeFilterTab === 'my' ? '2px solid var(--line)' : '2px solid transparent',
+                    border: activeFilterTab === 'my' ? 'var(--bw-thin) solid var(--line)' : '2px solid transparent',
                     borderRadius: 6,
                     padding: '4px 12px',
                     fontSize: 12,
                     fontWeight: 900,
-                    color: 'var(--ink)',
+                    color: activeFilterTab === 'my' ? 'var(--on-accent)' : 'var(--ink)',
                     cursor: 'pointer',
-                    boxShadow: activeFilterTab === 'my' ? '1.5px 1.5px 0 var(--line)' : 'none',
-                    transition: 'all 0.1s ease'
+                    boxShadow: activeFilterTab === 'my' ? 'var(--sh-diag-1h)' : 'none',
+                    transition: 'transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease'
                   }}
                 >
                   My Patients
@@ -276,15 +298,15 @@ export function DoctorPortal() {
                   onClick={() => setActiveFilterTab('all')}
                   style={{
                     background: activeFilterTab === 'all' ? 'var(--mint)' : 'transparent',
-                    border: activeFilterTab === 'all' ? '2px solid var(--line)' : '2px solid transparent',
+                    border: activeFilterTab === 'all' ? 'var(--bw-thin) solid var(--line)' : '2px solid transparent',
                     borderRadius: 6,
                     padding: '4px 12px',
                     fontSize: 12,
                     fontWeight: 900,
-                    color: 'var(--ink)',
+                    color: activeFilterTab === 'all' ? 'var(--on-accent)' : 'var(--ink)',
                     cursor: 'pointer',
-                    boxShadow: activeFilterTab === 'all' ? '1.5px 1.5px 0 var(--line)' : 'none',
-                    transition: 'all 0.1s ease'
+                    boxShadow: activeFilterTab === 'all' ? 'var(--sh-diag-1h)' : 'none',
+                    transition: 'transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease'
                   }}
                 >
                   All Patients
@@ -306,24 +328,27 @@ export function DoctorPortal() {
                 }} 
               />
               <input
-                type="text"
-                placeholder="Search patient database..."
+                type="search"
+                name="patient-search"
+                aria-label="Search patients"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Search patients…"
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 style={{
                   width: '100%',
                   padding: '10px 14px 10px 42px',
-                  border: '2.5px solid var(--line)',
+                  border: 'var(--bw) solid var(--line)',
                   borderRadius: 12,
                   fontSize: 14,
                   fontFamily: 'inherit',
                   fontWeight: 800,
                   color: 'var(--ink)',
-                  outline: 'none',
-                  boxShadow: isSearchFocused ? '5px 5px 0 var(--line)' : '3px 3px 0 var(--line)',
+                  boxShadow: isSearchFocused ? 'var(--sh-diag-5)' : 'var(--sh-diag-3)',
                   background: 'var(--surface)',
                   transform: isSearchFocused ? 'translate(-2px, -2px)' : 'none',
-                  transition: 'all 0.1s ease'
+                  transition: 'transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease'
                 }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -333,23 +358,24 @@ export function DoctorPortal() {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', fontSize: 15, fontWeight: 800, color: 'var(--ink-soft)' }}>
-              Loading registered patient data...
+              Loading registered patient data…
             </div>
           ) : filteredPatients.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', border: '3.5px dashed var(--line)', borderRadius: 16, fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)' }}>
+            <div style={{ textAlign: 'center', padding: '40px 0', border: 'var(--bw-thick) dashed var(--line)', borderRadius: 16, fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)' }}>
               No registered patients match your search.
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
               {filteredPatients.map(p => (
-                <div 
+                <button
+                  type="button"
                   key={p.id}
                   onClick={() => handleSelectPatient(p)}
-                  className="plush-card tap"
+                  className="tap card-btn"
                   style={{
                     padding: '20px 22px',
                     background: 'var(--surface)',
-                    border: '2.5px solid var(--line)',
+                    border: 'var(--bw) solid var(--line)',
                     borderRadius: 'var(--r-md)',
                     cursor: 'pointer',
                     display: 'flex',
@@ -361,24 +387,24 @@ export function DoctorPortal() {
                 >
                   <div>
                     <h4 style={{ fontSize: 18, color: 'var(--ink)', margin: 0, fontWeight: 900 }}>{p.name}</h4>
-                    <p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '4px 0 0', fontWeight: 800, textTransform: 'uppercase' }}>
+                    <p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '4px 0 0', fontWeight: 800 }}>
                       Goal: {p.goal} • {p.age} y/o
                     </p>
                   </div>
                   
-                  <div style={{ borderTop: '2px dashed var(--line)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800 }}>
+                  <div style={{ borderTop: 'var(--bw-thin) dashed var(--line)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800 }}>
                     <div>
                       <span style={{ color: 'var(--ink-soft)' }}>Sessions:</span>{' '}
                       <span style={{ color: 'var(--ink)' }}>{p.sessionCount}</span>
                     </div>
                     <div>
                       <span style={{ color: 'var(--ink-soft)' }}>ROM Rating:</span>{' '}
-                      <span style={{ color: p.avgScore < 70 && p.sessionCount > 0 ? '#FF6B4A' : '#10B981' }}>
+                      <span style={{ color: p.avgScore < 70 && p.sessionCount > 0 ? 'var(--rose-text)' : 'var(--mint-text)' }}>
                         {p.sessionCount > 0 ? `${p.avgScore}%` : 'N/A'}
                       </span>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -386,7 +412,7 @@ export function DoctorPortal() {
       </main>
 
       {selectedPatient && (
-        <div style={{
+        <div onClick={(e) => e.target === e.currentTarget && closePatient()} style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -396,26 +422,33 @@ export function DoctorPortal() {
           zIndex: 100,
           display: 'flex',
           justifyContent: 'flex-end',
-          alignItems: 'stretch'
+          alignItems: 'stretch',
+          overscrollBehavior: 'contain'
         }}>
-          <div style={{ flex: 1 }} onClick={() => setSelectedPatient(null)} />
-          
-          <div className="slide-in-right" style={{
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="patient-drawer-title"
+            tabIndex={-1}
+            className="slide-in-right"
+            style={{
             width: '100%',
             maxWidth: 680,
             background: 'var(--cream)',
-            borderLeft: '2.5px solid var(--line)',
+            borderLeft: 'var(--bw) solid var(--line)',
             padding: '32px 28px',
             display: 'flex',
             flexDirection: 'column',
             gap: 24,
             overflowY: 'auto',
-            boxShadow: '-10px 0 0 rgba(43, 30, 22, 0.1)'
+            overscrollBehavior: 'contain',
+            boxShadow: 'var(--sh-drawer)'
           }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px dashed var(--line)', paddingBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'var(--bw-thin) dashed var(--line)', paddingBottom: 16 }}>
               <div>
-                <h2 style={{ fontSize: 26, color: 'var(--ink)', margin: 0 }}>{selectedPatient.name}</h2>
+                <h2 id="patient-drawer-title" style={{ fontSize: 26, color: 'var(--ink)', margin: 0 }}>{selectedPatient.name}</h2>
                 <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '4px 0 0', fontWeight: 800 }}>
                   Access Profile: {selectedPatient.email} • {selectedPatient.age} years old
                 </p>
@@ -431,36 +464,37 @@ export function DoctorPortal() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
-                    boxShadow: '2px 2px 0 var(--line)'
+                    boxShadow: 'var(--sh-diag-2)'
                   }}
                   title="Export workout logs to CSV"
                 >
                   <Download size={14} /> Export CSV
                 </button>
                 <button 
-                  onClick={() => setSelectedPatient(null)}
+                  onClick={closePatient}
+                  aria-label="Close patient details"
                   style={{
-                    border: '2.5px solid var(--line)',
+                    border: 'var(--bw) solid var(--line)',
                     background: 'var(--surface)',
                     borderRadius: 12,
                     padding: 8,
                     cursor: 'pointer',
                     display: 'flex',
-                    boxShadow: '2px 2px 0 var(--line)'
+                    boxShadow: 'var(--sh-diag-2)'
                   }}
                 >
-                  <X size={20} />
+                  <X size={20} aria-hidden="true" />
                 </button>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="plush" style={{ padding: '12px 16px', background: 'var(--surface)', fontSize: 13 }}>
-                <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', fontSize: 10 }}>Experience Level</span>
+                <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', fontSize: 10 }}>Experience level</span>
                 <span style={{ fontWeight: 800, color: 'var(--ink)', textTransform: 'capitalize' }}>{selectedPatient.experience}</span>
               </div>
               <div className="plush" style={{ padding: '12px 16px', background: 'var(--surface)', fontSize: 13 }}>
-                <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', fontSize: 10 }}>Wellness Goal</span>
+                <span style={{ display: 'block', fontWeight: 900, color: 'var(--ink-soft)', fontSize: 10 }}>Wellness goal</span>
                 <span style={{ fontWeight: 800, color: 'var(--ink)', textTransform: 'capitalize' }}>{selectedPatient.goal}</span>
               </div>
             </div>
@@ -470,7 +504,7 @@ export function DoctorPortal() {
               return (
                 <div className="plush" style={{ background: 'var(--surface)', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <HeartPulse size={18} style={{ color: 'var(--rose-deep)' }} /> Rehabilitative Care Plan
+                    <HeartPulse size={18} style={{ color: 'var(--rose-text)' }} /> Rehabilitative Care Plan
                   </h4>
                   
                   {currentCarePlan.length === 0 ? (
@@ -489,7 +523,7 @@ export function DoctorPortal() {
                               alignItems: 'center', 
                               justifyContent: 'space-between', 
                               padding: '10px 14px', 
-                              border: '2.5px solid var(--line)', 
+                              border: 'var(--bw) solid var(--line)', 
                               borderRadius: 8, 
                               background: 'var(--cream)' 
                             }}
@@ -499,11 +533,12 @@ export function DoctorPortal() {
                                 {poseConfig?.name || planItem.poseId}
                               </div>
                               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-soft)', marginTop: 2 }}>
-                                Target Hold: <span style={{ color: 'var(--peach-deep)' }}>{planItem.targetHold}s</span> • Frequency: {planItem.frequency}
+                                Target Hold: <span style={{ color: 'var(--peach-text)' }}>{planItem.targetHold}s</span> • Frequency: {planItem.frequency}
                               </div>
                             </div>
                             <button
                               disabled={isUpdatingCarePlan}
+                              aria-label={`Remove ${poseConfig?.name || planItem.poseId} from the plan`}
                               onClick={() => {
                                 const newPlan = currentCarePlan.filter((_, idx) => idx !== index);
                                 handleSaveCarePlan(newPlan);
@@ -511,7 +546,7 @@ export function DoctorPortal() {
                               style={{
                                 background: 'transparent',
                                 border: 'none',
-                                color: 'var(--rose-deep)',
+                                color: 'var(--rose-text)',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 padding: 4
@@ -530,7 +565,7 @@ export function DoctorPortal() {
                     style={{ 
                       marginTop: 8,
                       padding: '14px 16px',
-                      border: '2.5px dashed var(--line)',
+                      border: 'var(--bw) dashed var(--line)',
                       borderRadius: 12,
                       background: 'var(--paper)',
                       display: 'flex',
@@ -540,24 +575,25 @@ export function DoctorPortal() {
                   >
                     <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink)' }}>Prescribe Pose</div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1.8fr', gap: 10 }}>
+                    <div className="layout-plan-row">
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: 'var(--ink-soft)' }}>Select Pose</label>
+                        <label htmlFor="plan-pose" style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-2)' }}>Pose</label>
                         <select
+                          id="plan-pose"
                           value={prescribingPose}
                           onChange={(e) => setPrescribingPose(e.target.value)}
                           style={{
                             padding: '6px 8px',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             borderRadius: 6,
                             background: 'var(--surface)',
-                            fontSize: 12,
+                            color: 'var(--ink)',
+                            fontSize: 13,
                             fontWeight: 800,
                             fontFamily: 'inherit',
-                            outline: 'none'
                           }}
                         >
-                          <option value="">-- Select Pose --</option>
+                          <option value="">Choose a pose</option>
                           {POSES.map(p => (
                             <option key={p.id} value={p.id}>{p.name.split(' (')[0]}</option>
                           ))}
@@ -565,19 +601,20 @@ export function DoctorPortal() {
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: 'var(--ink-soft)' }}>Target Hold</label>
+                        <label htmlFor="plan-hold" style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-2)' }}>Target hold</label>
                         <select
+                          id="plan-hold"
                           value={prescribingHold}
                           onChange={(e) => setPrescribingHold(parseInt(e.target.value))}
                           style={{
                             padding: '6px 8px',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             borderRadius: 6,
                             background: 'var(--surface)',
-                            fontSize: 12,
+                            color: 'var(--ink)',
+                            fontSize: 13,
                             fontWeight: 800,
                             fontFamily: 'inherit',
-                            outline: 'none'
                           }}
                         >
                           {[5, 10, 15, 20, 30, 45, 60].map(s => (
@@ -587,19 +624,20 @@ export function DoctorPortal() {
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: 'var(--ink-soft)' }}>Frequency</label>
+                        <label htmlFor="plan-frequency" style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-2)' }}>Frequency</label>
                         <select
+                          id="plan-frequency"
                           value={prescribingFreq}
                           onChange={(e) => setPrescribingFreq(e.target.value)}
                           style={{
                             padding: '6px 8px',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             borderRadius: 6,
                             background: 'var(--surface)',
-                            fontSize: 12,
+                            color: 'var(--ink)',
+                            fontSize: 13,
                             fontWeight: 800,
                             fontFamily: 'inherit',
-                            outline: 'none'
                           }}
                         >
                           {['Daily', '3x a week', '2x a week', 'Weekly', 'Every other day'].map(f => (
@@ -633,7 +671,7 @@ export function DoctorPortal() {
                         justifyContent: 'center',
                         gap: 6,
                         margin: '4px 0 0',
-                        boxShadow: '2px 2px 0 var(--line)'
+                        boxShadow: 'var(--sh-diag-2)'
                       }}
                     >
                       <Plus size={14} /> Add Prescription
@@ -646,7 +684,7 @@ export function DoctorPortal() {
             <div className="plush" style={{ background: 'var(--surface)', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Sparkles size={18} style={{ color: 'var(--peach-deep)' }} /> Clinician Clinical Insight
+                  <Sparkles size={18} style={{ color: 'var(--peach-text)' }} /> Clinician Clinical Insight
                 </h4>
                 <button
                   onClick={handleGenerateAiInsight}
@@ -654,13 +692,13 @@ export function DoctorPortal() {
                   className="btn-plush primary"
                   style={{ fontSize: 12, padding: '8px 14px', borderRadius: 8, margin: 0 }}
                 >
-                  {generatingAi ? 'Analyzing Metrics...' : 'Generate AIPT Report'}
+                  {generatingAi ? 'Analyzing Metrics…' : 'Generate AIPT Report'}
                 </button>
               </div>
 
               {generatingAi ? (
                 <div style={{ textAlign: 'center', padding: '24px 0', fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)' }}>
-                  Attending Grader AI is compiling range-of-motion metrics...
+                  Attending Grader AI is compiling range-of-motion metrics…
                 </div>
               ) : aiReport ? (
                 <div 
@@ -671,10 +709,10 @@ export function DoctorPortal() {
                     color: 'var(--ink-2)', 
                     maxHeight: 280, 
                     overflowY: 'auto', 
-                    border: '2.5px solid var(--line)', 
+                    border: 'var(--bw) solid var(--line)', 
                     borderRadius: 12, 
                     padding: 16, 
-                    background: '#FDFBF7'
+                    background: 'var(--paper)'
                   }}
                   dangerouslySetInnerHTML={{ __html: aiReport }}
                 />
@@ -700,7 +738,7 @@ export function DoctorPortal() {
                       }))}
                       margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--ink) 14%, transparent)" />
                       <XAxis dataKey="frame" />
                       <YAxis domain={[0, 100]} />
                       <Tooltip />
@@ -727,7 +765,7 @@ export function DoctorPortal() {
               
               {historyLoading ? (
                 <div style={{ textAlign: 'center', padding: '20px 0', fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)' }}>
-                  Loading sessions...
+                  Loading sessions…
                 </div>
               ) : patientHistory.length === 0 ? (
                 <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: 0, fontWeight: 700 }}>
@@ -737,7 +775,7 @@ export function DoctorPortal() {
                 <div style={{ maxHeight: 220, overflowY: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
                     <thead>
-                      <tr style={{ borderBottom: '2.5px solid var(--line)', color: 'var(--ink-soft)', fontWeight: 900 }}>
+                      <tr style={{ borderBottom: 'var(--bw) solid var(--line)', color: 'var(--ink-soft)', fontWeight: 900 }}>
                         <th style={{ padding: '8px 4px' }}>Date</th>
                         <th style={{ padding: '8px 4px' }}>Pose</th>
                         <th style={{ padding: '8px 4px' }}>Duration</th>
@@ -752,7 +790,7 @@ export function DoctorPortal() {
                           key={s.id} 
                           onClick={() => setSelectedSession(s)}
                           style={{ 
-                            borderBottom: '2px dashed var(--line)', 
+                            borderBottom: 'var(--bw-thin) dashed var(--line)', 
                             fontWeight: 800, 
                             cursor: 'pointer',
                             background: selectedSession?.id === s.id ? 'var(--cream)' : 'transparent'
@@ -765,10 +803,11 @@ export function DoctorPortal() {
                           <td style={{ padding: '10px 4px' }}>{s.averageScore}%</td>
                           <td style={{ padding: '10px 4px' }}>
                             <span style={{
-                              background: s.grade === 'A' ? 'var(--mint)' : s.grade === 'B' ? 'var(--butter)' : '#FFEAE6',
+                              background: s.grade === 'A' ? 'var(--mint)' : s.grade === 'B' ? 'var(--butter)' : 'var(--rose)',
+                              color: 'var(--on-accent)',
                               padding: '2px 8px',
                               borderRadius: 6,
-                              border: '2.5px solid var(--line)',
+                              border: 'var(--bw) solid var(--line)',
                               fontSize: 11
                             }}>
                               {s.grade}

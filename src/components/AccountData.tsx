@@ -61,8 +61,9 @@ export function AccountData() {
       {error && (
         <div
           style={{
-            background: '#FFEAE6',
-            border: '2.5px solid var(--line)',
+            background: 'var(--rose)',
+            color: 'var(--on-accent)',
+            border: 'var(--bw) solid var(--line)',
             borderRadius: 'var(--r-sm)',
             padding: '10px 14px',
             fontSize: 13,
@@ -93,7 +94,7 @@ export function AccountData() {
           style={{
             marginTop: 14,
             padding: 14,
-            border: '2.5px solid var(--line)',
+            border: 'var(--bw) solid var(--line)',
             borderRadius: 'var(--r-sm)',
             background: 'var(--cream)',
           }}
@@ -108,7 +109,7 @@ export function AccountData() {
               aria-label={`Type ${CONFIRM_WORD} to confirm`}
               placeholder={CONFIRM_WORD}
               style={{
-                border: '2.5px solid var(--line)',
+                border: 'var(--bw) solid var(--line)',
                 borderRadius: 'var(--r-sm)',
                 padding: '8px 12px',
                 fontFamily: 'inherit',

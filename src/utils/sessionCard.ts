@@ -1,7 +1,7 @@
 import { HOLD_SCORE_THRESHOLD, type SessionData } from '../game/types';
 
-// Renders a shareable PNG of a finished session, drawn in the colours of the
-// theme that's currently active so the card matches what the user sees.
+// Renders a shareable PNG of a finished session, drawn in the app's own
+// colour tokens so the card matches what the user sees.
 const W = 1200;
 const H = 630;
 

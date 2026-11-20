@@ -43,7 +43,7 @@ export function ConnectionBanner() {
         right: 0,
         zIndex: 3000,
         background: offline ? 'var(--butter)' : 'var(--rose)',
-        borderBottom: '2.5px solid var(--line)',
+        borderBottom: 'var(--bw) solid var(--line)',
         padding: '8px 16px',
         display: 'flex',
         alignItems: 'center',
@@ -51,7 +51,7 @@ export function ConnectionBanner() {
         gap: 10,
         fontSize: 13.5,
         fontWeight: 800,
-        color: 'var(--ink)',
+        color: 'var(--on-accent)',
       }}
     >
       {offline ? <WifiOff size={16} /> : <CloudOff size={16} />}

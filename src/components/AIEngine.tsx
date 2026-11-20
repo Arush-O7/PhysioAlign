@@ -267,29 +267,29 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: 24, textAlign: 'center', color: 'var(--ink)'
-        }}>
-          <AlertCircle size={48} color="var(--rose-deep)" style={{ marginBottom: 12 }} />
-          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Camera Error</h3>
+          padding: 24, textAlign: 'center', color: 'var(--ink)', background: 'var(--paper)'
+        }} role="alert">
+          <AlertCircle size={48} color="var(--rose-deep)" style={{ marginBottom: 12 }} aria-hidden="true" />
+          <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Camera unavailable</h3>
           <p style={{ fontSize: 14, color: 'var(--ink-2)' }}>{error}</p>
         </div>
       ) : (
         <>
           {/* Overlay state spinner */}
           {(!isModelLoaded || !isCameraActive) && (
-            <div style={{
+            <div role="status" style={{
               position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255, 250, 240, 0.9)', zIndex: 20, textAlign: 'center'
+              background: 'color-mix(in srgb, var(--paper) 90%, transparent)', zIndex: 20, textAlign: 'center'
             }}>
               <div className="breathe" style={{ marginBottom: 12 }}>
-                <Camera size={44} color="var(--ink-soft)" />
+                <Camera size={44} color="var(--ink-soft)" aria-hidden="true" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>
-                {!isModelLoaded ? 'Loading Posture Model...' : 'Initializing Camera...'}
+                {!isModelLoaded ? 'Loading Posture Model…' : 'Initializing Camera…'}
               </h3>
               <p style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-                {!isModelLoaded ? 'Loading the MediaPipe pose model...' : 'Please allow camera access'}
+                {!isModelLoaded ? 'Loading the MediaPipe pose model…' : 'Please allow camera access'}
               </p>
             </div>
           )}
@@ -311,7 +311,8 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
                 padding: '2px 8px',
                 boxShadow: 'var(--plush-tiny)',
                 background: 'var(--butter)',
-                fontWeight: 900
+                fontWeight: 900,
+                color: 'var(--on-accent)'
               }}>
                 Target Pose
               </span>
@@ -319,8 +320,8 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
                 width: 110,
                 height: 110,
                 background: 'var(--surface)',
-                border: '2.5px solid var(--line)',
-                boxShadow: '3px 3px 0 var(--line)',
+                border: 'var(--bw) solid var(--line)',
+                boxShadow: 'var(--sh-diag-3)',
                 borderRadius: 8,
                 overflow: 'hidden',
                 display: 'flex',
@@ -358,7 +359,7 @@ export const AIEngine = memo(({ onPoseDetected, onPoseLost, onStatusChange, pose
           {isModelLoaded && isCameraActive && (
             <div style={{
               position: 'absolute', bottom: 12, right: 12, zIndex: 15,
-              background: 'var(--surface)', border: '2.5px solid var(--line)', padding: '2px 8px',
+              background: 'var(--surface)', border: 'var(--bw) solid var(--line)', padding: '2px 8px',
               borderRadius: 'var(--r-sm)', fontSize: 11, fontWeight: 800, boxShadow: 'var(--plush-tiny)'
             }}>
               CV Engine: {fps} FPS{detectorMode === 'worker' ? ' · worker' : ''}

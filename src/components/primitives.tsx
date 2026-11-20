@@ -1,8 +1,52 @@
 import { useEffect, useRef, useState } from 'react';
 import { LogOut, RotateCcw, User, X } from 'lucide-react';
-import { applyTheme, getTheme, THEMES, Theme } from '../utils/theme';
 import { store, useScreen, useActiveTab, useUserData } from '../game/store';
 import { useAuth, useUser } from '../utils/auth';
+
+// shared behaviour for the help modal and the clinician's patient drawer:
+// Escape closes, focus moves into the panel and goes back where it was, and the
+// page behind stops scrolling
+export function useDialog(open: boolean, onClose: () => void) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    panelRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRef.current();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflow;
+      previous?.focus?.();
+    };
+  }, [open]);
+
+  return panelRef;
+}
+
+// keyboard support for a clickable row that can't be a <button> because it holds
+// its own buttons. Enter or Space on the row itself (not on a child control) runs it
+export function pressable(action: () => void) {
+  return {
+    role: 'button' as const,
+    tabIndex: 0,
+    onClick: action,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.target !== e.currentTarget) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        action();
+      }
+    },
+  };
+}
 
 // --- DOODLE ICONS ---
 export type DoodleKind = 'star' | 'flower' | 'heart' | 'cross' | 'leaf';
@@ -79,11 +123,13 @@ export function Doodle({ kind, size = 24, color = 'var(--line)', className = '' 
 export function Wordmark({ size = 32, dark = false }) {
   return (
     <div
+      className="wordmark"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: 10,
-        fontFamily: 'Nunito',
+        // the wordmark is the logotype, so it always uses Nunito
+        fontFamily: "'Nunito', system-ui, sans-serif",
         fontWeight: 900,
         fontSize: size,
         color: dark ? 'white' : 'var(--ink)',
@@ -107,35 +153,34 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ steps, here }: BreadcrumbProps) {
   return (
-    <div className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <nav aria-label="Progress" className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
       {steps.map((step, idx) => (
         <span key={step} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          {idx > 0 && <span className="sep" style={{ fontWeight: 800, color: 'var(--ink-soft)' }}>/</span>}
+          {idx > 0 && <span className="sep" aria-hidden="true" style={{ fontWeight: 800, color: 'var(--ink-soft)' }}>/</span>}
           {idx === here ? (
             <span 
+              aria-current="step"
               className="here popin" 
               style={{ 
                 fontFamily: 'inherit',
                 fontWeight: 900,
                 fontSize: '13px',
-                color: 'var(--ink)',
+                color: 'var(--on-accent)',
                 background: 'var(--butter)',
-                border: '2.5px solid var(--line)',
+                border: 'var(--bw) solid var(--line)',
                 borderRadius: '8px',
                 padding: '4px 12px',
-                boxShadow: 'var(--plush-tiny)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                boxShadow: 'var(--plush-tiny)'
               }}
             >
               {step}
             </span>
           ) : (
-            <span style={{ opacity: 0.6, fontWeight: 700, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{step}</span>
+            <span style={{ color: 'var(--ink-soft)', fontWeight: 700, fontSize: '13px' }}>{step}</span>
           )}
         </span>
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -145,34 +190,6 @@ interface TopBarProps {
   steps: string[];
   userName?: string;
   showProfile?: boolean;
-}
-
-const THEME_SWATCH: Record<Theme, { label: string; background: string }> = {
-  sunshine: { label: 'Sunshine', background: 'linear-gradient(135deg, #FFD86B 50%, #FFB68A 50%)' },
-  orchid: { label: 'Orchid', background: 'linear-gradient(135deg, #C9B8FF 50%, #FFD9F2 50%)' },
-  midnight: { label: 'Midnight', background: 'linear-gradient(135deg, #221F2E 50%, #6EE7B7 50%)' },
-};
-
-export function ThemeSwitch() {
-  const [theme, setTheme] = useState<Theme>(() => getTheme());
-
-  return (
-    <div className="theme-switch" role="group" aria-label="Colour theme">
-      {THEMES.map((name) => (
-        <button
-          key={name}
-          onClick={() => {
-            setTheme(name);
-            applyTheme(name);
-          }}
-          aria-pressed={theme === name}
-          aria-label={`${THEME_SWATCH[name].label} theme`}
-          title={`${THEME_SWATCH[name].label} theme`}
-          style={{ background: THEME_SWATCH[name].background }}
-        />
-      ))}
-    </div>
-  );
 }
 
 function ProfileMenu() {
@@ -204,7 +221,7 @@ function ProfileMenu() {
           height: 38,
           padding: 0,
           borderRadius: '50%',
-          border: '2.5px solid var(--line)',
+          border: 'var(--bw) solid var(--line)',
           boxShadow: 'var(--plush-tiny)',
           background: 'var(--surface)',
           overflow: 'hidden',
@@ -217,7 +234,7 @@ function ProfileMenu() {
 
       {open && (
         <div className="menu-sheet" role="menu">
-          <div style={{ padding: '6px 10px 10px', borderBottom: '2px dashed var(--line)', marginBottom: 6 }}>
+          <div style={{ padding: '6px 10px 10px', borderBottom: 'var(--bw-thin) dashed var(--line)', marginBottom: 6 }}>
             <div style={{ fontWeight: 900, fontSize: 13.5 }}>{user.fullName}</div>
             <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-soft)', wordBreak: 'break-all' }}>
               {user.primaryEmailAddress.emailAddress}
@@ -262,6 +279,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
   const activeTab = useActiveTab();
   const userData = useUserData();
   const [helpOpen, setHelpOpen] = useState(false);
+  const helpRef = useDialog(helpOpen, () => setHelpOpen(false));
 
   // clinicians and admins have their own workspace, so don't show them patient links
   const navItems =
@@ -279,17 +297,19 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
   const home = userData?.role === 'admin' ? 'admin' : userData?.role === 'doctor' ? 'doctor' : 'dashboard';
 
   return (
-    <div className="appbar">
+    <header className="appbar">
+      <a href="#main" className="skip-link">Skip to content</a>
       <button
         onClick={() => store.setScreen(home)}
         title="Back to your dashboard"
+        aria-label="PhysioAlign, back to your dashboard"
         style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: 0, padding: 0, cursor: 'pointer' }}
       >
         <Wordmark size={24} />
       </button>
 
       {showProfile ? (
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <nav aria-label="Main" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {navItems.map((item) => (
             <button
               key={item.label}
@@ -308,18 +328,11 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
         <Breadcrumb steps={steps} here={here} />
       )}
 
-      {showProfile ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <ThemeSwitch />
-          <ProfileMenu />
-        </div>
-      ) : (
-        <ThemeSwitch />
-      )}
+      {showProfile && <ProfileMenu />}
 
       {/* Help Modal */}
       {helpOpen && (
-        <div style={{
+        <div onClick={(e) => e.target === e.currentTarget && setHelpOpen(false)} style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -330,9 +343,17 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 20
+          padding: 20,
+          overscrollBehavior: 'contain'
         }}>
-          <div className="plush popin" style={{
+          <div
+            ref={helpRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="help-title"
+            tabIndex={-1}
+            className="plush popin"
+            style={{
             background: 'var(--surface)',
             maxWidth: 580,
             width: '100%',
@@ -341,7 +362,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
             flexDirection: 'column',
             borderRadius: 'var(--r-md)',
             overflow: 'hidden',
-            border: '2.5px solid var(--line)',
+            border: 'var(--bw) solid var(--line)',
           }}>
             {/* Modal Header */}
             <div style={{
@@ -349,30 +370,32 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '16px 20px',
-              borderBottom: '2.5px solid var(--line)',
+              borderBottom: 'var(--bw) solid var(--line)',
               background: 'var(--mint)',
+              color: 'var(--on-accent)'
             }}>
-              <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
-                PhysioAlign Guide & FAQs
-              </h3>
+              <h2 id="help-title" style={{ fontSize: 20, fontWeight: 900, color: 'var(--on-accent)', margin: 0 }}>
+                How PhysioAlign works
+              </h2>
               <button
                 onClick={() => setHelpOpen(false)}
+                aria-label="Close help"
                 className="tap"
                 style={{
                   padding: '4px',
                   borderRadius: '50%',
-                  width: 30,
-                  height: 30,
+                  width: 36,
+                  height: 36,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  border: '2.5px solid var(--line)',
+                  border: 'var(--bw) solid var(--line)',
                   background: 'var(--surface)',
                   boxShadow: 'var(--plush-tiny)'
                 }}
               >
-                <X size={16} />
+                <X size={18} aria-hidden="true" />
               </button>
             </div>
 
@@ -380,6 +403,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
             <div style={{
               flex: 1,
               overflowY: 'auto',
+              overscrollBehavior: 'contain',
               padding: 24,
               display: 'flex',
               flexDirection: 'column',
@@ -387,7 +411,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
               background: 'var(--cream)',
             }}>
               {/* Quick Instructions */}
-              <div className="plush" style={{ padding: 18, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+              <div className="plush" style={{ padding: 18, background: 'var(--surface)', border: 'var(--bw) solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                 <h4 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', marginTop: 0, marginBottom: 8 }}>
                   How to use PhysioAlign
                 </h4>
@@ -406,7 +430,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   Frequently Asked Questions
                 </h4>
                 
-                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: 'var(--bw) solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     How does the real-time pose tracking work?
                   </h5>
@@ -415,7 +439,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   </p>
                 </div>
 
-                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: 'var(--bw) solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     What does the AI Attending Coach do?
                   </h5>
@@ -424,7 +448,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
                   </p>
                 </div>
 
-                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="plush" style={{ padding: 14, background: 'var(--surface)', border: 'var(--bw) solid var(--line)', borderRadius: 'var(--r-sm)' }}>
                   <h5 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: '0 0 6px 0' }}>
                     Who are the three specialized AI Yoga Coaches?
                     {" "}
@@ -438,7 +462,7 @@ export function TopBar({ here, steps, showProfile = true }: TopBarProps) {
           </div>
         </div>
       )}
-    </div>
+    </header>
   );
 }
 
@@ -479,7 +503,7 @@ export function PhysioLogo({ size = 80, className = '' }) {
         height: size, 
         borderRadius: '50%',
         overflow: 'hidden',
-        border: '2.5px solid var(--line)',
+        border: 'var(--bw) solid var(--line)',
         boxShadow: 'var(--plush-tiny)',
         display: 'inline-flex',
         alignItems: 'center',
@@ -490,7 +514,7 @@ export function PhysioLogo({ size = 80, className = '' }) {
     >
       <img 
         src="/logo.png?v=4" 
-        alt="PhysioAlign Logo" 
+        alt="" 
         style={{ 
           width: '100%', 
           height: '100%', 

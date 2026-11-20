@@ -17,7 +17,7 @@ export function DebriefScreen() {
   if (!activeSession) {
     return (
       <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h3>Loading Debrief Report...</h3>
+        <h3>Loading Debrief Report…</h3>
       </div>
     );
   }
@@ -58,7 +58,7 @@ export function DebriefScreen() {
     <div className="screen" style={{ background: 'var(--cream)' }}>
       <TopBar here={3} steps={['Dashboard', 'Pose Select', 'Evaluation', 'Debrief Grader']} userName={userData?.name} />
 
-      <main style={{ maxWidth: 1024, margin: '28px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }} className="popin">
+      <main id="main" tabIndex={-1} style={{ maxWidth: 1024, margin: '28px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }} className="popin">
         
         {/* Grader Header Card */}
         <div className="plush" style={{ padding: '28px 24px', background: 'var(--surface)', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
@@ -84,21 +84,21 @@ export function DebriefScreen() {
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', color: 'var(--ink-soft)' }}>
                 <Activity size={14} />
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Avg Score</span>
+                <span style={{ fontSize: 11, fontWeight: 800 }}>Average score</span>
               </div>
               <h2 style={{ fontSize: 24, fontWeight: 900, marginTop: 4 }}>{activeSession.averageScore}%</h2>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', color: 'var(--ink-soft)' }}>
                 <Clock size={14} />
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Hold Time</span>
+                <span style={{ fontSize: 11, fontWeight: 800 }}>Hold time</span>
               </div>
-              <h2 style={{ fontSize: 24, fontWeight: 900, marginTop: 4, color: 'var(--mint-deep)' }}>{activeSession.holdTimeSeconds}s</h2>
+              <h2 style={{ fontSize: 24, fontWeight: 900, marginTop: 4, color: 'var(--mint-text)' }}>{activeSession.holdTimeSeconds}s</h2>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', color: 'var(--ink-soft)' }}>
                 <Clock size={14} />
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Total Time</span>
+                <span style={{ fontSize: 11, fontWeight: 800 }}>Total time</span>
               </div>
               <h2 style={{ fontSize: 24, fontWeight: 900, marginTop: 4 }}>{formatDuration(activeSession.durationSeconds)}</h2>
             </div>
@@ -107,7 +107,7 @@ export function DebriefScreen() {
 
         {/* Biomechanical Hold Graph Card (Recharts) */}
         <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: '2.5px solid var(--line)', paddingBottom: 10, marginBottom: 16 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 10, marginBottom: 16 }}>
             Alignment Accuracy Over Time
           </h3>
 
@@ -125,13 +125,13 @@ export function DebriefScreen() {
                       <stop offset="95%" stopColor="var(--mint-deep)" stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(43,30,22,0.1)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--ink) 14%, transparent)" />
                   <XAxis dataKey="second" stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} tickFormatter={(s) => `${s}s`} />
                   <YAxis domain={[0, 100]} stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                   <Tooltip
                     contentStyle={{
                       background: 'var(--paper)',
-                      border: '2.5px solid var(--line)',
+                      border: 'var(--bw) solid var(--line)',
                       borderRadius: 'var(--r-sm)',
                       fontWeight: 700,
                       color: 'var(--ink)'
@@ -156,7 +156,7 @@ export function DebriefScreen() {
           </div>
 
           {frameCount > 0 && (
-            <div style={{ marginTop: 18, borderTop: '2px dashed var(--line)', paddingTop: 16 }}>
+            <div style={{ marginTop: 18, borderTop: 'var(--bw-thin) dashed var(--line)', paddingTop: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <button
                   onClick={() => {
@@ -197,7 +197,7 @@ export function DebriefScreen() {
                     gap: 14,
                     flexWrap: 'wrap',
                     background: 'var(--cream)',
-                    border: '2.5px solid var(--line)',
+                    border: 'var(--bw) solid var(--line)',
                     borderRadius: 'var(--r-sm)',
                     padding: '12px 16px',
                   }}
@@ -205,11 +205,12 @@ export function DebriefScreen() {
                   <span
                     style={{
                       fontSize: 26,
+                      fontVariantNumeric: 'tabular-nums',
                       fontWeight: 900,
                       color:
                         activeSession.frameLogs[replaySecond].score >= HOLD_SCORE_THRESHOLD
-                          ? 'var(--mint-deep)'
-                          : 'var(--peach-deep)',
+                          ? 'var(--mint-text)'
+                          : 'var(--peach-text)',
                     }}
                   >
                     {activeSession.frameLogs[replaySecond].score}%
@@ -232,7 +233,7 @@ export function DebriefScreen() {
 
         {/* Attending Coach Critique Markdown card */}
         <div className="debrief-report paper">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '2.5px solid var(--line)', paddingBottom: 10, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 10, marginBottom: 14 }}>
             <Doodle kind="star" size={24} color="var(--butter)" />
             <h3 style={{ fontSize: 20, fontWeight: 900 }}>AI Attending Grader Critique</h3>
           </div>
@@ -240,12 +241,12 @@ export function DebriefScreen() {
           {activeSession.critiqueStatus === 'saving' || activeSession.critiqueStatus === 'pending' ? (
             <div style={{ padding: '32px 16px', textAlign: 'center' }}>
               <div className="breathe" style={{ display: 'inline-block', marginBottom: 12 }}>
-                <Clock size={36} className="floaty" style={{ color: 'var(--peach-deep)' }} />
+                <Clock size={36} className="floaty" style={{ color: 'var(--peach-text)' }} />
               </div>
               <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)' }}>
                 {activeSession.critiqueStatus === 'saving'
-                  ? 'Saving your session...'
-                  : 'Session saved. Your coach is writing the report...'}
+                  ? 'Saving your session…'
+                  : 'Session saved. Your coach is writing the report…'}
               </p>
               <p style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700, marginTop: 4 }}>
                 You can leave this page, the report will be in your history when it's ready.
@@ -275,7 +276,7 @@ export function DebriefScreen() {
               __html: activeSession.aiCritique 
                 // Convert simple markdown elements returned from Gemini into HTML tags:
                 ? escapeHtml(activeSession.aiCritique)
-                    .replace(/### (.*)/g, '<h3 style="font-size: 18px; font-weight: 800; color: var(--ink); margin: 18px 0 8px; border-bottom: 2px dashed var(--line); padding-bottom: 4px;">$1</h3>')
+                    .replace(/### (.*)/g, '<h3 style="font-size: 18px; font-weight: 800; color: var(--ink); margin: 18px 0 8px; border-bottom: var(--bw-thin) dashed var(--line); padding-bottom: 4px;">$1</h3>')
                     .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--ink); font-weight: 800;">$1</strong>')
                     .replace(/\*(.*?)\*/g, '<em style="color: var(--ink-soft); font-style: italic;">$1</em>')
                     .replace(/- (.*)/g, '<li style="margin-left: 20px; margin-bottom: 4px; font-weight: 700; list-style-type: square;">$1</li>')

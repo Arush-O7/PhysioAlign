@@ -228,7 +228,7 @@ export function SessionScreen() {
   if (!pose || !activeSession) {
     return (
       <div className="screen dots-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h3>Initializing Session...</h3>
+        <h3>Initializing Session…</h3>
       </div>
     );
   }
@@ -257,26 +257,27 @@ export function SessionScreen() {
           transform: 'translateX(-50%)',
           zIndex: 1000,
           background: 'var(--mint)',
-          border: '2.5px solid var(--line)',
+          border: 'var(--bw) solid var(--line)',
           borderRadius: 'var(--r-md)',
           boxShadow: 'var(--plush-sm)',
           padding: '16px 24px',
           display: 'flex',
           alignItems: 'center',
           gap: 16,
-          animation: 'pop-in 400ms cubic-bezier(.5,1.7,.4,1) forwards',
+          animation: 'pop-in 320ms var(--ease-out) forwards',
+          color: 'var(--on-accent)'
         }}>
-          <CheckCircle size={24} color="var(--ink)" />
-          <div>
-            <h4 style={{ fontWeight: 900, fontSize: 16, color: 'var(--ink)' }}>Target Hold Reached!</h4>
-            <p style={{ fontWeight: 700, fontSize: 13, margin: '2px 0 0', color: 'var(--ink-2)', opacity: 0.9 }}>
+          <CheckCircle size={24} aria-hidden="true" />
+          <div role="status">
+            <h4 style={{ fontWeight: 900, fontSize: 16 }}>Target Hold Reached!</h4>
+            <p style={{ fontWeight: 700, fontSize: 13, margin: '2px 0 0', opacity: 0.85 }}>
               Excellent alignment. You held the posture for {customTargetHold} seconds.
             </p>
           </div>
           <button 
             onClick={() => setTargetReached(false)} 
             className="btn-plush ghost tap" 
-            style={{ padding: '6px 12px', fontSize: 12, border: '2.5px solid var(--line)', boxShadow: 'none' }}
+            style={{ padding: '6px 12px', fontSize: 12, border: 'var(--bw) solid var(--line)', boxShadow: 'none' }}
           >
             Dismiss
           </button>
@@ -285,22 +286,22 @@ export function SessionScreen() {
 
       {isAnalyzing && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(255, 250, 240, 0.95)', zIndex: 100,
+          position: 'fixed', inset: 0,
+          background: 'color-mix(in srgb, var(--paper) 95%, transparent)', zIndex: 100,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           textAlign: 'center', padding: 24
         }}>
           <div className="breathe" style={{ marginBottom: 16 }}>
             <HeartPulse size={64} className="floaty" color="var(--peach-deep)" />
           </div>
-          <h2 style={{ fontSize: 26, fontWeight: 900 }}>AI Attending Grader analyzing...</h2>
+          <h2 style={{ fontSize: 26, fontWeight: 900 }}>AI Attending Grader analyzing…</h2>
           <p style={{ fontSize: 15, color: 'var(--ink-2)', fontWeight: 700, marginTop: 6, maxWidth: 360 }}>
             Analyzing joint deviations, hold consistency, and assembling your anatomical critique report.
           </p>
         </div>
       )}
 
-      <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
+      <main id="main" tabIndex={-1} className="layout-split" style={{ maxWidth: 1200, margin: '24px auto', padding: '0 24px' }}>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <AIEngine
@@ -311,15 +312,15 @@ export function SessionScreen() {
             jointStatus={jointStatus}
           />
 
-          <div className="plush" style={{ padding: 18, background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', gap: 12 }}>
+          <div className="plush" style={{ padding: 18, background: 'var(--surface)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               {!sessionActive ? (
                 <button onClick={handleStart} className="btn-plush mint" style={{ padding: '8px 16px', fontSize: 15 }}>
-                  <Play size={16} /> Start Hold
+                  <Play size={16} aria-hidden="true" /> Start hold
                 </button>
               ) : (
                 <button onClick={handlePause} className="btn-plush ghost" style={{ padding: '8px 16px', fontSize: 15 }}>
-                  <Pause size={16} /> Pause
+                  <Pause size={16} aria-hidden="true" /> Pause
                 </button>
               )}
               
@@ -329,12 +330,12 @@ export function SessionScreen() {
                 className="btn-plush primary"
                 style={{ padding: '8px 16px', fontSize: 15 }}
               >
-                <Square size={14} /> Finish & Grade
+                <Square size={14} aria-hidden="true" /> Finish &amp;&nbsp;grade
               </button>
             </div>
 
-            <button onClick={handleCancel} className="btn-plush ghost" style={{ padding: '8px 16px', fontSize: 14, color: 'var(--rose-deep)' }}>
-              Exit Practice
+            <button onClick={handleCancel} className="btn-plush ghost" style={{ padding: '8px 16px', fontSize: 14, color: 'var(--rose-text)', whiteSpace: 'nowrap' }}>
+              Exit practice
             </button>
           </div>
         </div>
@@ -342,22 +343,22 @@ export function SessionScreen() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           
           <div className="plush-lg" style={{ padding: 20, background: 'var(--surface)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
-            <div style={{ borderRight: '2px dashed var(--line)' }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Practice Duration
+            <div style={{ borderRight: 'var(--bw-thin) dashed var(--line)' }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)' }}>
+                Practice time
               </span>
               <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--ink)', marginTop: 4 }}>
                 {formatTime(activeSession.durationSeconds)}
               </h2>
             </div>
             <div>
-              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Correct Posture Hold
+              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--ink-soft)' }}>
+                Correct hold
               </span>
-              <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--mint-deep)', marginTop: 4, marginBottom: 4 }}>
+              <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--mint-text)', marginTop: 4, marginBottom: 4 }}>
                 {activeSession.holdTimeSeconds}s
               </h2>
-              <div style={{ fontSize: 11, fontWeight: 800, color: prescribedTargetHold && prescribedTargetHold === customTargetHold ? 'var(--rose-deep)' : 'var(--peach-deep)' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: prescribedTargetHold && prescribedTargetHold === customTargetHold ? 'var(--rose-text)' : 'var(--peach-text)' }}>
                 Goal: {customTargetHold}s {prescribedTargetHold && prescribedTargetHold === customTargetHold ? '(Prescribed)' : '(Custom)'}
               </div>
             </div>
@@ -367,8 +368,8 @@ export function SessionScreen() {
 
           {!sessionActive && activeSession.durationSeconds === 0 && (
             <div className="plush popin" style={{ padding: 20, background: 'var(--cream-2)' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8, color: 'var(--ink)' }}>
-                🎯 Target Hold Goal
+              <h3 style={{ fontSize: 15, fontWeight: 900, marginBottom: 8, color: 'var(--ink)' }}>
+                Target hold
               </h3>
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 14 }}>
                 Adjust how long you want to hold this posture. A voice cue will trigger when you reach this target.
@@ -377,18 +378,20 @@ export function SessionScreen() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
                 <button 
                   onClick={() => setCustomTargetHold(prev => Math.max(5, prev - 5))}
+                  aria-label="5 seconds shorter"
                   className="btn-plush ghost tap"
                   style={{ padding: 0, width: 40, height: 40, borderRadius: 10, fontSize: 18 }}
                   type="button"
                 >
-                  -
+                  −
                 </button>
-                <div style={{ textAlign: 'center', flex: 1 }}>
+                <div aria-live="polite" className="num" style={{ textAlign: 'center', flex: 1 }}>
                   <span style={{ fontSize: 24, fontWeight: 900, color: 'var(--ink)' }}>{customTargetHold}</span>
                   <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)', marginLeft: 4 }}>seconds</span>
                 </div>
                 <button 
                   onClick={() => setCustomTargetHold(prev => Math.min(300, prev + 5))}
+                  aria-label="5 seconds longer"
                   className="btn-plush ghost tap"
                   style={{ padding: 0, width: 40, height: 40, borderRadius: 10, fontSize: 18 }}
                   type="button"
@@ -403,7 +406,7 @@ export function SessionScreen() {
                     key={seconds}
                     onClick={() => setCustomTargetHold(seconds)}
                     className={`chip tap ${customTargetHold === seconds ? 'peach' : ''}`}
-                    style={{ border: '2.5px solid var(--line)', padding: '4px 10px', fontSize: 12, fontWeight: 800 }}
+                    style={{ border: 'var(--bw) solid var(--line)', padding: '4px 10px', fontSize: 12, fontWeight: 800 }}
                     type="button"
                   >
                     {seconds}s
@@ -418,18 +421,19 @@ export function SessionScreen() {
             padding: 20,
             background: isCalibrating ? 'var(--cream-2)' : feedback?.severity === 'error' ? 'var(--rose)' : feedback?.severity === 'warning' ? 'var(--butter)' : 'var(--mint)',
             minHeight: 120,
+            color: isCalibrating ? 'var(--ink)' : 'var(--on-accent)',
             transition: 'background 300ms ease'
           }}>
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ marginTop: 2 }}>
                 {feedback?.severity === 'success' ? (
-                  <CheckCircle size={22} color="var(--ink)" />
+                  <CheckCircle size={22} aria-hidden="true" />
                 ) : (
-                  <AlertCircle size={22} color="var(--ink)" />
+                  <AlertCircle size={22} aria-hidden="true" />
                 )}
               </div>
               <div>
-                <h3 style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800 }}>
                   {isCalibrating ? 'Calibrating Position' : feedback?.severity === 'success' ? 'Perfect Alignment!' : 'Adjustment Cues'}
                 </h3>
                 <p style={{ fontSize: 14, fontWeight: 700, marginTop: 4, lineHeight: 1.4 }}>
@@ -450,13 +454,13 @@ export function SessionScreen() {
 
 
           <div className="plush" style={{ padding: 20, background: 'var(--surface)' }}>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center', borderBottom: '2.5px solid var(--line)', paddingBottom: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 12, marginBottom: 12 }}>
               <div style={{
                 width: 70,
                 height: 70,
                 flexShrink: 0,
                 borderRadius: 8,
-                border: '2.5px solid var(--line)',
+                border: 'var(--bw) solid var(--line)',
                 background: 'var(--cream)',
                 overflow: 'hidden',
                 display: 'flex',
@@ -471,15 +475,15 @@ export function SessionScreen() {
               </div>
               <div>
                 <h3 style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>{pose.name} Reference</h3>
-                <p style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>
+                <p style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 800, marginTop: 2 }}>
                   Difficulty: {pose.difficulty}
                 </p>
               </div>
             </div>
 
             <div>
-              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                How to Perform
+              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-soft)' }}>
+                How to do it
               </span>
               <ol style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--ink)', fontWeight: 700, lineHeight: 1.4 }}>
                 {pose.instructions.map((inst, idx) => (
@@ -491,13 +495,13 @@ export function SessionScreen() {
 
 
           <div className="plush" style={{ padding: 20, background: 'var(--surface)' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, borderBottom: '2.5px solid var(--line)', paddingBottom: 8, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 8, marginBottom: 12 }}>
               Joint Angle Calibrator
             </h3>
 
             {isCalibrating ? (
               <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-soft)' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Awaiting pose tracking data...</p>
+                <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Awaiting pose tracking data…</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -513,7 +517,7 @@ export function SessionScreen() {
                     <div key={jointKey}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800, marginBottom: 4 }}>
                         <span style={{ color: 'var(--ink)' }}>{target.label}</span>
-                        <span style={{ color: isError ? 'var(--rose-deep)' : 'var(--mint-deep)' }}>
+                        <span style={{ color: isError ? 'var(--rose-text)' : 'var(--mint-text)' }}>
                           {currentAngle}° <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>(Ideal: {target.min}°-{target.max}°)</span>
                         </span>
                       </div>
@@ -522,7 +526,7 @@ export function SessionScreen() {
                       <div style={{
                         height: 12,
                         background: 'var(--cream)',
-                        border: '2.5px solid var(--line)',
+                        border: 'var(--bw) solid var(--line)',
                         borderRadius: 'var(--r-pill)',
                         overflow: 'hidden',
                         position: 'relative'
@@ -541,9 +545,9 @@ export function SessionScreen() {
                           width: `${((target.max - target.min) / 180) * 100}%`,
                           height: '100%',
                           top: 0,
-                          borderLeft: '2px dashed var(--line)',
-                          borderRight: '2px dashed var(--line)',
-                          background: 'rgba(0, 0, 0, 0.05)',
+                          borderLeft: 'var(--bw-thin) dashed var(--line)',
+                          borderRight: 'var(--bw-thin) dashed var(--line)',
+                          background: 'color-mix(in srgb, var(--ink) 8%, transparent)',
                           pointerEvents: 'none'
                         }} />
                       </div>

@@ -47,7 +47,7 @@ export function SplashScreen() {
 
       {/* Footer */}
       <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)' }}>
-        Built with ❤️ for your daily yoga practice. Powered by MediaPipe & Gemini.
+        Pose tracking by MediaPipe. Session reports by Gemini.
       </div>
     </div>
   );

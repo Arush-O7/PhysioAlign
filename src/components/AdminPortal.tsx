@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryParam } from '../game/router';
 import { useAuth } from '../utils/auth';
 import { apiFetch } from '../utils/api';
 import { store, useUserData } from '../game/store';
@@ -50,7 +51,7 @@ export function AdminPortal() {
     uptime: '0s'
   });
   const [users, setUsers] = useState<UserRow[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useQueryParam('q');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -187,7 +188,7 @@ export function AdminPortal() {
     <div className="screen dots-bg" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--cream)' }}>
       <TopBar here={0} steps={['System Administrator Dashboard']} userName={adminData?.name} showProfile={true} />
 
-      <main style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
+      <main id="main" tabIndex={-1} style={{ maxWidth: 1200, width: '100%', margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24, flex: 1 }}>
         
         <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', position: 'relative', overflow: 'hidden' }}>
           
@@ -202,41 +203,41 @@ export function AdminPortal() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--mint)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
+            <div style={{ background: 'var(--mint)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
               <Database size={24} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SQL Database Engine</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Database engine</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', marginTop: 4 }}>{stats.dbEngine}</div>
             </div>
           </div>
 
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--butter)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
+            <div style={{ background: 'var(--butter)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
               <Shield size={24} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Directory Database Size</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Database size</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', marginTop: 4 }}>{stats.dbSize}</div>
             </div>
           </div>
 
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: 'var(--peach)', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
+            <div style={{ background: 'var(--peach)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
               <Activity size={24} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Workouts Logged</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Workouts logged</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', marginTop: 4 }}>{stats.sessions} sessions</div>
             </div>
           </div>
 
           <div className="plush" style={{ padding: '20px 22px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: '#EAFCEF', border: '2.5px solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--ink)' }}>
-              <Cpu size={24} style={{ color: '#10B981' }} />
+            <div style={{ background: 'var(--mint)', border: 'var(--bw) solid var(--line)', padding: 12, borderRadius: 12, display: 'flex', color: 'var(--on-accent)' }}>
+              <Cpu size={24} aria-hidden="true" />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Process Uptime</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-soft)' }}>Server uptime</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', marginTop: 4 }}>{stats.uptime}</div>
             </div>
           </div>
@@ -265,24 +266,27 @@ export function AdminPortal() {
                 }} 
               />
               <input
-                type="text"
-                placeholder="Search name, email, or role..."
+                type="search"
+                name="user-search"
+                aria-label="Search accounts"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Search name, email or role…"
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 style={{
                   width: '100%',
                   padding: '10px 14px 10px 42px',
-                  border: '2.5px solid var(--line)',
+                  border: 'var(--bw) solid var(--line)',
                   borderRadius: 12,
                   fontSize: 14,
                   fontFamily: 'inherit',
                   fontWeight: 800,
                   color: 'var(--ink)',
-                  outline: 'none',
-                  boxShadow: isSearchFocused ? '5px 5px 0 var(--line)' : '3px 3px 0 var(--line)',
+                  boxShadow: isSearchFocused ? 'var(--sh-diag-5)' : 'var(--sh-diag-3)',
                   background: 'var(--surface)',
                   transform: isSearchFocused ? 'translate(-2px, -2px)' : 'none',
-                  transition: 'all 0.1s ease'
+                  transition: 'transform 100ms ease, box-shadow 100ms ease'
                 }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -292,17 +296,17 @@ export function AdminPortal() {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', fontSize: 15, fontWeight: 800, color: 'var(--ink-soft)' }}>
-              Loading user directory logs...
+              Loading user directory logs…
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', border: '3.5px dashed var(--line)', borderRadius: 16, fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)' }}>
+            <div style={{ textAlign: 'center', padding: '40px 0', border: 'var(--bw-thick) dashed var(--line)', borderRadius: 16, fontSize: 14, fontWeight: 800, color: 'var(--ink-soft)' }}>
               No accounts match your query parameters.
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, textAlign: 'left', minWidth: 600 }}>
                 <thead>
-                  <tr style={{ borderBottom: '2.5px solid var(--line)', color: 'var(--ink-soft)', fontWeight: 900 }}>
+                  <tr style={{ borderBottom: 'var(--bw) solid var(--line)', color: 'var(--ink-soft)', fontWeight: 900 }}>
                     <th style={{ padding: '12px 8px' }}>User Details</th>
                     <th style={{ padding: '12px 8px' }}>Clerk ID</th>
                     <th style={{ padding: '12px 8px' }}>Demographics</th>
@@ -316,10 +320,10 @@ export function AdminPortal() {
                     <tr 
                       key={u.id}
                       style={{ 
-                        borderBottom: '2px dashed var(--line)', 
+                        borderBottom: 'var(--bw-thin) dashed var(--line)', 
                         fontWeight: 800, 
                         opacity: updatingId === u.id ? 0.5 : 1,
-                        background: u.id === userId ? '#F6FFF8' : 'transparent'
+                        background: u.id === userId ? 'var(--cream-2)' : 'transparent'
                       }}
                     >
                       <td style={{ padding: '14px 8px' }}>
@@ -328,19 +332,21 @@ export function AdminPortal() {
                             width: 36,
                             height: 36,
                             borderRadius: '50%',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'var(--surface)',
+                            color: u.role === 'patient' ? 'var(--ink)' : 'var(--on-accent)',
+                            flexShrink: 0,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
-                          }}>
+                          }} aria-hidden="true">
                             {u.role === 'admin' ? <Shield size={16} /> : u.role === 'doctor' ? <Stethoscope size={16} /> : <User size={16} />}
                           </div>
                           <div>
                             <div style={{ color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
                               {u.name}
                               {u.id === userId && (
-                                <span style={{ fontSize: 9, background: 'var(--mint)', border: '2.5px solid var(--line)', padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>You</span>
+                                <span style={{ fontSize: 11, background: 'var(--mint)', border: 'var(--bw) solid var(--line)', padding: '1px 6px', borderRadius: 4, color: 'var(--on-accent)' }}>You</span>
                               )}
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontWeight: 700 }}>{u.email}</div>
@@ -365,16 +371,17 @@ export function AdminPortal() {
                           value={u.role}
                           disabled={updatingId === u.id}
                           onChange={(e) => handleChangeRole(u.id, e.target.value as any)}
+                          aria-label={`Role for ${u.name}`}
                           style={{
+                            color: u.role === 'patient' ? 'var(--ink)' : 'var(--on-accent)',
                             padding: '6px 10px',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             borderRadius: 'var(--r-sm)',
                             background: u.role === 'admin' ? 'var(--peach)' : u.role === 'doctor' ? 'var(--mint)' : 'var(--surface)',
                             fontFamily: 'inherit',
                             fontWeight: 800,
                             fontSize: 12,
                             cursor: 'pointer',
-                            outline: 'none'
                           }}
                         >
                           <option value="patient">Patient</option>
@@ -389,14 +396,15 @@ export function AdminPortal() {
                             style={{
                               marginLeft: 8,
                               padding: '6px 10px',
-                              border: '2.5px solid var(--line)',
+                              border: 'var(--bw) solid var(--line)',
                               borderRadius: 'var(--r-sm)',
                               background: 'var(--butter)',
                               fontFamily: 'inherit',
                               fontWeight: 900,
                               fontSize: 12,
                               cursor: 'pointer',
-                              boxShadow: '2px 2px 0 var(--line)'
+                              boxShadow: 'var(--sh-diag-2)',
+                              color: 'var(--on-accent)'
                             }}
                           >
                             Approve
@@ -410,16 +418,17 @@ export function AdminPortal() {
                             value={u.doctorId || ''}
                             disabled={updatingId === u.id}
                             onChange={(e) => handleAssignDoctor(u.id, e.target.value)}
+                            aria-label={`Doctor for ${u.name}`}
                             style={{
+                              color: 'var(--ink)',
                               padding: '6px 10px',
-                              border: '2.5px solid var(--line)',
+                              border: 'var(--bw) solid var(--line)',
                               borderRadius: 'var(--r-sm)',
                               background: 'var(--surface)',
                               fontFamily: 'inherit',
                               fontWeight: 800,
                               fontSize: 12,
                               cursor: 'pointer',
-                              outline: 'none'
                             }}
                           >
                             <option value="">No Doctor Assigned</option>
@@ -435,16 +444,17 @@ export function AdminPortal() {
                       <td style={{ padding: '14px 8px', textAlign: 'center' }}>
                         <button
                           onClick={() => handleDeleteUser(u.id, u.name)}
+                          aria-label={`Delete ${u.name}'s account`}
                           disabled={updatingId === u.id || u.id === userId}
                           style={{
-                            border: '2.5px solid var(--line)',
-                            background: u.id === userId ? '#F1F5F9' : '#FFEAE6',
-                            color: u.id === userId ? 'var(--ink-soft)' : '#FF6B4A',
+                            border: 'var(--bw) solid var(--line)',
+                            background: u.id === userId ? 'var(--cream-2)' : 'var(--rose)',
+                            color: u.id === userId ? 'var(--ink-soft)' : 'var(--on-accent)',
                             padding: '8px',
                             borderRadius: 10,
                             cursor: u.id === userId ? 'not-allowed' : 'pointer',
                             display: 'inline-flex',
-                            boxShadow: u.id === userId ? 'none' : '2px 2px 0 var(--line)',
+                            boxShadow: u.id === userId ? 'none' : 'var(--sh-diag-2)',
                             transition: 'transform 0.1s'
                           }}
                           className={u.id === userId ? '' : 'tap'}

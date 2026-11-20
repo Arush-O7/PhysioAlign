@@ -141,6 +141,12 @@ class PhysioStore {
     }
   }
 
+  // opens a saved session's report
+  viewSession(session: SessionData) {
+    this.state = { ...this.state, activeSession: session, screen: 'debrief' };
+    this.notify();
+  }
+
   selectPose(poseId: string) {
     this.state = {
       ...this.state,

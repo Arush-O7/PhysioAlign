@@ -12,7 +12,7 @@ export function PoseLibraryScreen() {
     <div className="screen" style={{ background: 'var(--cream)' }}>
       <TopBar here={1} steps={['Dashboard', 'Select Pose']} />
 
-      <main style={{ maxWidth: 1024, margin: '24px auto', padding: '0 24px' }}>
+      <main id="main" tabIndex={-1} style={{ maxWidth: 1024, margin: '24px auto', padding: '0 24px' }}>
         
         {/* Title */}
         <div style={{ textAlign: 'center', marginBottom: 28 }} className="popin">
@@ -25,6 +25,7 @@ export function PoseLibraryScreen() {
         {/* Library Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
           {POSES.map((pose) => (
+            // the whole card is a mouse target; the Start button below is the keyboard one
             <div
               key={pose.id}
               className="plush tap"
@@ -57,7 +58,7 @@ export function PoseLibraryScreen() {
                   marginTop: 14,
                   overflow: 'hidden',
                   borderRadius: 12,
-                  border: '3.5px solid var(--ink)',
+                  border: 'var(--bw-thick) solid var(--line)',
                   boxShadow: 'var(--plush-sm)',
                   background: 'var(--cream)',
                   display: 'flex',
@@ -68,6 +69,8 @@ export function PoseLibraryScreen() {
                   <img
                     src={pose.image}
                     alt={pose.name}
+                    loading="lazy"
+                    decoding="async"
                     style={{
                       height: '100%',
                       width: '100%',
@@ -89,13 +92,13 @@ export function PoseLibraryScreen() {
 
                 {/* Anatomy targets */}
                 <div style={{ marginTop: 14 }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Alignment Targets
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-soft)' }}>
+                    Alignment targets
                   </span>
                   <ul style={{ margin: '4px 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--ink)', fontWeight: 700 }}>
                     {Object.values(pose.targetAngles).map((ang, i) => (
                       <li key={i} style={{ marginBottom: 4 }}>
-                        {ang.label}: <span style={{ color: 'var(--peach-deep)' }}>{ang.min}° - {ang.max}°</span>
+                        {ang.label}: <span style={{ color: 'var(--peach-text)' }}>{ang.min}° - {ang.max}°</span>
                       </li>
                     ))}
                   </ul>
@@ -111,7 +114,7 @@ export function PoseLibraryScreen() {
                   handleSelectPose(pose.id);
                 }}
               >
-                <Trophy size={16} /> Start Calibration
+                <Trophy size={16} aria-hidden="true" /> Start {pose.name}
               </button>
             </div>
           ))}

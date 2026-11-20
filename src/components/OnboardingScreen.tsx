@@ -93,7 +93,7 @@ export function OnboardingScreen() {
           }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: '2px dashed var(--line)', paddingBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: 'var(--bw-thin) dashed var(--line)', paddingBottom: 18 }}>
             <PhysioLogo size={70} />
             <div>
               <h2 style={{ fontSize: 26, color: 'var(--ink)' }}>
@@ -109,16 +109,16 @@ export function OnboardingScreen() {
 
           {error && (
             <div style={{
-              background: '#FFEAE6',
-              border: '2.5px solid var(--line)',
+              background: 'var(--rose)',
+              border: 'var(--bw) solid var(--line)',
               borderRadius: 'var(--r-sm)',
               padding: '10px 14px',
-              color: '#FF6B4A',
+              color: 'var(--on-accent)',
               fontSize: 13,
               fontWeight: 800,
-              boxShadow: '2px 2px 0 var(--line)'
+              boxShadow: 'var(--sh-diag-2)'
             }}>
-              ⚠️ {error}
+              {error}
             </div>
           )}
 
@@ -142,17 +142,16 @@ export function OnboardingScreen() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                border: '2.5px solid var(--line)',
+                border: 'var(--bw) solid var(--line)',
                 borderRadius: 'var(--r-sm)',
                 fontSize: 15,
                 fontFamily: 'inherit',
                 fontWeight: 800,
                 color: 'var(--ink)',
-                outline: 'none',
-                boxShadow: isNameFocused ? '4px 4px 0 var(--line)' : '2px 2px 0 var(--line)',
+                boxShadow: isNameFocused ? 'var(--sh-diag-4)' : 'var(--sh-diag-2)',
                 transform: isNameFocused ? 'translate(-2px, -2px)' : 'none',
                 background: 'var(--surface)',
-                transition: 'all 0.1s ease',
+                transition: 'transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease',
               }}
             />
           </div>
@@ -179,17 +178,16 @@ export function OnboardingScreen() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                border: '2.5px solid var(--line)',
+                border: 'var(--bw) solid var(--line)',
                 borderRadius: 'var(--r-sm)',
                 fontSize: 15,
                 fontFamily: 'inherit',
                 fontWeight: 800,
                 color: 'var(--ink)',
-                outline: 'none',
-                boxShadow: isAgeFocused ? '4px 4px 0 var(--line)' : '2px 2px 0 var(--line)',
+                boxShadow: isAgeFocused ? 'var(--sh-diag-4)' : 'var(--sh-diag-2)',
                 transform: isAgeFocused ? 'translate(-2px, -2px)' : 'none',
                 background: 'var(--surface)',
-                transition: 'all 0.1s ease',
+                transition: 'transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease',
               }}
             />
           </div>
@@ -208,20 +206,21 @@ export function OnboardingScreen() {
                   key={level}
                   type="button"
                   onClick={() => setExperience(level)}
+                  aria-pressed={experience === level}
                   style={{
                     padding: '12px',
-                    border: '2.5px solid var(--line)',
+                    border: 'var(--bw) solid var(--line)',
                     borderRadius: 'var(--r-sm)',
                     fontFamily: 'inherit',
                     fontSize: 14,
                     fontWeight: 900,
                     cursor: 'pointer',
                     textTransform: 'capitalize',
-                    boxShadow: experience === level ? '1px 1px 0 var(--line)' : '3px 3px 0 var(--line)',
+                    boxShadow: experience === level ? 'var(--sh-diag-1)' : 'var(--sh-diag-3)',
                     background: experience === level ? 'var(--mint)' : 'var(--surface)',
-                    color: 'var(--ink)',
+                    color: experience === level ? 'var(--on-accent)' : 'var(--ink)',
                     transform: experience === level ? 'translate(2px, 2px)' : 'none',
-                    transition: 'all 0.1s ease',
+                    transition: 'transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease',
                   }}
                 >
                   {level}
@@ -244,20 +243,21 @@ export function OnboardingScreen() {
                   key={g}
                   type="button"
                   onClick={() => setGoal(g)}
+                  aria-pressed={goal === g}
                   style={{
                     padding: '12px',
-                    border: '2.5px solid var(--line)',
+                    border: 'var(--bw) solid var(--line)',
                     borderRadius: 'var(--r-sm)',
                     fontFamily: 'inherit',
                     fontSize: 14,
                     fontWeight: 900,
                     cursor: 'pointer',
                     textTransform: 'capitalize',
-                    boxShadow: goal === g ? '1px 1px 0 var(--line)' : '3px 3px 0 var(--line)',
+                    boxShadow: goal === g ? 'var(--sh-diag-1)' : 'var(--sh-diag-3)',
                     background: goal === g ? 'var(--peach)' : 'var(--surface)',
-                    color: 'var(--ink)',
+                    color: goal === g ? 'var(--on-accent)' : 'var(--ink)',
                     transform: goal === g ? 'translate(2px, 2px)' : 'none',
-                    transition: 'all 0.1s ease',
+                    transition: 'transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease',
                   }}
                 >
                   {g}
@@ -284,7 +284,7 @@ export function OnboardingScreen() {
               className="btn-plush primary"
               style={{ flex: 1, padding: '12px', fontSize: 16 }}
             >
-              {existingUser ? 'Save Profile Details ➔' : 'Register Account ➔'}
+              {existingUser ? 'Save profile' : 'Create profile'}
             </button>
           </div>
         </form>

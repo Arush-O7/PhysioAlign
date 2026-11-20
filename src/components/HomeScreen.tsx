@@ -3,7 +3,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../utils/auth';
 import { SessionData } from '../game/types';
 import { POSES } from '../data/poses';
-import { TopBar, Doodle, CuteFace } from './primitives';
+import { TopBar, Doodle, CuteFace, pressable } from './primitives';
+import { useQueryParam } from '../game/router';
 import {
   Award,
   Flame,
@@ -67,7 +68,7 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
       }}
     >
       <div>
-        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)' }}>
           {title}
         </span>
         <h2 style={{ fontSize: 32, fontWeight: 900, color: 'var(--ink)', marginTop: 4, lineHeight: 1 }}>
@@ -75,10 +76,10 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
         </h2>
       </div>
       <div style={{
-        width: 44, height: 44, borderRadius: '50%', border: '2.5px solid var(--line)',
+        width: 44, height: 44, borderRadius: '50%', border: 'var(--bw) solid var(--line)',
         background: color, display: 'flex', alignItems: 'center', justifyItems: 'center',
-        justifyContent: 'center', boxShadow: 'var(--plush-tiny)'
-      }}>
+        justifyContent: 'center', boxShadow: 'var(--plush-tiny)', color: 'var(--on-accent)', flexShrink: 0
+      }} aria-hidden="true">
         {icon}
       </div>
     </div>
@@ -200,7 +201,9 @@ export function HomeScreen() {
   });
 
 
-  const [selectedCoachId, setSelectedCoachId] = useState<string>('anya');
+  const [coachParam, setCoachParam] = useQueryParam('coach');
+  const selectedCoachId = COACHES.some((c) => c.id === coachParam) ? coachParam : 'anya';
+  const setSelectedCoachId = (id: string) => setCoachParam(id === 'anya' ? '' : id);
   const [inputText, setInputText] = useState<string>('');
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [chats, setChats] = useState<Record<string, ChatMessage[]>>(() => {
@@ -312,8 +315,7 @@ export function HomeScreen() {
   };
 
   const handleViewSession = (session: SessionData) => {
-    store.getState().activeSession = session;
-    store.setScreen('debrief');
+    store.viewSession(session);
   };
 
   const handleDeleteSession = async (id: string, e: React.MouseEvent) => {
@@ -452,7 +454,7 @@ export function HomeScreen() {
     <div className="screen" style={{ background: 'var(--cream)' }}>
       <TopBar here={0} steps={['Dashboard']} userName={userData?.name} />
 
-      <main style={{ maxWidth: 1024, margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <main id="main" tabIndex={-1} style={{ maxWidth: 1024, margin: '24px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
         
 
         <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', position: 'relative', overflow: 'hidden' }}>
@@ -476,7 +478,7 @@ export function HomeScreen() {
         </div>
 
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, borderBottom: '2.5px solid var(--line)', paddingBottom: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 12 }}>
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`btn-plush ${activeTab === 'dashboard' ? 'primary' : 'ghost'}`}
@@ -509,10 +511,10 @@ export function HomeScreen() {
           <div className="popin" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-              <StatCard title="Daily Streak" value={`${streak} ${streak === 1 ? 'day' : 'days'}`} icon={<Flame size={20} color="var(--ink)" />} color="var(--peach)" />
-              <StatCard title="Sessions Practiced" value={count} icon={<Activity size={20} color="var(--ink)" />} color="var(--sky)" />
-              <StatCard title="Average Score" value={`${avgScore}%`} icon={<Award size={20} color="var(--ink)" />} color="var(--butter)" />
-              <StatCard title="Attention Area" value={weakestArea} icon={<Doodle kind="star" size={20} color="var(--ink)" />} color="var(--rose)" />
+              <StatCard title="Daily streak" value={`${streak} ${streak === 1 ? 'day' : 'days'}`} icon={<Flame size={20} />} color="var(--peach)" />
+              <StatCard title="Sessions practised" value={count} icon={<Activity size={20} />} color="var(--sky)" />
+              <StatCard title="Average score" value={`${avgScore}%`} icon={<Award size={20} />} color="var(--butter)" />
+              <StatCard title="Focus area" value={weakestArea} icon={<Doodle kind="star" size={20} color="var(--on-accent)" />} color="var(--rose)" />
             </div>
 
 
@@ -522,11 +524,11 @@ export function HomeScreen() {
               
               return (
                 <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ borderBottom: '2.5px solid var(--line)', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                     <h2 style={{ fontSize: 22, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <HeartPulse size={24} style={{ color: 'var(--rose-deep)' }} /> Prescribed Rehabilitation Plan
+                      <HeartPulse size={24} style={{ color: 'var(--rose-text)' }} /> Prescribed Rehabilitation Plan
                     </h2>
-                    <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--ink-soft)', border: '2.5px solid var(--line)' }} className="chip">
+                    <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--ink-soft)', border: 'var(--bw) solid var(--line)' }} className="chip">
                       Assigned by your Doctor
                     </span>
                   </div>
@@ -535,9 +537,10 @@ export function HomeScreen() {
                     {carePlan.map((planItem: any, index: number) => {
                       const poseConfig = POSES.find(p => p.id === planItem.poseId);
                       return (
-                        <div 
+                        <button
+                          type="button"
                           key={index}
-                          className="plush tap"
+                          className="plush tap card-btn"
                           onClick={() => store.selectPose(planItem.poseId)}
                           style={{
                             background: 'var(--cream)',
@@ -546,7 +549,7 @@ export function HomeScreen() {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             cursor: 'pointer',
-                            borderWidth: '2.5px',
+                            borderWidth: 'var(--bw)',
                             boxShadow: 'var(--plush-tiny)',
                             gap: 12
                           }}
@@ -556,13 +559,13 @@ export function HomeScreen() {
                               {poseConfig?.name || planItem.poseId}
                             </div>
                             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-soft)', marginTop: 4 }}>
-                              Goal hold: <span style={{ color: 'var(--peach-deep)' }}>{planItem.targetHold}s</span> • {planItem.frequency}
+                              Goal hold: <span style={{ color: 'var(--peach-text)' }}>{planItem.targetHold}s</span> • {planItem.frequency}
                             </div>
                           </div>
-                          <span className="btn-plush primary" style={{ fontSize: 11, padding: '4px 10px', borderWidth: '1.5px', borderRadius: 6, height: 'auto', margin: 0, flexShrink: 0 }}>
+                          <span className="btn-plush primary" style={{ fontSize: 11, padding: '4px 10px', borderWidth: 'var(--bw-thin)', borderRadius: 6, height: 'auto', margin: 0, flexShrink: 0 }}>
                             Start
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -571,18 +574,18 @@ export function HomeScreen() {
             })()}
 
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'start' }}>
+            <div className="layout-split" style={{ alignItems: 'start' }}>
               
 
               <div className="plush" style={{ padding: '24px 28px', background: 'var(--surface)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid var(--line)', paddingBottom: 12, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 12, marginBottom: 16 }}>
                   <h2 style={{ fontSize: 22, color: 'var(--ink)', margin: 0 }}>
                     Completed Evaluations
                   </h2>
                   <button
                     onClick={handleStartPractice}
                     className="btn-plush primary"
-                    style={{ fontSize: 13, padding: '6px 12px', borderWidth: '2px', height: 'auto', display: 'inline-flex' }}
+                    style={{ fontSize: 13, padding: '6px 12px', borderWidth: 'var(--bw-thin)', height: 'auto', display: 'inline-flex' }}
                   >
                     <Plus size={14} style={{ marginRight: 4 }} /> New Session
                   </button>
@@ -601,21 +604,22 @@ export function HomeScreen() {
                     {history.map((session) => (
                       <div
                         key={session.id}
-                        onClick={() => handleViewSession(session)}
+                        {...pressable(() => handleViewSession(session))}
+                        aria-label={`Open the ${session.poseName} report from ${relativeDate(session.date)}`}
                         className="tap"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           padding: '14px 18px',
-                          border: '2.5px solid var(--line)',
+                          border: 'var(--bw) solid var(--line)',
                           borderRadius: 'var(--r-sm)',
                           background: 'var(--paper)',
                           boxShadow: 'var(--plush-tiny)',
                           cursor: 'pointer'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
 
                           <div
                             className={`debrief-grade-badge ${session.grade.toLowerCase()}`}
@@ -624,8 +628,9 @@ export function HomeScreen() {
                               height: 44,
                               fontSize: 22,
                               borderRadius: 10,
-                              border: '2.5px solid var(--line)',
-                              transform: 'none'
+                              border: 'var(--bw) solid var(--line)',
+                              transform: 'none',
+                              flexShrink: 0
                             }}
                           >
                             {session.grade}
@@ -633,28 +638,29 @@ export function HomeScreen() {
 
                           <div>
                             <h3 style={{ fontSize: 17, fontWeight: 800 }}>{session.poseName}</h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700 }}>
-                              <span>{relativeDate(session.date)}</span>
-                              <span>•</span>
-                              <span>Hold: {session.holdTimeSeconds}s</span>
-                              <span>•</span>
-                              <span>Score: {session.averageScore}%</span>
+                            <div className="num" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 8, rowGap: 2, marginTop: 4, fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700 }}>
+                              <span style={{ whiteSpace: 'nowrap' }}>{relativeDate(session.date)}</span>
+                              <span aria-hidden="true">•</span>
+                              <span style={{ whiteSpace: 'nowrap' }}>Hold: {session.holdTimeSeconds}s</span>
+                              <span aria-hidden="true">•</span>
+                              <span style={{ whiteSpace: 'nowrap' }}>Score: {session.averageScore}%</span>
                             </div>
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                           <button
                             onClick={(e) => handleDeleteSession(session.id, e)}
                             style={{
                               background: 'transparent', border: 0, padding: 6, cursor: 'pointer',
-                              color: 'var(--rose-deep)'
+                              color: 'var(--rose-text)'
                             }}
                             title="Delete log entry"
+                            aria-label={`Delete the ${session.poseName} session`}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={18} aria-hidden="true" />
                           </button>
-                          <ChevronRight size={20} color="var(--line)" />
+                          <ChevronRight size={20} color="var(--line)" aria-hidden="true" />
                         </div>
                       </div>
                     ))}
@@ -679,9 +685,11 @@ export function HomeScreen() {
                       
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '20px 0' }}>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--mint-deep)' }}>1 (Limber)</span>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--mint-text)' }}>1 (Limber)</span>
                         <input 
                           type="range" 
+                          aria-label="How stiff or sore you feel today, from 1 (limber) to 10 (stiff)"
+                          aria-valuetext={`${painLevel} out of 10`}
                           min="1" 
                           max="10" 
                           value={painLevel} 
@@ -692,12 +700,12 @@ export function HomeScreen() {
                             cursor: 'pointer'
                           }} 
                         />
-                        <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--rose-deep)' }}>10 (Stiff)</span>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--rose-text)' }}>10 (Stiff)</span>
                       </div>
                       
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
                         <div style={{ fontSize: 14, fontWeight: 800 }}>
-                          Selected Index: <span style={{ color: painLevel >= 7 ? 'var(--rose-deep)' : painLevel >= 4 ? 'var(--butter-deep)' : 'var(--mint-deep)', fontSize: 18, fontWeight: 900 }}>{painLevel}</span>
+                          Selected Index: <span style={{ color: painLevel >= 7 ? 'var(--rose-text)' : painLevel >= 4 ? 'var(--butter-text)' : 'var(--mint-text)', fontSize: 18, fontWeight: 900 }}>{painLevel}</span>
                         </div>
                         <button
                           onClick={handleLogPain}
@@ -710,7 +718,7 @@ export function HomeScreen() {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--cream-2)', padding: '12px 14px', borderRadius: 'var(--r-sm)', border: '2.5px solid var(--line)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--cream-2)', padding: '12px 14px', borderRadius: 'var(--r-sm)', border: 'var(--bw) solid var(--line)' }}>
                         <CheckCircle size={18} color="var(--mint-deep)" />
                         <span style={{ fontSize: 13, fontWeight: 800 }}>Daily index logged successfully!</span>
                       </div>
@@ -737,7 +745,7 @@ export function HomeScreen() {
                   </h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
 
-                    <div style={{ flex: 1, height: 10, background: 'var(--cream)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-pill)', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: 10, background: 'var(--cream)', border: 'var(--bw) solid var(--line)', borderRadius: 'var(--r-pill)', overflow: 'hidden' }}>
                       <div style={{ width: `${roadmapPercentage}%`, height: '100%', background: 'var(--mint-deep)', transition: 'width 300ms ease' }} />
                     </div>
                     <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-2)' }}>{roadmapPercentage}%</span>
@@ -745,15 +753,18 @@ export function HomeScreen() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {roadmap.map((item) => (
-                      <div
+                      <button
+                        type="button"
                         key={item.id}
                         onClick={() => handleToggleRoadmapItem(item.id)}
+                        aria-pressed={item.completed}
+                        className="card-btn"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 12,
                           padding: '10px 14px',
-                          border: '2.5px solid var(--line)',
+                          border: 'var(--bw) solid var(--line)',
                           borderRadius: 'var(--r-sm)',
                           background: item.completed ? 'var(--cream-2)' : 'var(--paper)',
                           cursor: 'pointer',
@@ -766,12 +777,12 @@ export function HomeScreen() {
                           width: 20,
                           height: 20,
                           borderRadius: '50%',
-                          border: '2.5px solid var(--line)',
+                          border: 'var(--bw) solid var(--line)',
                           background: item.completed ? 'var(--mint-deep)' : 'var(--surface)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: '0 1px 0 var(--line)'
+                          boxShadow: 'var(--sh-down-1)'
                         }}>
                           {item.completed && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--surface)' }} />}
                         </div>
@@ -796,7 +807,7 @@ export function HomeScreen() {
                             }
                           })()}
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -804,7 +815,7 @@ export function HomeScreen() {
 
                 <div className="plush" style={{ padding: 20, background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{
-                    border: '2.5px solid var(--line)',
+                    border: 'var(--bw) solid var(--line)',
                     borderRadius: '50%',
                     overflow: 'hidden',
                     width: 44,
@@ -826,6 +837,7 @@ export function HomeScreen() {
                   </div>
                   <button
                     onClick={() => setActiveTab('consult')}
+                    aria-label={`Chat with ${activeCoach.name}`}
                     className="btn-plush primary"
                     style={{
                       width: 36,
@@ -872,16 +884,16 @@ export function HomeScreen() {
                   <div style={{ width: '100%', height: 260 }}>
                     <ResponsiveContainer>
                       <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#F1E3D3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--ink) 14%, transparent)" />
                         <XAxis dataKey="date" stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <YAxis domain={[0, 100]} stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <Tooltip
                           contentStyle={{
                             background: 'var(--surface)',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             borderRadius: '10px',
                             boxShadow: 'var(--plush-tiny)',
-                            fontFamily: 'Nunito',
+                            fontFamily: 'inherit',
                             fontWeight: 800
                           }}
                         />
@@ -906,16 +918,16 @@ export function HomeScreen() {
                   <div style={{ width: '100%', height: 260 }}>
                     <ResponsiveContainer>
                       <BarChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#F1E3D3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--ink) 14%, transparent)" />
                         <XAxis dataKey="date" stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <YAxis stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <Tooltip
                           contentStyle={{
                             background: 'var(--surface)',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             borderRadius: '10px',
                             boxShadow: 'var(--plush-tiny)',
-                            fontFamily: 'Nunito',
+                            fontFamily: 'inherit',
                             fontWeight: 800
                           }}
                         />
@@ -940,16 +952,16 @@ export function HomeScreen() {
                   <div style={{ width: '100%', height: 280 }}>
                     <ResponsiveContainer>
                       <BarChart data={poseSummaryData} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#F1E3D3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--ink) 14%, transparent)" />
                         <XAxis dataKey="name" stroke="var(--ink-soft)" style={{ fontSize: 12, fontWeight: 800 }} />
                         <YAxis domain={[0, 100]} stroke="var(--ink-soft)" style={{ fontSize: 11, fontWeight: 700 }} />
                         <Tooltip
                           contentStyle={{
                             background: 'var(--surface)',
-                            border: '2.5px solid var(--line)',
+                            border: 'var(--bw) solid var(--line)',
                             borderRadius: '10px',
                             boxShadow: 'var(--plush-tiny)',
-                            fontFamily: 'Nunito',
+                            fontFamily: 'inherit',
                             fontWeight: 800
                           }}
                         />
@@ -972,24 +984,27 @@ export function HomeScreen() {
         )}
 
         {activeTab === 'consult' && (
-          <div className="popin" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, minHeight: 520 }}>
+          <div className="popin layout-sidebar" style={{ minHeight: 520 }}>
             
 
             <div className="plush" style={{ background: 'var(--surface)', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, borderBottom: '2.5px solid var(--line)', paddingBottom: 8, color: 'var(--ink)' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 900, borderBottom: 'var(--bw) solid var(--line)', paddingBottom: 8, color: 'var(--ink)' }}>
                 Yoga Instructors
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {COACHES.map((coach) => (
-                  <div
+                  <button
+                    type="button"
                     key={coach.id}
                     onClick={() => setSelectedCoachId(coach.id)}
-                    className="tap"
+                    aria-pressed={selectedCoachId === coach.id}
+                    className="tap card-btn"
                     style={{
                       padding: 12,
-                      border: '2.5px solid var(--line)',
+                      border: 'var(--bw) solid var(--line)',
                       borderRadius: 'var(--r-sm)',
                       background: selectedCoachId === coach.id ? coach.color : 'var(--paper)',
+                      color: selectedCoachId === coach.id ? 'var(--on-accent)' : 'var(--ink)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -999,7 +1014,7 @@ export function HomeScreen() {
                     }}
                   >
                     <div style={{
-                      border: '2.5px solid var(--line)',
+                      border: 'var(--bw) solid var(--line)',
                       borderRadius: '50%',
                       overflow: 'hidden',
                       width: 32,
@@ -1012,18 +1027,18 @@ export function HomeScreen() {
                       <CuteFace size={38} mood={coach.avatarMood} skin={coach.skinColor} />
                     </div>
                     <div>
-                      <h4 style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
+                      <h4 style={{ fontSize: 14, fontWeight: 900, color: 'inherit', margin: 0 }}>
                         {coach.name.split(' ').pop()}
                       </h4>
-                      <p style={{ fontSize: 10, fontWeight: 800, color: 'var(--ink-soft)', margin: 0 }}>
+                      <p style={{ fontSize: 12, fontWeight: 800, color: 'inherit', opacity: 0.8, margin: 0 }}>
                         {coach.role}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
 
-              <div style={{ marginTop: 'auto', background: 'var(--cream-2)', border: '2.5px solid var(--line)', borderRadius: 'var(--r-sm)', padding: 12 }}>
+              <div style={{ marginTop: 'auto', background: 'var(--cream-2)', border: 'var(--bw) solid var(--line)', borderRadius: 'var(--r-sm)', padding: 12 }}>
                 <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-2)', margin: 0 }}>
                   Active Coach:
                 </p>
@@ -1042,14 +1057,15 @@ export function HomeScreen() {
 
               <div style={{
                 padding: '16px 20px',
-                borderBottom: '2.5px solid var(--line)',
+                borderBottom: 'var(--bw) solid var(--line)',
                 background: activeCoach.color,
+                color: 'var(--on-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12
               }}>
                 <div style={{
-                  border: '2.5px solid var(--line)',
+                  border: 'var(--bw) solid var(--line)',
                   borderRadius: '50%',
                   overflow: 'hidden',
                   width: 40,
@@ -1062,8 +1078,8 @@ export function HomeScreen() {
                   <CuteFace size={48} mood={activeCoach.avatarMood} skin={activeCoach.skinColor} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)' }}>{activeCoach.name}</h3>
-                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-2)', margin: 0 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 900 }}>{activeCoach.name}</h3>
+                  <p style={{ fontSize: 12, fontWeight: 800, opacity: 0.85, margin: 0 }}>
                     {activeCoach.role} • AI Assistant
                   </p>
                 </div>
@@ -1088,18 +1104,19 @@ export function HomeScreen() {
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      color: 'var(--ink-2)',
-                      padding: 4,
-                      opacity: 0.7
+                      color: 'inherit',
+                      padding: 6,
+                      opacity: 0.8
                     }}
-                    title="Clear Chat History"
+                    title="Clear chat history"
+                    aria-label="Clear chat history"
                     className="tap"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={16} aria-hidden="true" />
                   </button>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span className="dot" style={{ background: 'var(--line)', width: 6, height: 6 }} />
-                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink-2)' }}>Online</span>
+                    <span className="dot" style={{ background: 'currentColor', width: 6, height: 6 }} />
+                    <span style={{ fontSize: 12, fontWeight: 800 }}>Online</span>
                   </div>
                 </div>
               </div>
@@ -1130,11 +1147,11 @@ export function HomeScreen() {
                       <div
                         style={{
                           background: isUser ? 'var(--butter)' : 'var(--surface)',
-                          border: '2.5px solid var(--line)',
+                          border: 'var(--bw) solid var(--line)',
                           borderRadius: isUser ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
                           padding: '12px 16px',
                           boxShadow: 'var(--plush-tiny)',
-                          color: 'var(--ink)',
+                          color: isUser ? 'var(--on-accent)' : 'var(--ink)',
                           fontSize: 14,
                           fontWeight: 700,
                           lineHeight: 1.5,
@@ -1154,7 +1171,7 @@ export function HomeScreen() {
                   <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{
                       background: 'var(--surface)',
-                      border: '2.5px solid var(--line)',
+                      border: 'var(--bw) solid var(--line)',
                       borderRadius: '12px 12px 12px 2px',
                       padding: '10px 16px',
                       boxShadow: 'var(--plush-tiny)',
@@ -1163,8 +1180,8 @@ export function HomeScreen() {
                       gap: 4
                     }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-soft)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        <Sparkles size={14} className="floaty" style={{ color: 'var(--peach-deep)' }} />
-                        {activeCoach.name.split(' ').pop()} is thinking...
+                        <Sparkles size={14} className="floaty" style={{ color: 'var(--peach-text)' }} />
+                        {activeCoach.name.split(' ').pop()} is thinking…
                       </span>
                     </div>
                   </div>
@@ -1177,7 +1194,7 @@ export function HomeScreen() {
                 onSubmit={handleSendMessage}
                 style={{
                   padding: '12px 16px',
-                  borderTop: '2.5px solid var(--line)',
+                  borderTop: 'var(--bw) solid var(--line)',
                   background: 'var(--surface)',
                   display: 'flex',
                   gap: 12,
@@ -1188,25 +1205,28 @@ export function HomeScreen() {
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={`Ask ${activeCoach.name.split(' ').pop()} a question...`}
+                  placeholder={`Ask ${activeCoach.name.split(' ').pop()} a question…`}
+                  aria-label={`Message ${activeCoach.name}`}
+                  name="coach-message"
+                  autoComplete="off"
                   disabled={isTyping}
                   style={{
                     flex: 1,
                     height: 44,
-                    border: '2.5px solid var(--line)',
+                    border: 'var(--bw) solid var(--line)',
                     borderRadius: 'var(--r-sm)',
                     padding: '0 16px',
                     fontFamily: 'inherit',
                     fontSize: 14,
                     fontWeight: 700,
                     color: 'var(--ink)',
-                    outline: 'none',
                     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
                   }}
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isTyping}
+                  aria-label="Send message"
                   className="btn-plush primary"
                   style={{
                     width: 44,
@@ -1216,7 +1236,7 @@ export function HomeScreen() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 3px 0 var(--line)'
+                    boxShadow: 'var(--sh-down-3)'
                   }}
                 >
                   <Send size={18} />

@@ -94,7 +94,7 @@ export function BreathingPacer({ active }: BreathingPacerProps) {
             background: phase === 'out' ? 'var(--sky)' : 'var(--mint)',
           }}
         />
-        <Wind size={20} style={{ position: 'relative', color: 'var(--ink)', strokeWidth: 2.5 }} />
+        <Wind size={20} aria-hidden="true" style={{ position: 'relative', color: 'var(--on-accent)', strokeWidth: 2.5 }} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
