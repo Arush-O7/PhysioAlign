@@ -35,8 +35,10 @@ A webcam posture coach for yoga and physiotherapy exercises. It tracks 33 body l
 | **Live joint colouring** | The skeleton overlay colours each limb by whether that joint is inside its target range, with a halo on the joint that needs fixing | You can see *where* the pose is wrong without reading the cue list |
 | **Session replay** | The per-second log every session records is replayed on the report: scrub or play back the score, the cue and the joint angles for any second | Reviewing a session doesn't need the video, which never leaves the device |
 | **Breathing pacer** | A ring that expands and contracts on a 4s-in / 6s-out cycle while a hold is running, with the phase and a countdown | Gives the hold a rhythm; can be switched off and the choice sticks |
-| **Shareable session card** | The report renders a 1200×630 PNG on a canvas — grade, stats and the score curve with the hold threshold marked — in the colours of the active theme | One click to save a session summary worth posting |
-| **Themes** | Three palettes (Sunshine, Orchid and a dark Midnight) built on CSS custom properties, remembered per browser | Usable in a dim room; no hardcoded colours left in components |
+| **Shareable session card** | The report renders a 1200×630 PNG on a canvas — grade, stats and the score curve with the hold threshold marked — in the app's colours | One click to save a session summary worth posting |
+| **Design tokens** | One palette built on CSS custom properties, with separate text-safe shades of each accent so coloured text stays above WCAG AA contrast | No hardcoded colours left in components |
+| **Linkable screens** | Each screen has its own URL (`/dashboard`, `/coaches`, `/poses`, `/report/:id`, `/patients`, `/accounts`), and search, filters and the open patient live in the query string | Reloads, deep links and back/forward all work, with role checks on every route |
+| **Accessibility** | Real buttons for clickable cards, labelled form fields, dialogs that trap Escape and restore focus, a skip link, visible focus rings and reduced-motion support | Keyboard and screen-reader friendly; layouts stack cleanly on phones |
 | **Schema migrations** | Versioned, transactional migrations with an advisory lock. Existing databases are upgraded in place: `TEXT` JSON becomes `JSONB`, the `clerk_id` column is renamed to `user_id`, and indexes are added. | Tested against the pre-migration production schema |
 
 The pose numbers were measured on an Apple M4 in Chrome 153 (GPU delegate) over 300 frames of a 640×480 feed. To measure on your own machine, open the app with `?perf` and run `__perf()` in the console. To reproduce the smoothing numbers, run `npm run bench:smoothing`.
@@ -90,7 +92,7 @@ Migrations run automatically when the server starts.
 TEST_DATABASE_URL=postgres://localhost:5432/physio_test npm test
 ```
 
-There are 57 tests:
+There are 68 tests:
 - **Unit tests:** angle maths, pose scoring, smoothing, HTML sanitising, tokens, passwords, rate limiting.
 - **API tests:** run against a real Postgres. They cover auth and cookies, CSRF, role and patient-level access control, validation, the async critique pipeline, and upgrading the legacy schema.
 
@@ -133,6 +135,7 @@ backend/test/    API and unit tests
 src/
   components/    screens
   data/poses.ts  pose definitions and scoring rules
+  game/          app state and URL routing
   utils/         angle maths, smoothing, pose detector, api client
 public/pose-worker.js   MediaPipe inference worker
 scripts/         benchmark and db check

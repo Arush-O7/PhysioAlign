@@ -513,7 +513,7 @@ export function PhysioLogo({ size = 80, className = '' }) {
       }}
     >
       <img 
-        src="/logo.png?v=4" 
+        src="/logo.jpg" 
         alt="" 
         style={{ 
           width: '100%', 
