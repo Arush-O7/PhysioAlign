@@ -26,7 +26,7 @@ export const POSES: PoseConfig[] = [
       leftShoulder: { min: 145, max: 180, optimal: 170, label: 'Shoulder Extension' },
       rightShoulder: { min: 145, max: 180, optimal: 170, label: 'Shoulder Extension' }
     },
-    image: '/poses/tree-pose.png'
+    image: '/poses/tree-pose.jpg'
   },
   {
     id: 'warrior-ii',
@@ -55,7 +55,7 @@ export const POSES: PoseConfig[] = [
       rightElbow: { min: 160, max: 180, optimal: 175, label: 'Front Arm Extension' },
       leftElbow: { min: 160, max: 180, optimal: 175, label: 'Back Arm Extension' }
     },
-    image: '/poses/warrior-ii.png'
+    image: '/poses/warrior-ii.jpg'
   },
   {
     id: 'downward-dog',
@@ -84,7 +84,7 @@ export const POSES: PoseConfig[] = [
       leftElbow: { min: 165, max: 180, optimal: 175, label: 'Left Arm Extension' },
       rightElbow: { min: 165, max: 180, optimal: 175, label: 'Right Arm Extension' }
     },
-    image: '/poses/downward-dog.png'
+    image: '/poses/downward-dog.jpg'
   },
   {
     id: 'cobra-pose',
@@ -113,7 +113,7 @@ export const POSES: PoseConfig[] = [
       leftShoulder: { min: 35, max: 75, optimal: 55, label: 'Chest Opening' },
       rightShoulder: { min: 35, max: 75, optimal: 55, label: 'Chest Opening' }
     },
-    image: '/poses/cobra-pose.png'
+    image: '/poses/cobra-pose.jpg'
   },
   {
     id: 'chair-pose',
@@ -142,7 +142,7 @@ export const POSES: PoseConfig[] = [
       leftShoulder: { min: 135, max: 180, optimal: 160, label: 'Left Arm Reach' },
       rightShoulder: { min: 135, max: 180, optimal: 160, label: 'Right Arm Reach' }
     },
-    image: '/poses/chair-pose.png'
+    image: '/poses/chair-pose.jpg'
   },
   {
     id: 'plank-pose',
@@ -171,7 +171,7 @@ export const POSES: PoseConfig[] = [
       leftElbow: { min: 165, max: 180, optimal: 175, label: 'Left Elbow Extension' },
       rightElbow: { min: 165, max: 180, optimal: 175, label: 'Right Elbow Extension' }
     },
-    image: '/poses/plank-pose.png'
+    image: '/poses/plank-pose.jpg'
   },
   {
     id: 'warrior-i',
@@ -198,7 +198,7 @@ export const POSES: PoseConfig[] = [
       leftShoulder: { min: 140, max: 180, optimal: 165, label: 'Left Arm Reach' },
       rightShoulder: { min: 140, max: 180, optimal: 165, label: 'Right Arm Reach' }
     },
-    image: '/poses/warrior-i.png'
+    image: '/poses/warrior-i.jpg'
   },
   {
     id: 'bridge-pose',
@@ -225,7 +225,7 @@ export const POSES: PoseConfig[] = [
       leftHip: { min: 135, max: 165, optimal: 150, label: 'Left Hip Extension' },
       rightHip: { min: 135, max: 165, optimal: 150, label: 'Right Hip Extension' }
     },
-    image: '/poses/bridge-pose.png'
+    image: '/poses/bridge-pose.jpg'
   },
   {
     id: 'triangle-pose',
@@ -254,7 +254,7 @@ export const POSES: PoseConfig[] = [
       leftElbow: { min: 165, max: 180, optimal: 175, label: 'Left Arm Straight' },
       rightElbow: { min: 165, max: 180, optimal: 175, label: 'Right Arm Straight' }
     },
-    image: '/poses/triangle-pose.png'
+    image: '/poses/triangle-pose.jpg'
   }
 ];
 
